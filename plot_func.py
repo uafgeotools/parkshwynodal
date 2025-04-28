@@ -73,7 +73,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
     f0lab = []
-    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label='Estimated arrival: '+str(np.round(tprime0,2))+' s')
+    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + str(np.round(tprime0,2))+' s')
     
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
@@ -89,10 +89,20 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
 
     fss = 'x-small'
     f0lab = sorted(f0_array)
+
+    f1 = []
     for i in range(len(f0lab)):
         f0lab[i] = (str(np.round(f0lab[i],2)))
-    ax2.set_title("t0'= "+str(np.round(tprime0,2)) + ' sec, v0 = '+str(np.round(v0,2)) +' m/s, l = '+str(np.round(l,2)) +' m, \n' + 'f0 = '+', '.join(f0lab) +' Hz\nMisfit: ' + str(np.round(F_m,2)), fontsize=fss)
-    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label='Wave arrvial: '+str(np.round(tarrive,2))+' s')
+        if i == 0:
+            continue
+        diff = float(f0_array[i]) - float(f0_array[i - 1])
+        #if diff > 22 or diff < 18:
+        #    continue
+        f1.append(diff)
+        med = np.nanmedian(f1)
+
+    ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = '+', '.join(f0lab) +' \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = '+str(np.round(med,2))+' Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
+    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' +str(np.round(tarrive,2))+' s')
 
     ax2.legend(loc='upper right',fontsize = 'x-small')
     ax2.set_ylabel('Frequency (Hz)')
@@ -125,6 +135,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
+    
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
     print(tprime0,v0,l,f0lab,covm)
