@@ -99,9 +99,10 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         #if diff > 22 or diff < 18:
         #    continue
         f1.append(diff)
-        med = np.nanmedian(f1)
-
-    ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = '+', '.join(f0lab) +' \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = '+str(np.round(med,2))+' Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
+    med = str(np.round(np.nanmedian(f1),2))
+    if len(f0_array) <= 1:
+        med = "NaN"
+    ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = '+', '.join(f0lab) +' \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = '+med+' Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' +str(np.round(tarrive,2))+' s')
 
     ax2.legend(loc='upper right',fontsize = 'x-small')

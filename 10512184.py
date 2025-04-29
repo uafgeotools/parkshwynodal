@@ -193,7 +193,7 @@ for station in os.listdir(spec_dir):
 	diff = np.inf
 			
 	text1 = 'Altitude: '+str(round(alt,2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(head,2))+ '\N{DEGREE SIGN}'
-	text2 = 'Temperature: '+str(round(temp,2))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s \nat '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n'+str(round(sound,2))+' m/s'
+	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 	text3 = 'Callsign: ' +  str(callsign) + ' (' + str(equip) + ')'
 
 	font2 = ImageFont.truetype('input/Arial.ttf', 25)
@@ -236,12 +236,12 @@ for station in os.listdir(spec_dir):
 	font = ImageFont.truetype('input/Arial.ttf', 14) 
 
 	# Label each image
-	draw.text((15, 35), '(a)', fill='black', font=font2)
-	draw.text((google_slide_width - int(plane.width*1.5), google_slide_height - spec.height - spec.height/2), '['+str(mnum)+']', fill='black', font=font2)
+	draw.text((15, 35), '(a) ['+mnum+']', fill='black', font=font2)
+	#draw.text((google_slide_width - int(plane.width*1.5), google_slide_height - spec.height - spec.height/2), '['+str(mnum)+']', fill='black', font=font2)
 	draw.text((15, 350), '(b)', fill='black', font=font2)
-	draw.text((google_slide_width - int(plane.width*1.15), 20), '(c)', fill='black', font=font2)
-	draw.text((google_slide_width - int(plane.width*1.15), int(plane.height) + int(plane.height*0.05)), '(d)', fill='black', font=font2)
-	draw.text((google_slide_width - spec.width + int(spec.width/12) - 15, google_slide_height - spec.height + 20), '(e)', fill='black', font=font2)
+	draw.text((google_slide_width - int(plane.width*1.18), 7), '(c)', fill='black', font=font2)
+	draw.text((google_slide_width - int(plane.width*1.18), int(plane.height) + int(plane.height*0.05)), '(d)', fill='black', font=font2)
+	draw.text((google_slide_width - int(plane.width*1.14), google_slide_height - spec.height + 20), '(e)', fill='black', font=font2)
 
 	draw.text((google_slide_width - 305, 405), text1, fill='black', font=font)			
 	draw.text((google_slide_width - 155, 405), text2,fill='black', font=font)
