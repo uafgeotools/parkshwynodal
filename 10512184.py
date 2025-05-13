@@ -236,7 +236,7 @@ for station in os.listdir(spec_dir):
 	font = ImageFont.truetype('input/Arial.ttf', 14) 
 
 	# Label each image
-	draw.text((15, 35), '(a) ['+mnum+']', fill='black', font=font2)
+	draw.text((15, 35), '(a)', fill='black', font=font2)
 	#draw.text((google_slide_width - int(plane.width*1.5), google_slide_height - spec.height - spec.height/2), '['+str(mnum)+']', fill='black', font=font2)
 	draw.text((15, 350), '(b)', fill='black', font=font2)
 	draw.text((google_slide_width - int(plane.width*1.18), 7), '(c)', fill='black', font=font2)

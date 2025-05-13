@@ -121,7 +121,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     if med_df == "NaN":
         ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = ['+', '.join([str(np.round(f,2)) for f in f0lab]) +'] \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = ['+', '.join([str(np.round(f,2)) for f in f0lab]) +'] \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = ' + str(np.round(med_df,2)) + ' \u00B1 ' + str(np.round(mad_df,2)) + ' Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
+        ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = ['+', '.join([str(np.round(f,2)) for f in f0lab]) +'] \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = ' + str(np.round(med_df,2)) + ' \u00B1 ' + str(np.round(mad_df,2)) + ' Hz\nMisfit: ' + str(np.round(F_m,4)) + ' [FH/VT]', fontsize=fss)
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' +str(np.round(tarrive,2))+' s')
 
     ax2.legend(loc='upper right',fontsize = 'small')
@@ -155,7 +155,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-    
+
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
     print(tprime0,v0,l,f0lab,covm)
