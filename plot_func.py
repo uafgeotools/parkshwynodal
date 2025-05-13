@@ -90,22 +90,39 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     fss = 'x-small'
     f0lab = sorted(f0_array)
 
-    f1 = []
-    for i in range(len(f0lab)):
-        f0lab[i] = (str(np.round(f0lab[i],2)))
-        if i == 0:
-            continue
-        diff = float(f0_array[i]) - float(f0_array[i - 1])
-        #if diff > 22 or diff < 18:
-        #    continue
-        f1.append(diff)
-    med = str(np.round(np.nanmedian(f1),2))
     if len(f0_array) <= 1:
-        med = "NaN"
-    ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = '+', '.join(f0lab) +' \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = '+med+' Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
+        med_df = "NaN"
+        mad_df = "NaN"
+
+    else:
+        #Generate random samples of f0 values withing their sigma from the covariance matrix 
+        #Calculate the median of the differences and MAD to obtain error
+        f_range = []
+        NTRY = 1000
+        for N in range(NTRY):
+            ftry = []
+            for c_index  in range(3, len(covm)):
+                xmin = f0_array[c_index-3] - covm[c_index]
+                xmax = f0_array[c_index-3] + covm[c_index]
+                xtry = xmin + (xmax-xmin)*np.random.rand()
+                ftry.append(xtry)
+
+            ftry = np.sort(ftry)
+            f1 = []
+            for g in range(len(ftry)):
+                if g == 0:
+                    continue
+                diff = ftry[g] - ftry[g - 1]
+                f1.append(diff)
+            med = np.nanmedian(f1)
+            f_range.append(med)
+        med_df = np.nanmedian(f_range)
+        mad_df = np.nanmedian(np.abs(f_range - med_df))
+    
+    ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = ['+', '.join([str(np.round(f,2)) for f in f0lab]) +'] \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = ' + str(np.round(med_df,2)) + ' \u00B1 ' + str(np.round(mad_df,2)) + ' Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' +str(np.round(tarrive,2))+' s')
 
-    ax2.legend(loc='upper right',fontsize = 'x-small')
+    ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
 
     ax2.margins(x=0)
