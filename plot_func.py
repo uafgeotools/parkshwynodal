@@ -73,8 +73,8 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
     f0lab = []
-    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + str(np.round(tprime0,2))+' s')
-    
+    #ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + str(np.round(tprime0,2))+' s')
+    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
         
@@ -119,10 +119,10 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
     if med_df == "NaN":
-        ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = ['+', '.join([str(np.round(f,2)) for f in f0lab]) +'] \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + str(np.round(F_m,4)), fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+str(np.round(tprime0,2)) + ' \u00B1 ' + str(np.round(covm[2],2)) + ' s, v\u2080 = ' + str(np.round(v0,2)) +' \u00B1 ' + str(np.round(covm[0],2))+' m/s, l = '+str(np.round(l,2)) +' \u00B1 ' + str(np.round(covm[1],2)) + ' m, \n' + 'f\u2080 = ['+', '.join([str(np.round(f,2)) for f in f0lab]) +'] \u00B1 ' + str(np.round(np.median(covm[3:]),2)) +' Hz, df\u2080 = ' + str(np.round(med_df,2)) + ' \u00B1 ' + str(np.round(mad_df,2)) + ' Hz\nMisfit: ' + str(np.round(F_m,4)) + ' [FH/VT]', fontsize=fss)
-    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' +str(np.round(tarrive,2))+' s')
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0] +' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
@@ -155,7 +155,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-
+    
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
     print(tprime0,v0,l,f0lab,covm)
