@@ -1,53 +1,13 @@
 import pandas as pd
 import os
 from PIL import Image, ImageDraw, ImageFont
-from prelude import make_base_dir
 import glob
 import numpy as np
 import json
-from datetime import datetime, timezone
 from pyproj import Proj
-from prelude import speed_of_sound
-import math
+from prelude import speed_of_sound, add_vectors, make_base_dir
+
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
-
-def add_vectors(v1_magnitude, v1_angle, v2_magnitude, v2_angle):
-	"""
-	Adds two vectors given their magnitudes and directions (angles in degrees, clockwise from the positive y-axis).
-
-	Args:
-		v1_magnitude (float): Magnitude of the first vector.
-		v1_angle (float): Direction angle (in degrees, clockwise from the positive y-axis) of the first vector.
-		v2_magnitude (float): Magnitude of the second vector.
-		v2_angle (float): Direction angle (in degrees, clockwise from the positive y-axis) of the second vector.
-
-	Returns:
-		tuple: A tuple containing the magnitude and direction (angle in degrees, clockwise from the positive y-axis) 
-			   of the resultant vector.
-	"""
-
-	# Convert angles to radians for trigonometric functions
-	v1_angle_rad = math.radians(90 - v1_angle)
-	v2_angle_rad = math.radians(90 - v2_angle)
-
-	# Calculate components of the vectors
-	v1_x = v1_magnitude * math.cos(v1_angle_rad)
-	v1_y = v1_magnitude * math.sin(v1_angle_rad)
-	v2_x = v2_magnitude * math.cos(v2_angle_rad)
-	v2_y = v2_magnitude * math.sin(v2_angle_rad)
-
-	# Add the components
-	resultant_x = v1_x + v2_x
-	resultant_y = v1_y + v2_y
-
-	# Calculate magnitude of the resultant vector
-	resultant_magnitude = math.sqrt(resultant_x**2 + resultant_y**2)
-
-	# Calculate direction (angle) of the resultant vector
-	resultant_angle_rad = math.atan2(resultant_y, resultant_x)
-	resultant_angle_deg = (90 - math.degrees(resultant_angle_rad)) % 360
-
-	return resultant_magnitude, resultant_angle_deg
 
 day = str(21)
 month = '02'
