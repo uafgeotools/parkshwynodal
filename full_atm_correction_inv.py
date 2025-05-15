@@ -9,6 +9,8 @@ from prelude import *
 from scipy.signal import find_peaks, spectrogram
 from plot_func import *
 from obspy.clients.nrl import NRL
+#add a way to get the correct time and save it with picks
+#add a way to only pick 5 images for each aircraft type
 
 nrl = NRL()
 
