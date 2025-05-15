@@ -82,7 +82,7 @@ for i in range(len(day)):
 	callsign = flight_data['callsign'] 
 	aircraft_id = flight_data['aircraft_id']
 
-	spec_dir = '/scratch/irseppi/nodal_data/plane_info/C185_spec_cfc/2019-'+month[i]+'-'+day[i]
+	spec_dir = '/scratch/irseppi/nodal_data/plane_info/C185_spec_cfc/2019-'+month[i]+'-'+day[i] #replace C185
 	if os.path.exists(spec_dir):
 		try:
 			for flight_id in os.listdir(spec_dir):
@@ -201,7 +201,7 @@ for i in range(len(day)):
 					image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month[i]+day[i]+'/'+flight_id+'/'+station+'/map_'+flight_id+'_*')[0]
 
 					map_img = Image.open(image_path)
-					spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/C185_spectrum_c/2019'+month[i]+day[i]+'/'+flight_id+'/'+station+'/'+station+'_' + str(time) + '.png')
+					spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spectrum_c/2019'+month[i]+day[i]+'/'+flight_id+'/'+station+'/'+station+'_' + str(time) + '.png')
 
 					# Resize images
 					google_slide_width = 1280  # Width of a Google Slide in pixels
