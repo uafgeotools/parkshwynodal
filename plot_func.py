@@ -158,7 +158,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
-    print(tprime0,v0,l,f0lab,covm)
+
     return qnum
 
 ##############################################################################################################################################################################################################

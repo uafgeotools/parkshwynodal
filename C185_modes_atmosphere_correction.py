@@ -9,6 +9,7 @@ from prelude import *
 from scipy.signal import find_peaks, spectrogram
 from plot_func import *
 from obspy.clients.nrl import NRL
+
 nrl = NRL()
 equip = 'C185'
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
@@ -27,14 +28,15 @@ for line in sta_f.readlines():
 sta_f.close()
 second_column_array = np.array(second_column)
 
-temp_correction = True
+temp_correction = True #Flag use the temperature correction or not
+rerun_fig = True #Flag rerun the figures without saving the inversion results = True
 
-if temp_correction == True:
-    output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
-else:
-    output = open('output/' + equip + 'data_full.csv', 'a')
+if rerun_fig == False:
+    if temp_correction == True:
+        output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
+    else:
+        output = open('output/' + equip + 'data_full.csv', 'a')
 # Loop through each station in text file that we already know comes within 2km of the nodes
-
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_UTM.txt','r')
 for li in file_in.readlines():
     text = li.split(',')
@@ -103,7 +105,7 @@ for li in file_in.readlines():
 
     spec_dir = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec +'/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'
     
-    if os.path.exists(spec_dir):
+    if os.path.exists(spec_dir) and rerun_fig == False:
         continue
 
     flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
@@ -326,8 +328,11 @@ for li in file_in.readlines():
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
 
     m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
+    v0 = m[0]
+    l = m[1]
+    tprime0 = m[2]
     covm = np.sqrt(np.diag(covm))
-    print(covm)
+
     closest_index = np.argmin(np.abs(tprime0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
@@ -341,5 +346,9 @@ for li in file_in.readlines():
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
-    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
-output.close()
+    
+    if rerun_fig == False:
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+
+if rerun_fig == False:
+    output.close()
