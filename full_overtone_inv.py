@@ -5,40 +5,151 @@ import obspy
 import datetime
 from prelude import *
 from scipy.signal import find_peaks, spectrogram
-import scipy.linalg as la
+import json
+import obspy
+from datetime import datetime, timezone
+from pyproj import Proj
+from plot_func import *
+from obspy.clients.nrl import NRL
 
-
+nrl = NRL()
+equip = 'DH8A'
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
-station = seismo_data['Station']
-flight_num = [530342801,528485724,528473220,528407493,528293430] 
-time = [1551066051,1550172833,1550168070,1550165577,1550089044] 
-sta = [1022,1272,1173,1283,1004]
-day = [25,14,14,14,13]
-month = [2,2,2,2,2]
+stations = seismo_data['Station']
+elevations = seismo_data['Elevation']
 
-def Sd(m,dobs,dpred,icobs):
-    sd = 0.5 * (dpred-dobs).T @ icobs @ (dpred-dobs)
-    return sd
-# model misfit (related to regularization)
-def Sm(m,mprior,icprior):
-    sm = 0.5 * (m-mprior).T @ icprior @ (m-mprior)
-    return sm
-# total misfit
-def S(m,dobs,dpred,mprior,icobs,icprior):
-    s = Sd(m,dobs,dpred,icobs) + Sm(m,mprior,icprior)
-    return s
+utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-for n in range(0,5):
-    ht = datetime.utcfromtimestamp(time[n])
+temp_correction = True #Flag use the temperature correction or not
+rerun_fig = False #Flag rerun the figures without saving the inversion results = True
+
+if rerun_fig == False:
+    if temp_correction == True:
+        output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
+    else:
+        output = open('output/' + equip + 'data_full.csv', 'a')
+        
+# Loop through each station in text file that we already know comes within 2km of the nodes
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_UTM.txt','r')
+
+
+for li in file_in.readlines():
+
+    text = li.split(',')
+    flight_num = text[1]
+    date = text[0]
+    sta = text[9]
+    time = float(text[5])
+
+    equip_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_flights.csv'
+    equip_data = pd.read_csv(equip_file, sep=",")
+    equip_list = equip_data['equip']
+    flight_list = equip_data['flight_id']
+
+
+    for i_e in range(len(equip_list)):
+
+        if str(flight_num) == str(flight_list[i_e]) and str(equip_list[i_e]) == str(equip):
+            equip_go = True
+            break
+        else:
+            equip_go = False
+    if equip_go == False:
+        continue
+
+    ht = datetime.fromtimestamp(time, tz=timezone.utc)
+    h = ht.hour
+
+    alt = float(text[4])*0.0003048 #convert between feet and km
+    x =  float(text[2]) 
+    y = float(text[3])  
+
+    # Convert UTM coordinates to latitude and longitude
+    lon, lat = utm_proj(x, y, inverse=True)
+
+    if temp_correction == True:
+        input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+        try:
+            file =  open(input_files, 'r') #as file:
+        except:
+            print('No file for: ', date, flight_num, sta)
+            continue
+        data = json.load(file)
+
+        # Extract metadata
+        metadata = data['metadata']
+        sourcefile = metadata['sourcefile']
+        datetim = metadata['time']['datetime']
+        latitude = metadata['location']['latitude']
+        longitude = metadata['location']['longitude']
+        parameters = metadata['parameters']
+
+        # Extract data
+        data_list = data['data']
+
+        # Convert data to a DataFrame
+        data_frame = pd.DataFrame(data_list)
+
+        # Find the "Z" parameter and extract the value at index
+        z_index = None
+        hold = np.inf
+        for item in data_list:
+            if item['parameter'] == 'Z':
+                for i in range(len(item['values'])):
+                    if abs(float(item['values'][i]) - float(alt)) < hold:
+                        hold = abs(float(item['values'][i]) - float(alt))
+                        z_index = i
+        folder_spec = equip + '_spec_c'
+        folder_spectrum = equip + '_spectrum_c'
+        for item in data_list:
+            if item['parameter'] == 'T':
+                Tc = - 273.15 + float(item['values'][z_index])
+    else:
+        Tc = -2
+        folder_spec =  equip + '_spec_cfc'
+        folder_spectrum = equip + '_spectrum_cfc'
+    c = speed_of_sound(Tc)
+    sound_speed = c
+
+    print(f"Speed of sound: {c} m/s")
+
+    spec_dir = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec +'/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'
+    
+    if os.path.exists(spec_dir) and rerun_fig == False:
+        continue
+
+    flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
+    flight_data = pd.read_csv(flight_file, sep=",")
+    flight_latitudes = flight_data['latitude']
+    flight_longitudes = flight_data['longitude']
+    time = flight_data['snapshot_id']
+    timestamps = flight_data['snapshot_id']
+    speed = flight_data['speed']
+    altitude = flight_data['altitude']
+
+    closest_x, closest_y, dist_km, closest_time, tarrive, alt, sp, elevation, speed_mps, height_m, dist_m, tmid = closest_approach_UTM(seismo_latitudes, seismo_longitudes, flight_latitudes, flight_longitudes, timestamps, altitude, speed, stations, elevations, c, sta)
+    if closest_x == None:
+        continue
+            
+    if equip == 'C185':
+        #To set the initial window of arrival correct picks your start end Must use the tarrive time to get the correct data
+        ta_old = calc_time(tmid,dist_m,height_m,343)
+        start_time = ta_old - 120
+        ht = datetime.fromtimestamp(ta_old, tz=timezone.utc)
+    else:
+        #Must use the tarrive time to get the correct data
+        start_time = tarrive - 120
+        ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
     mins = ht.minute
     secs = ht.second
-    h = ht.hour
-    tim = 120	
+    month = ht.month
+    day = ht.day
+
     h_u = str(h+1)
     if h < 23:			
-        day2 = str(day[n])
+        day2 = str(day)
         if h < 10:
             h_u = '0'+str(h+1)
             h = '0'+str(h)
@@ -47,440 +158,210 @@ for n in range(0,5):
             h = str(h)
     else:
         h_u = '00'
-        day2 = str(day[n]+1)
-    if len(str(day[n])) == 1:
-        day[n] = '0'+str(day[n])
-        day2 = day[n]
-    flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/20190'+str(month[n])+str(day[n])+'_positions/20190'+str(month[n])+str(day[n])+'_'+str(flight_num[n])+'.csv', sep=",")
+        day2 = str(day+1)
+    if len(str(day)) == 1:
+        day = '0'+str(day)
+        day2 = day
 
-    flight_latitudes = flight_data['latitude']
-    flight_longitudes = flight_data['longitude']
-    tm = flight_data['snapshot_id']
-    speed = flight_data['speed']
-    alt = flight_data['altitude']
-    head = flight_data['heading']
+    try:
+        p = "/scratch/naalexeev/NODAL/2019-0"+str(month)+"-"+str(day)+"T"+str(h)+":00:00.000000Z.2019-0"+str(month)+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(sta)+".mseed"
+        tr = obspy.read(p)
+    except:
+        continue 
 
-    for line in range(len(tm)):
-        if str(tm[line]) == str(time[n]):
-            speed = flight_data['speed'][line]
-            speed_mps = speed * 0.514444
-            alt = flight_data['altitude'][line]
-            alt_m = alt * 0.3048
+    tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - 120, tr[2].stats.starttime + (mins * 60) + secs + 120)
+    data = tr[2][:]
+    fs = int(tr[2].stats.sampling_rate)
+    title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
+    torg = tr[2].times()
 
-            for y in range(len(station)):
-                if str(station[y]) == str(sta[n]):
-                    dist = distance(seismo_latitudes[y], seismo_longitudes[y], flight_latitudes[line], flight_longitudes[line])	
+    # Compute spectrogram
+    frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
+    
+    spec, MDF = remove_median(Sxx)
+    
+    middle_index =  len(times) // 2
+    middle_column = spec[:, middle_index]
+    vmin = 0  
+    vmax = np.max(middle_column) 
 
-                    p = "/scratch/naalexeev/NODAL/2019-0"+str(month[n])+"-"+str(day[n])+"T"+str(h)+":00:00.000000Z.2019-0"+str(month[n])+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(station[y])+".mseed"
-                    tr = obspy.read(p)
-                    tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - tim, tr[2].stats.starttime + (mins * 60) + secs + tim)
-                    data = tr[2][:]
-                    fs = int(tr[2].stats.sampling_rate)
-                    title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-                    torg = tr[2].times()
-                      
-                    clat, clon, dist_km, tmid = closest_encounter(flight_latitudes, flight_longitudes,line, tm, seismo_latitudes[y], seismo_longitudes[y])
-                    dist_m = dist_km * 1000
-                    tarrive = tim + (time[n] - calc_time(tmid,dist_m,alt_m))
+    tprime0 = tarrive-start_time
+    v0 = speed_mps
+    l = np.sqrt(dist_m**2 + (height_m)**2)
 
-                    # Compute spectrogram
-                    frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
-                    
-                    a, b = Sxx.shape
+    tf = np.arange(0, 240, 1)
 
-                    MDF = np.zeros((a,b))
-                    for row in range(len(Sxx)):
-                        m = len(Sxx[row])
-                        p = sorted(Sxx[row])
-                        median = p[int(m/2)]
-                        for col in range(m):
-                            MDF[row][col] = median
-                    spec = 10 * np.log10(Sxx) - (10 * np.log10(MDF))
-                    if isinstance(sta[n], int):
-                            spec = np.zeros((a,b))
-                            for col in range(0,b):
-                                p = sorted(Sxx[:, col])
-                                median = p[int(len(p)/2)]
+    coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=True) 
 
-                                for row in range(len(Sxx)):
-                                    spec[row][col] = 10 * np.log10(Sxx[row][col]) - ((10 * np.log10(MDF[row][col])) + ((10*np.log10(median))))
+    if len(coords) == 0:
+        print('No picks for: ', date, flight_num, sta)
+        continue
 
-                    middle_index = len(times) // 2
-                    middle_column = spec[:, middle_index]
-                    vmin = 0  
-                    vmax = np.max(middle_column) 
-                    p, _ = find_peaks(middle_column, distance=10)
+    # Convert the list of coordinates to a numpy array
+    coords_array = np.array(coords)
 
-                    output1 = '/scratch/irseppi/nodal_data/plane_info/inversepicks/2019-0'+str(month[n])+'-'+str(day[n])+'/'+str(flight_num[n])+'/'+str(sta[n])+'/'+str(time[n])+'_'+str(flight_num[n])+'.csv'
-                    coords = []
-                    with open(output1, 'r') as file:
-                        for line in file:
-                            # Split the line using commas
-                            pick_data = line.split(',')
-                            coords.append((float(pick_data[0]), float(pick_data[1])))
-                    file.close()  # Close the file after reading
+    f0 = 116
+    m0 = [f0, v0, l, tprime0]
 
-                    coords_array = np.array(coords)
-
-                    if n == 0:
-                        tprime0 = 112
-                        fnot = [153, 172, 228, 38, 57, 76, 93, 135]
-                        v0 = 68
-                        l = 2135
-                        f0 = 115
-
-                    if n == 1:
-                        fnot = [37, 56, 73,  127, 146, 165, 182, 218, 238, 256, 275]
-                        tprime0 = 107
-                        f0 = 110
-                        v0 = 100
-                        l = 2700
-
-                    if n == 2:
-                        fnot = [79, 120, 261]
-                        tprime0 = 93
-                        f0 = 131
-                        v0 = 139
-                        l = 4650
-
-                    if n == 3:
-                        fnot = [36,69,104,136,144]
-                        tprime0 = 116
-                        f0 = 121
-                        v0 = 142
-                        l = 2450
-
-                    if n == 4:
-                        fnot = [13,27,40,52,67,80,92,108,134,148,160,173,186,202,223,239,247,270]
-                        tprime0 = 140
-                        f0 = 120
-                        v0 = 67
-                        l = 5800
-                   
-                    w  = len(fnot)
-                    
-                    mprior = []
-                    mprior.append(v0)
-                    mprior.append(l)
-                    mprior.append(tprime0)
-                    for i in range(w+1):
-                        if i == 0:
-                            mprior.append(f0)
-                        else:
-                            mprior.append(fnot[i-1])
-                    mprior = np.array(mprior)
-                    vnot = v0
-                    lnot = l
-                    tprimenot = tprime0
-                    c = 343
-                    m0 = [f0, v0, l, tprime0]
-                    m,covm = invert_f(m0, coords_array, num_iterations=4)
-
-                    p, _ = find_peaks(middle_column, distance = 7)
-                    corridor_width = (fs/2) / len(p)
-
-                    peaks_assos = []
-                    fobs = []
-                    tobs = []
-                    f0_array = []
-
-                    f0_array.append(f0)
-                   
-                    ft = calc_ft(times, m[3], m[0], m[1], m[2], c)
-
-                    maxfreq = []
-                    coord_inv = []
-                    ttt = []
-                    plt.figure()
-                    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                    for t_f in range(len(times)):
-                        if not np.isnan(ft[t_f]) and ft[t_f] != np.inf:
-                            upper = int(ft[t_f] + corridor_width)
-                            lower = int(ft[t_f] - corridor_width)
-
-                            if lower < 0:
-                                lower = 0
-                            if upper > len(frequencies):
-                                upper = len(frequencies)
-                            try:
-                                tt = spec[lower:upper, t_f]
-
-                                max_amplitude_index = np.argmax(tt)
-                                max_amplitude_frequency = frequencies[max_amplitude_index+lower]
-                                maxfreq.append(max_amplitude_frequency)
-                                coord_inv.append((times[t_f], max_amplitude_frequency))
-                                ttt.append(times[t_f])
-                            except:
-                                continue
-                            
-                    coord_inv_array = np.array(coord_inv)
-                    if len(coord_inv_array) == 0:
-                        continue
-                    m,_ = invert_f(m0, coord_inv_array, num_iterations=4)
-                    f0 = m[0]
-                    v00 = m[1]
-                    l0 = m[2]
-                    tprime00 = m[3]
-                    ft = calc_ft(ttt, tprime00, f0, v00, l0, c)
-
-                    delf = np.array(ft) - np.array(maxfreq)
-
-                    count = 0
-                    for i in range(len(delf)):
-                        if np.abs(delf[i]) <= (3):
-                            fobs.append(maxfreq[i])
-                            tobs.append(ttt[i])
-                            count += 1
-                    
-                    peaks_assos.append(count)
-                    
-                    for i in range(len(fnot)):
-                        f0 = fnot[i]
-                        f0_array.append(f0)
-                        m0 = [f0, vnot, lnot, tprimenot]
-                        ft = calc_ft(times,  tprime00, f0, v00, l0, c)
+    m,covm, F_m = invert_f(m0, coords_array, c, num_iterations=8)
+    f0 = m[0]
+    v0 = m[1]
+    l = m[2]
+    tprime0 = m[3]
+    
+    ft = calc_ft(times, tprime0, f0, v0, l, c)
+    if isinstance(sta, int):
+        peaks = []
+        p, _ = find_peaks(middle_column, distance = 7)
+        corridor_width = (fs/2) / len(p) 
                         
-                        maxfreq = []
-                        coord_inv = []
-                        ttt = []
-                        for t_f in range(len(times)):
-                            if not np.isnan(ft[t_f]) and ft[t_f] != np.inf:
-                                upper = int(ft[t_f] + corridor_width)
-                                lower = int(ft[t_f] - corridor_width)
+        if len(p) == 0:
+            corridor_width = fs/4
 
-                                if lower < 0:
-                                    lower = 0
-                                if upper > len(frequencies):
-                                    upper = len(frequencies)
-                                try:
-                                    tt = spec[lower:upper, t_f]
+        coord_inv = []
 
-                                    max_amplitude_index = np.argmax(tt)
-                                    max_amplitude_frequency = frequencies[max_amplitude_index+lower]
-                                    maxfreq.append(max_amplitude_frequency)
-                                    coord_inv.append((times[t_f], max_amplitude_frequency))
-                                    ttt.append(times[t_f])
-                                except:
-                                    continue
-                                
-                        coord_inv_array = np.array(coord_inv)
-                        if len(coord_inv_array) == 0:
-                            continue
-                        m,_ = invert_f(m0, coord_inv_array, num_iterations=4)
+        for t_f in range(len(times)):
+            upper = int(ft[t_f] + corridor_width)
+            lower = int(ft[t_f] - corridor_width)
+            if lower < 0:
+                lower = 0
+            if upper > len(frequencies):
+                upper = len(frequencies)
+            tt = spec[lower:upper, t_f]
+
+            max_amplitude_index = np.argmax(tt)
+            
+            max_amplitude_frequency = frequencies[max_amplitude_index+lower]
+            peaks.append(max_amplitude_frequency)
+            coord_inv.append((times[t_f], max_amplitude_frequency))
+
+
+        coord_inv_array = np.array(coord_inv)
+
+        m,_,F_m = invert_f(m0, coord_inv_array, c, num_iterations=12)
+        f0 = m[0]
+        v0 = m[1]
+        l = m[2]
+        tprime0 = m[3]
+
+        ft = calc_ft(times, tprime0, f0, v0, l, c)
+        
+        delf = np.array(ft) - np.array(peaks)
+        
+        new_coord_inv_array = []
+        for i in range(len(delf)):
+            if np.abs(delf[i]) <= 3:
+                new_coord_inv_array.append(coord_inv_array[i])
+        coord_inv_array = np.array(new_coord_inv_array)
+
+        m,covm,F_m = invert_f(m0, coord_inv_array, c, num_iterations=12, sigma=5)
+        
+        f0 = m[0]
+        v0 = m[1]
+        l = m[2]
+        tprime0 = m[3]
+
+    mprior = []
+    mprior.append(v0)
+    mprior.append(l)
+    mprior.append(tprime0)       
+
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, make_picks=True)
+    f0_array = []
+    w = len(peaks)
+    for o in range(w):
+        tprime = freqpeak[o]
+        ft0p = peaks[o]
+        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        mprior.append(f0)
+        f0_array.append(f0)
+    mprior = np.array(mprior)
                         
-                        ft = calc_ft(ttt, m[3], m[0], m[1], m[2], c)
+    corridor_width = 10
 
-                        delf = np.array(ft) - np.array(maxfreq)
+    peaks_assos = []
+    fobs = []
+    tobs = []
 
-                        count = 0
-                        for i in range(len(delf)):
-                            if np.abs(delf[i]) <= (3):
-                                fobs.append(maxfreq[i])
-                                tobs.append(ttt[i])
-                                count += 1
-                        
-                        peaks_assos.append(count)
-                    plt.scatter(tobs, fobs, color='black', marker='x')
+    for pp in range(len(peaks)):
+        tprime = freqpeak[pp]
+        ft0p = peaks[pp]
+        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        ft = calc_ft(times,  tprime0, f0, v0, l, c)
+        
+        maxfreq = []
+        coord_inv = []
+        ttt = []
 
-                    plt.show()
-                    qv = 0
-                    num_iterations = 20
-                    
-                    w  = len(f0_array)
-                    cprior = np.zeros((w+3,w+3))
-                    m0 = []
-                    m0.append(vnot)
-                    m0.append(lnot)
-                    m0.append(tprimenot)
-                    for i in range(w):
-                        m0.append(f0_array[i])
-                    for row in range(len(cprior)):
-                        if row == 0:
-                            cprior[row][row] = 20**2
-                        elif row == 1:
-                            cprior[row][row] = 300**2
-                        elif row == 2:
-                            cprior[row][row] = 20**2
-                        else:
-                            cprior[row][row] = 1**2
-                    
-                    Cd = np.zeros((len(fobs), len(fobs)), int)
-                    np.fill_diagonal(Cd, 3**2)
-                    mnew = np.array(m0)
-                    Sd_vec = np.zeros(num_iterations)
-                    Sm_vec = np.zeros(num_iterations)
-                    S_vec = np.zeros(num_iterations)
-                    iter_vec = np.transpose(np.arange(0,num_iterations))
-                    plt.figure()
-                    while qv < num_iterations:
-                        G = np.zeros((0,w+3))
-                        fnew = []
-                        cum = 0
-                        for p in range(w):
-                            new_row = np.zeros(w+3)
-                            f0 = f0_array[p]
-                          
-                            if p == 0:
-                                for j in range(cum,peaks_assos[p]):
-                                    tprime = tobs[j]
-                                    t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
-                                    ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+        f01 = f0 + corridor_width
+        f02 = f0  - corridor_width
+        upper = calc_ft(times,  tprime0, f01, v0, l, c)
+        lower = calc_ft(times,  tprime0, f02, v0, l, c)
+
+        for t_f in range(len(times)):
+
+            try:      
+                tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
+
+                max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+                maxa = np.argmax(tt[max_amplitude_index])
+                max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
+
+                maxfreq.append(max_amplitude_frequency)
+                coord_inv.append((times[t_f], max_amplitude_frequency))
+                ttt.append(times[t_f])
+
+            except:
+                continue
+
+        if len(coord_inv) > 0:
+            if f0 < 200:
+                coord_inv_array = np.array(coord_inv)
+                mtest = [f0,v0, l, tprime0]
+                mtest,_, F_m = invert_f(mtest, coord_inv_array, c, num_iterations=4)
+                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], c)
+            else:
+                ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
+
+            delf = np.array(ft) - np.array(maxfreq)
+
+            count = 0
+            for i in range(len(delf)):
+                if np.abs(delf[i]) <= (4):
+                    fobs.append(maxfreq[i])
+                    tobs.append(ttt[i])
+                    count += 1
+            peaks_assos.append(count)
 
 
-                                    f_derivef0, f_derivev0, f_derivel, f_derivetprime0 = df(f0,v0,l,tprime0, tobs[j])
-                                
-                                    new_row[0] = f_derivev0
-                                    new_row[1] = f_derivel
-                                    new_row[2] = f_derivetprime0
-                                    new_row[3+p] = f_derivef0
+    if len(fobs) == 0:
+        print('No picks for: ', date, flight_num, sta)
+        continue
 
-                                    G = np.vstack((G, new_row))
-                                    
-                                    fnew.append(ft0p)
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
 
-                            else:
-                                for j in range(cum,cum+peaks_assos[p]):
-                                    tprime = tobs[j]
-                                    t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
-                                    ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
+    v0 = m[0]
+    l = m[1]
+    tprime0 = m[2]
+    covm = np.sqrt(np.diag(covm))
 
-                                    f_derivef0, f_derivev0, f_derivel, f_derivetprime0 = df(f0,v0,l,tprime0, tobs[j])
-                                
-                                    new_row[0] = f_derivev0
-                                    new_row[1] = f_derivel
-                                    new_row[2] = f_derivetprime0
-                                    new_row[3+p] = f_derivef0
-                                            
-                                    G = np.vstack((G, new_row))
-                                            
-                                    fnew.append(ft0p)
-                        
-                            cum = cum + peaks_assos[p]
-                        
-                        #m = np.array(m0) + cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.array(fobs)- np.array(fnew))
-                        print('iteration %i out of %i' % (qv,num_iterations))
-                        
-                        dpred  = np.array(fnew)
-                        Gm     = G
-                        icobs  = la.inv(Cd)
-                        dobs   = np.array(fobs)
-                        
-                        icprior = la.inv(cprior)
-                        # steepest ascent vector (Eq. 6.307 or 6.312)
-                        gamma = cprior @ Gm.T @ icobs @ (dpred - dobs) + (mnew - mprior)  # steepest ascent vector
+    closest_index = np.argmin(np.abs(tprime0 - times))
+    arrive_time = spec[:,closest_index]
+    for i in range(len(arrive_time)):
+        if arrive_time[i] < 0:
+            arrive_time[i] = 0
 
-                        #===================================================
-                        # QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
-                        
-                        # approximate curvature
-                        H = np.identity((w+3)) + cprior @ Gm.T @ icobs @ Gm
-                        
-                        dm   = -inv(H) @ gamma
-                        
-                        m = m + dm
-                        #===================================================
-                        
-                        # misfit function for new model
-                        # note: bookkeeping only -- not used within the algorithm above
-                        Sd_vec[qv] = Sd(mnew,dobs,dpred,icobs)
-                        Sm_vec[qv] = Sm(mnew,mprior,icprior)
-                        S_vec[qv]  = S(mnew,dobs,dpred,mprior,icobs,icprior)
-                        print(Sd_vec[qv],Sm_vec[qv],S_vec[qv])
-                                
-                        #covmlsq = la.inv(G.T@la.inv(Cd)@G + la.inv(cprior))
-                        mnew = m
-                        v0 = mnew[0]
-                        l = mnew[1]
-                        tprime0 = mnew[2]
-                        f0_array = mnew[3:]
-                        plt.scatter(v0,l)
-                        
-                        print(mnew)
-                        qv += 1
-                    plt.show()
-                    plt.figure()
-                    plt.plot(iter_vec,np.log10(S_vec),'k.-',iter_vec,np.log10(Sm_vec),'b.-',iter_vec,np.log10(Sd_vec),'r.-',
-                        linewidth=2,markersize=20)
-                    plt.legend(('S(mⁿ) = Sd + Sm','Sm(mⁿ)','Sd(mⁿ)'),fontsize=14)
-                    plt.xlim([-0.5, num_iterations+0.5])
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    make_base_dir(BASE_DIR)
+    qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
 
-                    plt.locator_params(axis="x", integer=True, tight=True)
-                    plt.xlabel('n, iteration')
-                    plt.ylabel(' log10[ S(mⁿ) ], misfit function')
-                    plt.title(str(num_iterations) + ' iterations')
-                    plt.show()
-                    closest_index = np.argmin(np.abs(tprime0 - times))
-                    arrive_time = spec[:,closest_index]
-                    for i in range(len(arrive_time)):
-                        if arrive_time[i] < 0:
-                            arrive_time[i] = 0
-                    vmin = np.min(arrive_time) 
-                    vmax = np.max(arrive_time)
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    make_base_dir(BASE_DIR)
+    plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
+    
+    if rerun_fig == False:
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
-                    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
-
-                    ax1.plot(torg, data, 'k', linewidth=0.5)
-                    ax1.set_title(title)
-
-                    ax1.margins(x=0)
-                    ax1.set_position([0.125, 0.6, 0.775, 0.3])  # Move ax1 plot upwards
-
-
-                    # Plot spectrogram
-                    cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
-                    ax2.set_xlabel('Time (s)')
-                    f0lab = []
-                    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label='Estimated arrival: '+str(np.round(tprime0,2))+' s')
-                    
-                    for pp in range(len(f0_array)):
-                        f0 = f0_array[pp]
-                        
-                        ft = calc_ft(times, tprime0, f0, v0, l, c)
-
-                        ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7) #(0,(5,10)),
-                        
-                        if np.abs(tprime -tprime0) < 1.5:
-                            ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30) 
-                        f0lab.append(int(f0)) 
-                        what_if = calc_ft(times, tarrive, fs/4, speed_mps, np.sqrt(dist_m**2 + alt_m**2), c)
-                        #ax2.plot(times, what_if, 'red', ls = '--', linewidth=0.4)
-                    f0lab_sorted = sorted(f0lab)
-                    covm = np.sqrt(np.diag(covm))
-                    if len(f0lab_sorted) <= 17:
-                        fss = 'medium'
-                    else:
-                        fss = 'small'
-                    ax2.set_title("Final Model:\nt0'= "+str(np.round(tprime0,2))+' +/- ' + str(np.round(covm[3],2)) + ' sec, v0 = '+str(np.round(v0,2))+' +/- ' + str(np.round(covm[1],2)) +' m/s, l = '+str(np.round(l,2))+' +/- ' + str(np.round(covm[2],2)) +' m, \n' + 'f0 = '+str(f0lab_sorted)+' +/- ' + str(np.round(covm[0],2)) +' Hz', fontsize=fss)
-                    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label='Wave arrvial: '+str(np.round(tarrive,2))+' s')
-
-                    
-                    ax2.legend(loc='upper right',fontsize = 'x-small')
-                    ax2.set_ylabel('Frequency (Hz)')
-
-
-                    ax2.margins(x=0)
-                    ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
-
-                    plt.colorbar(mappable=cax, cax=ax3)
-                    ax3.set_ylabel('Relative Amplitude (dB)')
-
-                    ax2.margins(x=0)
-                    ax2.set_xlim(0, 240)
-                    ax2.set_ylim(0, int(fs/2))
-
-                    # Plot overlay
-                    spec2 = 10 * np.log10(MDF)
-                    middle_column2 = spec2[:, middle_index]
-                    vmin2 = np.min(middle_column2)
-                    vmax2 = np.max(middle_column2)
-
-                    # Create ax4 and plot on the same y-axis as ax2
-                    ax4 = fig.add_axes([0.125, 0.11, 0.07, 0.35], sharey=ax2) 
-                    ax4.plot(middle_column2, frequencies, c='#ff7f00')  
-                    ax4.set_ylim(0, int(fs/2))
-                    ax4.set_xlim(vmax2*1.1, vmin2) 
-                    ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
-                    ax4.grid(axis='y')
-
-                    plt.show()
-
+if rerun_fig == False:
+    output.close()

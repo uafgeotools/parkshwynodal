@@ -10,7 +10,7 @@ from prelude import load_flights, dist_less, make_base_dir
 flight_files,filenames = load_flights(2, 4, 11, 27)
 
 # Open output file for writing
-#output = open('all_station_crossing_db_updated.txt','w')
+output = open('input/all_station_crossing_db_UTM_updated.txt','w')
 
 utm_proj = pyproj.Proj(proj='utm', zone='6', ellps='WGS84')
 
@@ -131,6 +131,16 @@ for i, flight_file in enumerate(flight_files):
     fname = filenames[i]	
     flight_num = fname[9:18]
     date = fname[0:8]
+
+    equip_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_flights.csv'
+    equip_data = pd.read_csv(equip_file, sep=",")
+    equip_list = equip_data['equip']
+    flight_list = equip_data['flight_id']
+
+    for i_e in range(len(equip_list)):
+        if str(flight_num) == str(flight_list[i_e]) :
+            equip = equip_list[i_e]
+            break
 
     # Convert flight latitude and longitude to UTM coordinates
     flight_utm = [utm_proj(lon, lat) for lat, lon in zip(flight_latitudes, flight_longitudes)]
@@ -269,17 +279,18 @@ for i, flight_file in enumerate(flight_files):
                 plt.savefig('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + date + '/' + flight_num + '/' + station + '/map_' + flight_num + '_' + str(closest_time) + '.png', bbox_inches='tight')
                 plt.close()
 
-                #alt_avg = (alt[index]+alt[index+1])/2
-                #alt_avg_m = alt_avg * 0.3048 #convert from feet to meters
+                alt_avg = (alt[index]+alt[index+1])/2
+                alt_avg_m = alt_avg * 0.3048 #convert from feet to meters
 
-                #speed_avg = (speed[index]+speed[index+1])/2
-                #speed_avg_mps = speed_avg * 0.514444 #convert from knots to meters/sec
-                #dist_m = d * 1000
-                #closest_x_m = closest_x * 1000
-                #closest_y_m = closest_y * 1000
+                speed_avg = (speed[index]+speed[index+1])/2
+                speed_avg_mps = speed_avg * 0.514444 #convert from knots to meters/sec
+                dist_m = d * 1000
+                closest_x_m = closest_x * 1000
+                closest_y_m = closest_y * 1000
+
                 # Write data to the output file
-                #output.write(str(date)+ ',' + str(flight_num) + ',' + str(closest_x_m) + ',' + str(closest_y_m) + ',' + str(dist_m) + ',' +str(closest_time) + ',' + str(alt_avg_m) + ',' + str(speed_avg_mps) + ',' + str(head_avg) + ',' + str(station) + ',\n')
+                output.write(str(date)+ ',' + str(flight_num) + ',' + str(closest_x_m) + ',' + str(closest_y_m) + ',' + str(dist_m) + ',' +str(closest_time) + ',' + str(alt_avg_m) + ',' + str(speed_avg_mps) + ',' + str(head_avg) + ',' + str(station) + ',' + str(equip) + ',\n')
 
             else:
                 continue
-#output.close()
+output.close()
