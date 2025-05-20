@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-file = open('old_new_invers.txt','r')
+file = open('1o_atmc_v_2c.txt','r')
 
 color_dict = {}
 count_dict = {}
