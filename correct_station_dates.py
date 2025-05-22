@@ -3,7 +3,7 @@ from obspy import read
 
 file_in = open('input/parkshwy_nodes.txt', 'r+')
 folder = '/scratch/irseppi/500sps/'
-
+file_out = open('input/parkshwy_nodes_corrected.txt', 'w')
 # Read all lines from the file once
 file_lines = file_in.readlines()
 
@@ -30,7 +30,9 @@ for sta, date in start_end.items():
     date_2 = '2019_0' + str(max_day[0]) + '_' + str(max_day[1:])
     file_structure[sta] = [os.path.join(folder, date_1, 'ZE_' + sta + '_DPZ.msd'), os.path.join(folder, date_2, 'ZE_' + sta + '_DPZ.msd')]
 x = 0
-for sta, path in file_structure.items():
+
+for sta in file_structure.keys():
+    path = file_structure[sta]
     st = read(path[0])
     start_time = st[0].stats.starttime
     st = read(path[1])
@@ -38,18 +40,17 @@ for sta, path in file_structure.items():
     for line in file_lines:
         text = line.split('|')
         if text[1] == sta:
+            x += 1
+            print(sta, x)
             text[6] = str(start_time)
             text[7] = str(end_time)
             updated_line = '|'.join(text)
-            x += 1
-            print(x)
 
             # Update the line in file_lines
-            file_lines[file_lines.index(line)] = updated_line
-            file_in.write(updated_line + '\n')    
+            file_lines[file_lines.index(line)] = updated_line + '\n'
             break
-
-# Sort the updated file_lines by increasing values of column 2
-#file_in.writelines(sorted(file_lines, key=lambda x: x.split('|')[1]))
-
+        else:
+            continue
+file_out.writelines(file_lines)
 file_in.close()
+file_out.close()
