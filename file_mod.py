@@ -388,14 +388,14 @@ def comb_lines(filename):
 		file.write("\n".join(new_lines))
 
 # Write a function to take one column of a text file and order it in increasing order. Using that column, all rows will be rearranged in order.
-def order_rows_by_column(filename, col):
+def order_rows_by_column(filename, col,split_symbol=','):
 	with open(filename, 'r') as file:
 		lines = file.readlines()
 
 	# Extract the values from the specified column
 	values = []
 	for line in lines:
-		columns = line.split(',')
+		columns = line.split(split_symbol)
 
 		values.append(columns[col].strip())
 	print(values)
