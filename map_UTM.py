@@ -333,25 +333,23 @@ def read_write_closest(flight_file,filename,tracer):
             closest_x_m = closest_x * 1000
             closest_y_m = closest_y * 1000
 
-            #output = open('input/all_station_crossing_db_UTM_updated.txt','a')
-            #output.write(str(tracer))
-            #output.write(str(date)+ ',' + str(flight_num) + ',' + str(closest_x_m) + ',' + str(closest_y_m) + ',' + str(dist_m) + ',' +str(closest_time) + ',' + str(alt_avg_m) + ',' + str(speed_avg_mps) + ',' + str(head_avg) + ',' + str(station) + ',' + str(equip) + ',\n')
-            #output.close()
             hold_lines.append(str(date)+ ',' + str(flight_num) + ',' + str(closest_x_m) + ',' + str(closest_y_m) + ',' + str(dist_m) + ',' +str(closest_time) + ',' + str(alt_avg_m) + ',' + str(speed_avg_mps) + ',' + str(head_avg) + ',' + str(station) + ',' + str(equip) + ',\n')
-            print(hold_lines)
     return hold_lines
 # Load flight files and filenames
-#flight_files,filenames = load_flights(2, 4, 11, 27)
-flight_files,filenames = load_flights(2, 3, 10, 11)
+flight_files,filenames = load_flights(2, 4, 11, 27)
+
 utm_proj = pyproj.Proj(proj='utm', zone='6', ellps='WGS84')
 
 tracer = [i for i in range(len(flight_files))]
 with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
     output_list = executor.map(read_write_closest,flight_files,filenames,tracer)
-print(output_list)
+
 output_list = list(output_list)
+
 output = open('input/all_station_crossing_db_UTM_updated.txt','w')
 for i in range(len(output_list)):
+    print(output_list[i])
     for j in range(len(output_list[i])):
+        print(output_list[i][j])
         output.write(output_list[i][j])
 output.close()
