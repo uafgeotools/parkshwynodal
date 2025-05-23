@@ -281,4 +281,5 @@ for gg, file in enumerate(file_list):
 
     # Adjust layout and display the plot
     plt.tight_layout(rect=[0.01, 0.05, 0.95, 0.95], h_pad=0, w_pad=0)
-    plt.show()
+    plt.savefig(f'/home/irseppi/REPOSITORIES/parkshwynodal/output/{file_list[gg].split(".")[0]}.pdf', dpi=300, bbox_inches='tight')
+    #plt.show()
