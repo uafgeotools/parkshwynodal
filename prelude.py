@@ -916,7 +916,7 @@ def load_flights(month1, month2, first_day, last_day):
 					f = os.path.join(directory, filename)
 					if os.path.isfile(f):
 						flight_files.append(f)
-		elif month1 == 2 and month2 == 4:
+		elif month1 == 3 and month2 == 4:
 			month = '03'
 			for day in range(first_day, last_day):
 				if day < 10:
