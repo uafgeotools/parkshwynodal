@@ -74,7 +74,7 @@ def closest_point_on_segment(flight_utm_x1, flight_utm_y1, flight_utm_x2, flight
 def find_closest_point(flight_utm, seismo_utm):
     min_distance = np.inf
     closest_point = None
-
+    index = None
     for i in range(len(flight_utm) - 1):
         flight_utm_x1, flight_utm_y1 = flight_utm[i]
         flight_utm_x2, flight_utm_y2 = flight_utm[i + 1]
@@ -315,7 +315,8 @@ def read_write_closest(flight_file,filename,tracer):
             continue
 
         closest_p, d, index= find_closest_point(flight_path, seismometer)
-        
+        if index == None:
+            continue
         if d <= 2:
 
             closest_x, closest_y = closest_p
@@ -346,10 +347,8 @@ with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor
 
 output_list = list(output_list)
 
-output = open('input/all_station_crossing_db_UTM_updated.txt','w')
+output = open('input/all_station_crossing_db_UTM.txt','w')
 for i in range(len(output_list)):
-    print(output_list[i])
     for j in range(len(output_list[i])):
-        print(output_list[i][j])
         output.write(output_list[i][j])
 output.close()

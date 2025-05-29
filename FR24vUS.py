@@ -93,7 +93,10 @@ for idx, fil in enumerate(file_list):
     times_org = []
     speeds_org = []
     dists_org = []
-    
+    error_vel = []
+    error_dist = []
+    error_time = []
+
     date = []
     y=0
     temp_c = []
@@ -177,9 +180,27 @@ for idx, fil in enumerate(file_list):
         v0_new.append(float(lines[5]))
         distance_new.append(float(lines[6]))
 
+        # Process old and new peaks
+        error = np.array(lines[8])
+        error = str(error)
+        error = np.char.replace(error, '[', '')
+        error = np.char.replace(error, ']', '')
+        error = str(error)
+        error = np.array(error.split(' '))
+        
+        if idx == 0 or idx == 2:
+            error_vel.append(float(error[1]))
+            error_dist.append(float(error[2]))
+            error_time.append(float(error[3]))
+        else:  
+            error_vel.append(float(error[0]))
+            error_dist.append(float(error[1]))
+            error_time.append(float(error[2]))
+
         speeds_org.append(speeds_list[index_UTC])
         dists_org.append(dists_list[index_UTC])
         date.append(y)
+
     if idx == 0 or idx == 1:
         # Sort the arrays by temperature in descending order
         sorted_indices = np.argsort(temp_c)[::-1]  # Get indices for sorting by temperature (highest to lowest)
@@ -190,8 +211,9 @@ for idx, fil in enumerate(file_list):
         times_org = np.array(times_org)[sorted_indices]
         time_new = np.array(time_new)[sorted_indices]
         temp_c = np.array(temp_c)[sorted_indices]  # Sort temperature values
-        
-        scatter1 = axs[idx, 0].scatter(v0_new, speeds_org, c=temp_c, cmap='coolwarm', s=15)
+
+        scatter1 = axs[idx, 0].scatter(v0_new, speeds_org, c=temp_c, cmap='coolwarm', s=15, zorder=2)
+        #axs[idx, 0].errorbar(v0_new, speeds_org, xerr=error_vel, fmt='none', c='k', zorder=1)
         axs[idx, 0].set_title(f"{title[idx]}: Velocity (m/s)", fontsize=10)
         axs[idx, 0].set_xlim(50, 80)
         axs[idx, 0].axline((0, 0), slope=1, color='black', linestyle='--')
