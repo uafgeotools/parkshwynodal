@@ -80,7 +80,9 @@ for line in file.readlines():
 
     for lp in range(len(flight)):
         if int(flight_num) == int(flight[lp]):
-            tail_num = tail_nums[lp]
+            
+            tail_num = flight[lp]
+            #tail_num = tail_nums[lp]
             # Assign a color to the tail number if it doesn't already have one
             if tail_num not in color_dict:
                 color_dict[tail_num] = np.random.rand(3,)
@@ -110,12 +112,21 @@ ax2 = fig.add_axes([0.83, 0.11, 0.07, 0.77], sharey=ax1)
 ax3 = fig.add_axes([0.90, 0.11, 0.07, 0.77], sharey=ax1) 
 ax1.set_title('Frequency Peaks')
 for tail_num, peaks in peaks_dict.items():
+    print(tail_num)
+    if str(tail_num) == '529754214' or str(tail_num) == '528698927' or str(tail_num) == '529409728' or str(tail_num) == '529416700':
+        go ='y'
+    else:
+        continue
+    print(peaks_dict[tail_num])
     color = color_dict[tail_num]
     dates = date_dict[tail_num]
     y =  y_pos_dict[tail_num]
     ax1.scatter(peaks, y, c=color,label=tail_num) 
 for tail_num, med in all_med.items():
-    print(tail_num)
+    if str(tail_num) == '529754214' or str(tail_num) == '528698927' or str(tail_num) == '529409728' or str(tail_num) == '529416700':
+        go ='y'
+    else:
+        continue
     color = color_dict[tail_num]
     y= y_med[tail_num]
     dates = date_med[tail_num]
@@ -127,13 +138,14 @@ ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bott
 ax3.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
 ax2.set_title('Median')
 ax3.set_title('MAD')
-#ax2.grid(axis='both') 
-#ax3.grid(axis='both') 
+ax1.grid(axis='both') 
+ax2.grid(axis='both') 
+ax3.grid(axis='both') 
 ax1.set_xlabel('Frequency')
 ax2.set_xlabel('\u0394'+'F')
 ax1.legend(loc='upper left',fontsize = 'x-small')
 ax1.set_xlim(0, 300)
-ax1.set_xticks(range(0, 251, 25)) 
+ax1.set_xticks(range(0, 251, 10)) 
 
 #ax1.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
 plt.show()
