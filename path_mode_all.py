@@ -137,7 +137,7 @@ flight_num2 = 0
 print(len(flights))
 for flight_num in flights:
     #print(flight_num)
-    if str(flight_num) != '529754214': #'531043310': #530681886':
+    if str(flight_num) != '528698927': #'531043310': #530681886':
         continue
     if flight_num2 == flight_num:
         continue

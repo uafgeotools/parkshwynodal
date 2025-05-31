@@ -6,6 +6,7 @@ file = open('C185data_atm_full.txt', 'r')
 file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
 tail_nums = file2['TAIL_NUM']
 flight = file2['FLIGHT_NUM']
+alts = file2['ELEVATION']
 time = file2['TIME']
 
 # Create a dictionary to store the color for each tail number
@@ -22,6 +23,7 @@ all_med = {}
 y_med = {}
 mad = {}
 date_med = {}
+flig = {}
 # Iterate over each line in the file
 for line in file.readlines():
     lines = line.split(',')
@@ -33,7 +35,7 @@ for line in file.readlines():
     flight_data = pd.read_csv(flight_file, sep=",")
     t = flight_data['snapshot_id']
     speed = flight_data['speed']
-    alt = flight_data['altitude']
+    #alt = flight_data['altitude']
 
     #time_diff = t - float(lines[3])  # Subtract lines[3] from each value in the t array
 
@@ -42,7 +44,8 @@ for line in file.readlines():
 
     closest_time_index = np.argmin(np.abs(time_diff))
     closest_time = t[closest_time_index]
-
+    #closest_alt = alt[closest_time_index]
+    closest_speed = speed[closest_time_index]
     peaks = np.array(lines[7])
 
     peaks = str(peaks)
@@ -80,12 +83,11 @@ for line in file.readlines():
 
     for lp in range(len(flight)):
         if int(flight_num) == int(flight[lp]):
-            
-            tail_num = flight[lp]
-            #tail_num = tail_nums[lp]
+            #tail_num = alts[lp] * 0.3048  # Convert altitude from feet to meters
+            tail_num = flight_num #tail_nums[lp]
             # Assign a color to the tail number if it doesn't already have one
             if tail_num not in color_dict:
-                color_dict[tail_num] = np.random.rand(3,)
+                color_dict[tail_num] = [] #alts[lp] * 0.3048 # np.random.rand(3,)
 
                 peaks_dict[tail_num] = []
                 y_pos_dict[tail_num] = []
@@ -95,6 +97,9 @@ for line in file.readlines():
                 y_med[tail_num] = []
                 mad[tail_num] = []
                 date_med[tail_num] = []
+                flig[tail_num] = []
+            for i in range(len(ppp)):
+                color_dict[tail_num].extend([closest_speed]) #[alts[lp] * 0.3048])
             peaks_dict[tail_num].extend(ppp)
             date_dict[tail_num].extend(date)
             y_pos_dict[tail_num].extend(y)
@@ -104,6 +109,7 @@ for line in file.readlines():
             date_med[tail_num].extend([lines[3]])
             y_med[tail_num].extend([count])
             mad[tail_num].extend([np.median(np.absolute(f1 - np.median(f1)))])
+    flig[tail_num].extend([flight_num])
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize=(8,6))     
 
 ax1.margins(x=0)
@@ -111,28 +117,33 @@ ax1.margins(x=0)
 ax2 = fig.add_axes([0.83, 0.11, 0.07, 0.77], sharey=ax1)
 ax3 = fig.add_axes([0.90, 0.11, 0.07, 0.77], sharey=ax1) 
 ax1.set_title('Frequency Peaks')
+# Sort tail numbers by their first color value in ascending order
+sorted_tail_nums = sorted(color_dict.keys(), key=lambda tn: color_dict[tn][0] if color_dict[tn] else float('inf'))
+
 for tail_num, peaks in peaks_dict.items():
-    print(tail_num)
-    if str(tail_num) == '529754214' or str(tail_num) == '528698927' or str(tail_num) == '529409728' or str(tail_num) == '529416700':
-        go ='y'
-    else:
-        continue
+    print(str(flig[tail_num]))
+    #if str(flight_num) == '529754214' or str(tail_num) == '528698927' or str(tail_num) == '529409728' or str(tail_num) == '529416700':
+    #    go ='y'
+ 
+    #if '528698927' in flig[tail_num]:
+    #    #go ='y'
+    #else:
+    #    continue
     print(peaks_dict[tail_num])
     color = color_dict[tail_num]
     dates = date_dict[tail_num]
     y =  y_pos_dict[tail_num]
-    ax1.scatter(peaks, y, c=color,label=tail_num) 
+    ax1.scatter(peaks, y, c=color) #, cmap='pink', edgecolors='black') #label=tail_num)
 for tail_num, med in all_med.items():
-    if str(tail_num) == '529754214' or str(tail_num) == '528698927' or str(tail_num) == '529409728' or str(tail_num) == '529416700':
-        go ='y'
-    else:
-        continue
-    color = color_dict[tail_num]
+    #if str(tail_num) == '529754214' or str(tail_num) == '528698927' or str(tail_num) == '529409728' or str(tail_num) == '529416700':
+    #    go ='y'
+ 
+    color = color_dict[tail_num][0:len(med)]  # Use the first color for the median points
     y= y_med[tail_num]
     dates = date_med[tail_num]
-    ax2.scatter(med, y, c=color)  
+    ax2.scatter(med, y, c=color) #, cmap='pink', edgecolors='black') 
     m = mad[tail_num]
-    ax3.scatter(m, y, c=color)  
+    ax3.scatter(m, y, c=color) #, cmap='pink', edgecolors='black')  
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
 
 ax3.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
