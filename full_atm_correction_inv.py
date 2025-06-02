@@ -30,7 +30,6 @@ for line in sta_f.readlines():
 sta_f.close()
 second_column_array = np.array(second_column)
 
-temp_correction = True #Flag use the temperature correction or not
 rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
@@ -50,10 +49,8 @@ for li in file_in.readlines():
         else:
             continue
     if rerun_fig == False:
-        if temp_correction == True:
-            output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
-        else:
-            output = open('output/' + equip + 'data_full.csv', 'a')
+        output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
+
 
     if flight_num not in second_column_array:
         continue
@@ -71,47 +68,44 @@ for li in file_in.readlines():
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
 
-    if temp_correction == True:
-        input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat'
-        try:
-            file =  open(input_files, 'r') #as file:
-        except:
-            print('No file for: ', date, flight_num, sta)
-            continue
-        data = json.load(file)
 
-        # Extract metadata
-        metadata = data['metadata']
-        sourcefile = metadata['sourcefile']
-        datetim = metadata['time']['datetime']
-        latitude = metadata['location']['latitude']
-        longitude = metadata['location']['longitude']
-        parameters = metadata['parameters']
+    input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+    try:
+        file =  open(input_files, 'r') #as file:
+    except:
+        print('No file for: ', date, flight_num, sta)
+        continue
+    data = json.load(file)
 
-        # Extract data
-        data_list = data['data']
+    # Extract metadata
+    metadata = data['metadata']
+    sourcefile = metadata['sourcefile']
+    datetim = metadata['time']['datetime']
+    latitude = metadata['location']['latitude']
+    longitude = metadata['location']['longitude']
+    parameters = metadata['parameters']
 
-        # Convert data to a DataFrame
-        data_frame = pd.DataFrame(data_list)
+    # Extract data
+    data_list = data['data']
 
-        # Find the "Z" parameter and extract the value at index
-        z_index = None
-        hold = np.inf
-        for item in data_list:
-            if item['parameter'] == 'Z':
-                for i in range(len(item['values'])):
-                    if abs(float(item['values'][i]) - float(alt)) < hold:
-                        hold = abs(float(item['values'][i]) - float(alt))
-                        z_index = i
-        folder_spec = equip + '_spec_c'
-        folder_spectrum = equip + '_spectrum_c'
-        for item in data_list:
-            if item['parameter'] == 'T':
-                Tc = - 273.15 + float(item['values'][z_index])
-    else:
-        Tc = -2
-        folder_spec =  equip + '_spec_cfc'
-        folder_spectrum = equip + '_spectrum_cfc'
+    # Convert data to a DataFrame
+    data_frame = pd.DataFrame(data_list)
+
+    # Find the "Z" parameter and extract the value at index
+    z_index = None
+    hold = np.inf
+    for item in data_list:
+        if item['parameter'] == 'Z':
+            for i in range(len(item['values'])):
+                if abs(float(item['values'][i]) - float(alt)) < hold:
+                    hold = abs(float(item['values'][i]) - float(alt))
+                    z_index = i
+    folder_spec = equip + '_spec_c'
+    folder_spectrum = equip + '_spectrum_c'
+    for item in data_list:
+        if item['parameter'] == 'T':
+            Tc = - 273.15 + float(item['values'][z_index])
+
     c = speed_of_sound(Tc)
     sound_speed = c
 
