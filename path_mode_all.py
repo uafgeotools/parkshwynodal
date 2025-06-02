@@ -42,7 +42,7 @@ UTM_km_x = {}
 UTM_km_y = {}
 points_sta_lat = {}
 points_sta_lon = {}
-
+central_peaks_dict = {}
 # Iterate over each line in the file
 for line in file.readlines():
     lines = line.split(',')
@@ -87,8 +87,11 @@ for line in file.readlines():
     peaks = sorted(np.array(peaks.split(' ')).astype(float))
 
     f1 = []
+    central_peaks = []
     peak_old = 0
     for peak in peaks:
+        if peak > 110 and peak < 130:
+            central_peaks.append(peak)
         if np.abs(float(peak) - float(peak_old)) < 10:
             continue
         if peak == peaks[0]:
@@ -103,6 +106,9 @@ for line in file.readlines():
         peak_old = float(peak)
     if len(f1) <= 1:
         continue
+    print(central_peaks)
+    if len(central_peaks) == 0:
+        central_peaks.append(0)
     for lp in range(len(flight)):   
         if int(flight_num) == int(flight[lp]):
             tail_num = tail_nums[lp]
@@ -119,6 +125,7 @@ for line in file.readlines():
         UTM_km_x[flight_num] = []
         UTM_km_y[flight_num] = []
         points_sta_lat[flight_num] = []
+        central_peaks_dict[flight_num] = []
         points_sta_lon[flight_num] = []
         flight_lat[flight_num].extend(flight_latitudes)
         flight_lon[flight_num].extend(flight_longitudes)
@@ -126,6 +133,7 @@ for line in file.readlines():
         UTM_km_y[flight_num].extend(flight_utm_y_km)
         flight_alt[flight_num].extend(alt)
         tail[flight_num].extend([tail_num])
+    central_peaks_dict[flight_num].extend(central_peaks)
     all_med[flight_num].extend([np.nanmedian(f1)])
     points_lat[flight_num].extend([closest_lat])
     points_lon[flight_num].extend([closest_lon])
@@ -137,7 +145,7 @@ flight_num2 = 0
 print(len(flights))
 for flight_num in flights:
     #print(flight_num)
-    if str(flight_num) != '528698927': #'531043310': #530681886':
+    if str(flight_num) != '529416700': #'528698927': #'531043310': #530681886':
         continue
     if flight_num2 == flight_num:
         continue
@@ -148,7 +156,8 @@ for flight_num in flights:
     alt_t = flight_alt[flight_num]
     lat = np.array(points_lat[flight_num])
     lon = np.array(points_lon[flight_num])
-    med = np.array(all_med[flight_num])
+    #med = np.array(all_med[flight_num])
+    med = np.array(central_peaks_dict[flight_num])
     fxx = np.array(UTM_km_x[flight_num])
     fyy = np.array(UTM_km_y[flight_num])
     p_sta_lat = np.array(points_sta_lat[flight_num])
