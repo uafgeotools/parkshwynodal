@@ -49,13 +49,11 @@ for line in file.readlines():
     if not np.isnan(np.nanmedian(f1)):
         all_med = np.nanmedian(f1)
         med_store.append(all_med)
-    print(flight_num)
-    print(all_med)
+
     for lp in range(len(flight)):
         if int(flight_num) == int(flight[lp]):
             tail_num = tail_nums[lp]
-            if str(tail_num) != '10512184':
-                continue
+
             # Assign a color to the tail number if it doesn't already have one
             if tail_num not in color_dict:
                 color_dict[tail_num] = np.random.rand(3,)
