@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-file = open('C185data_atmosphere_1o.txt', 'r')
+file = open('C185data_atmosphere.txt', 'r')
 file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
 tail_nums = file2['TAIL_NUM']
 flight = file2['FLIGHT_NUM']
@@ -54,6 +54,8 @@ for line in file.readlines():
     for lp in range(len(flight)):
         if int(flight_num) == int(flight[lp]):
             tail_num = tail_nums[lp]
+            if str(tail_num) != '10512184':
+                continue
             # Assign a color to the tail number if it doesn't already have one
             if tail_num not in color_dict:
                 color_dict[tail_num] = np.random.rand(3,)
@@ -64,6 +66,7 @@ for line in file.readlines():
             med_dict[tail_num].extend([all_med])
             date_dict[tail_num].extend([lines[3]])
 for tail_num, med in med_dict.items():
+
     color = color_dict[tail_num]
     dates = date_dict[tail_num]
     y =  y_pos_dict[tail_num]   
