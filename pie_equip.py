@@ -49,8 +49,7 @@ with open('input/colors.txt','r') as c_in:
 			colors.append(c)
 
 # Plot the two pie charts side by side
-fig, axes = plt.subplots(1, 2, figsize=(24, 12))
-
+fig, axes = plt.subplots(1, 2, figsize=(58, 40))
 # Plot the first pie chart with the 'Other' category as the last slice
 sorted_labels = list(equip_counts.keys())
 sorted_labels.remove('Other')
@@ -58,12 +57,24 @@ sorted_labels.append('Other')  # Ensure 'Other' is the last slice
 
 sorted_sizes = [equip_counts[label] for label in sorted_labels]
 
-axes[0].pie(sorted_sizes, labels=[f"{label}: {size}" for label, size in zip(sorted_labels, sorted_sizes)], colors=colors[4:(len(equip_counts)+4)])
-axes[0].set_title("Equipment Counts (Including 'Other')")
+# Modify colors to make the 'Other' slice magenta
+modified_colors = colors[4:(len(equip_counts)+4)]
+modified_colors[-1] = 'magenta'  # Set the color for 'Other' slice to magenta
+
+axes[0].pie(
+	sorted_sizes, 
+	labels=[f"{label}: {size}" for label, size in zip(sorted_labels, sorted_sizes)], 
+	colors=modified_colors, 
+	textprops={'fontsize': 14}  # Increase label font size
+)
 
 # Plot the second pie chart for values less than 50
-axes[1].pie(less_than_50.values(), labels=[f"{label}: {size}" for label, size in less_than_50.items()], colors=colors[(len(equip_counts)+10):((len(equip_counts)+10+len(less_than_50)))][::-1])
-axes[1].set_title("Equipment Counts (Less than 50)")
+axes[1].pie(
+	less_than_50.values(), 
+	labels=[f"{label}: {size}" for label, size in less_than_50.items()], 
+	colors=colors[(len(equip_counts)+10):((len(equip_counts)+10+len(less_than_50)))][::-1], 
+	textprops={'fontsize': 14}  # Increase label font size
+)
 
 plt.tight_layout()
 plt.show()
