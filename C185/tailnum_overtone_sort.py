@@ -75,14 +75,14 @@ for tail_num, peaks in peaks_dict.items():
     if str(tail_num) != '10572742' and str(tail_num) != '10512184':
         continue
 
-    ax1.hist(peaks, bins=200, color=color, alpha=0.8, label=tail_num, zorder = 10)  
-    ax2.hist(med, bins=300, color=color, alpha=0.8, zorder = 10)  
-    ax1.hist(peaks, bins=200, color=color, histtype='step',zorder = 15)  
-    ax2.hist(med, bins=300, color=color, histtype='step', zorder = 15)  
+    ax1.hist(peaks, bins=250, color=color, alpha=0.8, label=tail_num, zorder = 10)  
+    ax2.hist(med, bins=250, color=color, alpha=0.8, zorder = 10)  
+    ax1.hist(peaks, bins=250, color=color, histtype='step',zorder = 15)  
+    ax2.hist(med, bins=250, color=color, histtype='step', zorder = 15)  
 
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
-ax1.grid(which='both', axis='both', ls='--', zorder=0) 
-ax2.grid(axis='both', linestyle='--', zorder=0) 
+#ax1.grid(which='both', axis='both', ls='--', zorder=0) 
+#ax2.grid(axis='both', linestyle='--', zorder=0) 
 ax1.set_xlabel('Frequency', fontsize=16)
 ax2.set_xlabel('Median '+'\u0394'+'F', fontsize=16)
 ax1.legend(loc='upper left',fontsize = 'x-large')
@@ -93,4 +93,11 @@ ax1.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
 ax2.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
 ax2.set_xticks(np.arange(18.5, 22, 1))
 ax2.set_xlim(18, 22)
+for g in range(0,14):
+    ax1.axvline(x=19.6 + g*19.6, color = [1.0, 0.5, 0.0], ls = '--', zorder=0)
+    ax1.axvline(x=19.15 + g*19.15, color = [0.0, 0.5, 1.0], ls = '--', zorder=0)
+    ax1.axvline(x=20.65 + g*20.65, color = [0.0, 0.5, 1.0], ls = '--', zorder=0)
+ax2.axvline(x=19.6, color = [1.0, 0.5, 0.0], ls = '--', zorder=0)
+ax2.axvline(x=19.15, color = [0.0, 0.5, 1.0], ls = '--', zorder=0)
+ax2.axvline(x=20.65, color = [0.0, 0.5, 1.0], ls = '--', zorder=0)
 plt.show()
