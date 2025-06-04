@@ -56,7 +56,7 @@ for li in file_in.readlines():
 
     # get the index of the flight equivalent to the flight number
     index = flight.index(int(flight_num))
-
+    #Fix this section to use files to count tailnumbers so you can get accurate counts
     if tailnumber[index] not in tailnumber_dict:
         tailnumber_dict[equip] = [] 
         print('Tailnumber does not exist for: ', equip, tailnumber[equip])
