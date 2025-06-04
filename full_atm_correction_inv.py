@@ -21,57 +21,72 @@ stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
-sta_f = open('input/all_station_crossing_db_UTM.txt','r')
-second_column = []
-for line in sta_f.readlines():
-    val = line.split(',')
-    if len(val) >= 2:
-        second_column.append(val[1])
-sta_f.close()
-second_column_array = np.array(second_column)
 
 rerun_fig = False #Flag rerun the figures without saving the inversion results = True
-
+equip_count_dict = {}
+tailnumber_dict = {}
 # Loop through each station in text file that we already know comes within 2km of the nodes
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_UTM.txt','r')
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 for li in file_in.readlines():
     text = li.split(',')
+    date = text[0]
     flight_num = text[1]
-    date = text[0]
-
-    flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date[li] + '_flights.csv', sep=",")
-    flight = flight_data['flight_id']
-    equipment = flight_data['equip']
-    for ii, f in enumerate(flight):
-        if f == flight_num:
-            equip = equipment[ii]
-            break
-        else:
-            continue
-    if rerun_fig == False:
-        output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
-
-
-    if flight_num not in second_column_array:
-        continue
-    date = text[0]
-    sta = text[9]
-    time = float(text[5])
-
-    ht = datetime.fromtimestamp(time, tz=timezone.utc)
-    h = ht.hour
-
-    alt = float(text[4])*0.0003048 #convert between feet and km
     x =  float(text[2])  # Replace with your UTM x-coordinate
     y = float(text[3])  # Replace with your UTM y-coordinate
+    dist_m = float(text[4])   # Distance in meters
+    closest_time = float(text[5])
+    alt = float(text[6]) 
+    speed_mps = float(text[7])  # Speed in meters per second
+    sta = text[9]
+    equip = text[10]
+    if equip == 'C185':
+        continue
+    folder_spec = equip + '_spec_c'
+    folder_spectrum = equip + '_spectrum_c'
+    spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
+    #'/scratch/irseppi/nodal_data/plane_info/' + folder_spec +'/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'
+    
+    if os.path.exists(spec_dir) and rerun_fig == False:
+        continue
 
+    flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
+    flight = flight_data['flight_id']
+    flight = flight.values.tolist()
+    tailnumber = flight_data['aircraft_id']
+
+    # get the index of the flight equivalent to the flight number
+    index = flight.index(int(flight_num))
+    if tailnumber[index] not in tailnumber_dict:
+        tailnumber_dict[equip] = [] 
+        print('Tailnumber does not exist for: ', equip, tailnumber[index])
+    else:
+        print('Tailnumber already exists for: ', equip, tailnumber[index])
+
+    if equip not in equip_count_dict:
+        equip_count_dict[equip] = 0
+
+    if equip_count_dict[equip] >= 5:
+        print('Already 5 inversions for: ', equip, equip_count_dict[equip])
+
+    else:
+        print('This ' + str(equip), ' has ' + str(equip_count_dict[equip]) + ' inversions')
+    
+    for i in range(len(stations)):
+        if stations[i] == sta:
+            seismo_lat = seismo_latitudes[i]
+            seismo_lon = seismo_longitudes[i]
+            elev = elevations[i]
+            break
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
 
+    if rerun_fig == False:
+        output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
 
-    input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+    input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+    
     try:
-        file =  open(input_files, 'r') #as file:
+        file =  open(input_files, 'r') 
     except:
         print('No file for: ', date, flight_num, sta)
         continue
@@ -100,21 +115,14 @@ for li in file_in.readlines():
                 if abs(float(item['values'][i]) - float(alt)) < hold:
                     hold = abs(float(item['values'][i]) - float(alt))
                     z_index = i
-    folder_spec = equip + '_spec_c'
-    folder_spectrum = equip + '_spectrum_c'
+
     for item in data_list:
         if item['parameter'] == 'T':
             Tc = - 273.15 + float(item['values'][z_index])
 
     c = speed_of_sound(Tc)
     sound_speed = c
-
-    print(f"Speed of sound: {c} m/s")
-
-    spec_dir = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec +'/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'
-    
-    if os.path.exists(spec_dir) and rerun_fig == False:
-        continue
+    tarrive = calc_time(closest_time,dist_m,alt,c) 
 
     flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
     flight_data = pd.read_csv(flight_file, sep=",")
@@ -125,18 +133,10 @@ for li in file_in.readlines():
     speed = flight_data['speed']
     altitude = flight_data['altitude']
 
-    closest_x, closest_y, dist_km, closest_time, tarrive, alt, sp, elevation, speed_mps, height_m, dist_m, tmid = closest_approach_UTM(seismo_latitudes, seismo_longitudes, flight_latitudes, flight_longitudes, timestamps, altitude, speed, stations, elevations, c, sta)
-    if closest_x == None:
-        continue
-    
-    if equip == 'C185':
-        #To set the initial window of arrival correct picks your start end Must use the tarrive time to get the correct data
-        ta_old = calc_time(tmid,dist_m,height_m,343)
-        start_time = ta_old - 120
-        ht = datetime.fromtimestamp(ta_old, tz=timezone.utc)
-    else:
-        #Must use the tarrive time to get the correct data
-        ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
+    #Must use the tarrive time to get the correct data
+    ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
+    start_time = tarrive - 120
+    h = ht.hour
     mins = ht.minute
     secs = ht.second
     month = ht.month
@@ -180,8 +180,22 @@ for li in file_in.readlines():
     vmin = 0  
     vmax = np.max(middle_column) 
 
+    plt.figure()
+    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+    plt.show()
+
+    go = input('Press enter to continue or type "exit" to stop and return to this spot later, "skip" to go to the next inversion: ')
+    if go == 'exit':
+        break
+    elif go == 'skip':
+        make_base_dir(spec_dir)
+        continue
+    else:
+        pass
+
     tprime0 = tarrive-start_time
     v0 = speed_mps
+    height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
 
     tf = np.arange(0, 240, 1)
@@ -191,7 +205,8 @@ for li in file_in.readlines():
     if len(coords) == 0:
         print('No picks for: ', date, flight_num, sta)
         continue
-
+    else:
+        tailnumber_dict[equip].append(tailnumber[index])
     # Convert the list of coordinates to a numpy array
     coords_array = np.array(coords)
 
@@ -354,9 +369,11 @@ for li in file_in.readlines():
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
+
+    equip_count_dict[equip] = equip_count_dict.get(equip, 0) + 1 
     
     if rerun_fig == False:
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
-if rerun_fig == False:
-    output.close()
+    #if rerun_fig == False:
+    #    output.close()
