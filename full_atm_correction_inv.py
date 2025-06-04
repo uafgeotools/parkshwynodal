@@ -39,7 +39,7 @@ for li in file_in.readlines():
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
     equip = text[10]
-    if equip == 'C185':
+    if equip == 'C185' or equip == 'nan':
         continue
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
@@ -56,9 +56,10 @@ for li in file_in.readlines():
 
     # get the index of the flight equivalent to the flight number
     index = flight.index(int(flight_num))
+
     if tailnumber[index] not in tailnumber_dict:
         tailnumber_dict[equip] = [] 
-        print('Tailnumber does not exist for: ', equip, tailnumber[index])
+        print('Tailnumber does not exist for: ', equip, tailnumber[equip])
     else:
         print('Tailnumber already exists for: ', equip, tailnumber[index])
 
@@ -169,12 +170,28 @@ for li in file_in.readlines():
     fs = int(tr[2].stats.sampling_rate)
     title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
     torg = tr[2].times()
-
+    if len(data) == 0:
+        data = tr[1][:]
+        fs = int(tr[1].stats.sampling_rate)
+        title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
+        torg = tr[1].times()
+        if len(data) == 0:
+            data = tr[0][:]
+            fs = int(tr[0].stats.sampling_rate)
+            title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+            torg = tr[0].times()
+            if len(data) == 0:
+                print('No data for: ', date, flight_num, sta)
+                continue
     # Compute spectrogram
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
-    
-    spec, MDF = remove_median(Sxx)
-    
+    try:
+        spec, MDF = remove_median(Sxx)
+    except:
+        plt.figure()
+        plt.pcolormesh(times, frequencies, Sxx, shading='gouraud', cmap='pink_r') 
+        plt.show()
+        print('we will see')
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
     vmin = 0  
