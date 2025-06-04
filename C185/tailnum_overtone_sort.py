@@ -92,8 +92,7 @@ ax2.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
 ax2.set_xticks(np.arange(18.5, 22, 1))
 ax2.set_xlim(18, 22)
 ax1.set_ylim(0, 80)
-ax1.grid(True, axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
-ax2.grid(True, axis='y', linestyle='--', linewidth=0.5, alpha=0.7)
+
 del_f_t1 = 19.62
 del_f_t2_1 = 19.17
 del_f_t2_2 = 20.56
