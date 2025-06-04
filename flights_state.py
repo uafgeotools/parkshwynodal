@@ -11,6 +11,7 @@ with open('input/colors.txt','r') as c_in:
 		if (i + 1) % 9 == 0:
 			c = str(line[0:7])
 			colors.append(c)
+			
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
 seismo_lat = seismo_data['Latitude']
 seismo_lon = seismo_data['Longitude']
@@ -31,12 +32,11 @@ equip_counts = {k: v for k, v in sorted(equip_counts.items(), key=lambda item: i
 colors_dict={}
 for i,labels in enumerate(equip_counts.keys()):
     colors_dict[labels] = colors[i]
-colors_dict['Unknown'] = 'magenta' 
 
 file = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
 
 flight_num_hold = 0
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(6, 10))
 # Iterate over each line in the file
 for lines in file.readlines():
     line = lines.split(',')
@@ -52,24 +52,7 @@ for lines in file.readlines():
     if eq == np.nan or eq == 'nan':
         eq = 'Unknown'
 
-    flight_file = '/scratch/irseppi/nodal_data/flightradar24/'+str(line[0]) + '_positions/' + str(line[0]) + '_' + str(flight_num) + '.csv'
-    flight_data = pd.read_csv(flight_file, sep=",")
-    flight_lat = flight_data['latitude'] 
-    flight_lon = flight_data['longitude']
-    
-    # Calculate the distance between the (lon, lat) point and each point in the flight path
-    distances = np.sqrt((flight_lat - lat)**2 + (flight_lon - lon)**2)
-    
-    # Find the two closest points in the flight path
-    closest_indices = np.argsort(distances)[:2]
-    if abs(closest_indices[0] - closest_indices[1]) == 1:
-        lats = (flight_lat[closest_indices[0]],lat,flight_lat[closest_indices[1]])
-        lons = (flight_lon[closest_indices[0]],lon,flight_lon[closest_indices[1]])
-    else:
-        lats = (flight_lat[closest_indices[0]],lat)
-        lons = (flight_lon[closest_indices[0]],lon)
-		
-    plt.plot(np.array(lons), np.array(lats), color = colors_dict[eq])
+    plt.scatter(lon,lat, color = colors_dict[eq])
     plt.scatter(seismo_lon, seismo_lat, marker="x", color="black")
 plt.show()
 file.close()
