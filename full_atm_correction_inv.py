@@ -185,13 +185,11 @@ for li in file_in.readlines():
                 continue
     # Compute spectrogram
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
-    try:
-        spec, MDF = remove_median(Sxx)
-    except:
-        plt.figure()
-        plt.pcolormesh(times, frequencies, Sxx, shading='gouraud', cmap='pink_r') 
-        plt.show()
-        print('we will see')
+    
+    spec, MDF = remove_median(Sxx)
+    #For Boeing Jets
+    #max_amplitude_index,_ = find_peaks(tt, prominence = 25, wlen=5, height=vmax*0.5)
+    #corridor_width = 3 
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
     vmin = 0  
