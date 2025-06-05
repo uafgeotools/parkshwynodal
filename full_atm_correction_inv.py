@@ -59,7 +59,7 @@ for li in file_in.readlines():
     #Fix this section to use files to count tailnumbers so you can get accurate counts
     if tailnumber[index] not in tailnumber_dict:
         tailnumber_dict[equip] = [] 
-        print('Tailnumber does not exist for: ', equip, tailnumber[equip])
+        print('Tailnumber does not exist for: ', equip, tailnumber[index])
     else:
         print('Tailnumber already exists for: ', equip, tailnumber[index])
 
