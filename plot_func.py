@@ -291,7 +291,7 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
 
 ##############################################################################################################################################################################################################
 
-def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, start_time, tprime0, make_picks=True):
+def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, start_time, tprime0, wind, make_picks=True):
     """
     Pick the points for the overtone shift.
 
@@ -335,7 +335,7 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
             plt.figure()
             plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
             plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
-            plt.axvline(x=120, c = '#e41a1c', ls = '--')
+            plt.axvline(x=wind, c = '#e41a1c', ls = '--')
             def onclick(event):
                 #global coords
                 peaks.append(event.ydata)

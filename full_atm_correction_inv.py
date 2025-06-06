@@ -48,7 +48,7 @@ for li in file_in.readlines():
     
     if os.path.exists(spec_dir) and rerun_fig == False:
         continue
-
+    
     flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
     flight = flight_data['flight_id']
     flight = flight.values.tolist()
@@ -136,7 +136,11 @@ for li in file_in.readlines():
 
     #Must use the tarrive time to get the correct data
     ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
-    start_time = tarrive - 120
+    if equip[0] == 'B' and equip[0:1] != 'BE':
+        wind = 120
+    else:
+        wind = 120
+    start_time = tarrive - wind
     h = ht.hour
     mins = ht.minute
     secs = ht.second
@@ -165,7 +169,7 @@ for li in file_in.readlines():
     except:
         continue 
 
-    tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - 120, tr[2].stats.starttime + (mins * 60) + secs + 120)
+    tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - wind, tr[2].stats.starttime + (mins * 60) + secs + wind)
     data = tr[2][:]
     fs = int(tr[2].stats.sampling_rate)
     title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
@@ -187,9 +191,7 @@ for li in file_in.readlines():
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
     
     spec, MDF = remove_median(Sxx)
-    #For Boeing Jets
-    #max_amplitude_index,_ = find_peaks(tt, prominence = 25, wlen=5, height=vmax*0.5)
-    #corridor_width = 3 
+
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
     vmin = 0  
@@ -239,7 +241,8 @@ for li in file_in.readlines():
         peaks = []
         p, _ = find_peaks(middle_column, distance = 7)
         corridor_width = (fs/2) / len(p) 
-                        
+        if equip[0] == 'B' and equip[0:1] != 'BE':
+            corridor_width = 3       
         if len(p) == 0:
             corridor_width = fs/4
 
@@ -291,7 +294,7 @@ for li in file_in.readlines():
     mprior.append(l)
     mprior.append(tprime0)       
 
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, make_picks=True)
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=True)
     f0_array = []
     w = len(peaks)
     for o in range(w):
@@ -301,9 +304,10 @@ for li in file_in.readlines():
         mprior.append(f0)
         f0_array.append(f0)
     mprior = np.array(mprior)
-                          
+                    
     corridor_width = 10
- 
+    if equip[0] == 'B' and equip[0:1] != 'BE':
+        corridor_width = 3
     peaks_assos = []
     fobs = []
     tobs = []
@@ -328,10 +332,13 @@ for li in file_in.readlines():
             try:      
                 tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
 
-                max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+                #For Boeing Jets
+                if equip[0] == 'B' and equip[0:1] != 'BE':
+                    max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
+                else:
+                    max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
                 maxa = np.argmax(tt[max_amplitude_index])
                 max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
-
                 maxfreq.append(max_amplitude_frequency)
                 coord_inv.append((times[t_f], max_amplitude_frequency))
                 ttt.append(times[t_f])
@@ -390,5 +397,5 @@ for li in file_in.readlines():
     if rerun_fig == False:
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
-    #if rerun_fig == False:
-    #    output.close()
+    if rerun_fig == False:
+        output.close()
