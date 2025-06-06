@@ -197,18 +197,18 @@ for li in file_in.readlines():
     vmin = 0  
     vmax = np.max(middle_column) 
 
-    plt.figure()
-    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-    plt.show()
+    #plt.figure()
+    #plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+    #plt.show()
 
-    go = input('Press enter to continue or type "exit" to stop and return to this spot later, "skip" to go to the next inversion: ')
-    if go == 'exit':
-        break
-    elif go == 'skip':
-        make_base_dir(spec_dir)
-        continue
-    else:
-        pass
+    #go = input('Press enter to continue or type "exit" to stop and return to this spot later, "n" to skip and go to the next inversion: ')
+    #if go == 'exit':
+    #    break
+    #elif go == 'n':
+    #    make_base_dir(spec_dir)
+    #    continue
+    #else:
+    #    pass
 
     tprime0 = tarrive-start_time
     v0 = speed_mps
