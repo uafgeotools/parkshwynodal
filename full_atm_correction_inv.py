@@ -39,8 +39,12 @@ for li in file_in.readlines():
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
     equip = text[10]
-    if equip == 'C185' or equip == 'nan':
+
+    if equip == 'C185' or equip == 'nan' or equip[0:2] == 'B7':
         continue
+    #if equip[0:1] == 'B7' and dist_m < 1000:
+    #    continue
+
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
