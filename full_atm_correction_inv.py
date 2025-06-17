@@ -40,7 +40,8 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip == 'C185' or equip == 'nan' or equip[0:2] == 'B7':
+    if equip[0:3] == 'B73' or equip == 'nan':
+        print(equip[0:3])
         continue
     #if equip[0:1] == 'B7' and dist_m < 1000:
     #    continue
