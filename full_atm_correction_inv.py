@@ -9,6 +9,7 @@ from prelude import *
 from scipy.signal import find_peaks, spectrogram
 from plot_func import *
 from obspy.clients.nrl import NRL
+import os
 #add a way to get the correct time and save it with picks
 #add a way to only pick 5 images for each aircraft type
 
@@ -40,12 +41,9 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip[0:3] == 'B73' or equip == 'nan':
-        print(equip[0:3])
+    if equip == 'nan':
         continue
-    #if equip[0:1] == 'B7' and dist_m < 1000:
-    #    continue
-
+    
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
@@ -96,6 +94,7 @@ for li in file_in.readlines():
     except:
         print('No file for: ', date, flight_num, sta)
         continue
+
     data = json.load(file)
 
     # Extract metadata
