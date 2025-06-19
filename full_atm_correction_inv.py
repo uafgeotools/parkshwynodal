@@ -171,29 +171,38 @@ for li in file_in.readlines():
     try:
         p = "/scratch/naalexeev/NODAL/2019-0"+str(month)+"-"+str(day)+"T"+str(h)+":00:00.000000Z.2019-0"+str(month)+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(sta)+".mseed"
         tr = obspy.read(p)
-    except:
-        print(p)
-        continue 
-
-    tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - wind, tr[2].stats.starttime + (mins * 60) + secs + wind)
-    data = tr[2][:]
-    fs = int(tr[2].stats.sampling_rate)
-    title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-    torg = tr[2].times()
-    if len(data) == 0:
-        data = tr[1][:]
-        fs = int(tr[1].stats.sampling_rate)
-        title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
-        torg = tr[1].times()
+        tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - wind, tr[2].stats.starttime + (mins * 60) + secs + wind)
+        data = tr[2][:]
+        fs = int(tr[2].stats.sampling_rate)
+        title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
+        torg = tr[2].times()
         if len(data) == 0:
+            data = tr[1][:]
+            fs = int(tr[1].stats.sampling_rate)
+            title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
+            torg = tr[1].times()
+            if len(data) == 0:
+                data = tr[0][:]
+                fs = int(tr[0].stats.sampling_rate)
+                title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+                torg = tr[0].times()
+    except:
+        try:
+            p = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
+            tr = obspy.read(p)
+
+            tr.trim(tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs - wind, tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs + wind)
+
             data = tr[0][:]
             fs = int(tr[0].stats.sampling_rate)
             title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
             torg = tr[0].times()
-            if len(data) == 0:
-                print('No data for: ', date, flight_num, sta)
-                continue
+        except:
+            print(p)
+            continue
+
     # Compute spectrogram
+
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
     
     spec, MDF = remove_median(Sxx)
