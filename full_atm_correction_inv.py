@@ -10,8 +10,6 @@ from scipy.signal import find_peaks, spectrogram
 from plot_func import *
 from obspy.clients.nrl import NRL
 import os
-#add a way to get the correct time and save it with picks
-#add a way to only pick 5 images for each aircraft type
 
 nrl = NRL()
 
@@ -28,6 +26,7 @@ equip_count_dict = {}
 tailnumber_dict = {}
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
+
 for li in file_in.readlines():
     text = li.split(',')
     date = text[0]
@@ -47,9 +46,6 @@ for li in file_in.readlines():
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
-    exist_dir = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec +'/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'
-    if os.path.exists(exist_dir):
-        continue
     if os.path.exists(spec_dir) and rerun_fig == False:
         continue
     
@@ -60,22 +56,7 @@ for li in file_in.readlines():
 
     # get the index of the flight equivalent to the flight number
     index = flight.index(int(flight_num))
-    #Fix this section to use files to count tailnumbers so you can get accurate counts
-    if tailnumber[index] not in tailnumber_dict:
-        tailnumber_dict[equip] = [] 
-        print('Tailnumber does not exist for: ', equip, tailnumber[index])
-    else:
-        print('Tailnumber already exists for: ', equip, tailnumber[index])
 
-    if equip not in equip_count_dict:
-        equip_count_dict[equip] = 0
-
-    if equip_count_dict[equip] >= 5:
-        print('Already 5 inversions for: ', equip, equip_count_dict[equip])
-
-    else:
-        print('This ' + str(equip), ' has ' + str(equip_count_dict[equip]) + ' inversions')
-    
     for i in range(len(stations)):
         if stations[i] == sta:
             seismo_lat = seismo_latitudes[i]
@@ -237,8 +218,6 @@ for li in file_in.readlines():
     if len(coords) == 0:
         print('No picks for: ', date, flight_num, sta)
         continue
-    else:
-        tailnumber_dict[equip].append(tailnumber[index])
     # Convert the list of coordinates to a numpy array
     coords_array = np.array(coords)
 
