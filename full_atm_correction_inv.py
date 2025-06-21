@@ -180,7 +180,6 @@ for li in file_in.readlines():
             continue
 
     # Compute spectrogram
-
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
     # Error here with division by zero ##fix this
     spec, MDF = remove_median(Sxx)
@@ -369,8 +368,6 @@ for li in file_in.readlines():
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
-
-    equip_count_dict[equip] = equip_count_dict.get(equip, 0) + 1 
     
     if rerun_fig == False:
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
