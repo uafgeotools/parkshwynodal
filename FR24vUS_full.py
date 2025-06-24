@@ -52,7 +52,7 @@ elevations = seismo_data['Elevation']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_UTM.txt','r')
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 
 latc = []
 lonc = []
@@ -78,7 +78,7 @@ for line in file_in.readlines():
     stat_list.append(text[9])
 file_in.close()
 
-file = 'C185data_atm_full.txt'
+file = 'output/Inversion_Results/CRJ2data_atmosphere_full.txt'
 title = 'FH/VT'
 
 fig, axs = plt.subplots(1, 3, figsize=(24, 6), sharey=False, layout='constrained')
@@ -206,12 +206,12 @@ temp_c = np.array(temp_c)[sorted_indices]  # Sort temperature values
 scatter1 = axs[0].scatter(v0_new, speeds_org, c=temp_c, cmap='coolwarm', s=15, zorder=2)
 axs[0].errorbar(v0_new, speeds_org, xerr=error_vel, fmt='none', c='k', zorder=1)
 axs[0].set_title(f"{title}: Velocity (m/s)", fontsize=10)
-axs[0].set_xlim(50, 80)
+#axs[0].set_xlim(50, 80)
 axs[0].axline((0, 0), slope=1, color='black', linestyle='--')
-axs[0].set_ylim(50, 80)
+#axs[0].set_ylim(50, 80)
 axs[0].set_aspect('equal')
-axs[0].set_xticks(np.arange(50, 81, 10))
-axs[0].set_yticks(np.arange(50, 81, 10))
+#axs[0].set_xticks(np.arange(50, 81, 10))
+#axs[0].set_yticks(np.arange(50, 81, 10))
 axs[0].set_xlabel('Nodal Data', fontsize=8)
 axs[0].set_ylabel('Flightradar24', fontsize=8)
 axs[0].tick_params(axis='both', labelsize=8)
@@ -222,12 +222,12 @@ axs[0].plot(x, m * x + b, color='k')
 scatter2 = axs[1].scatter(distance_new, dists_org, c=temp_c, cmap='coolwarm', s=15, zorder=2)
 axs[1].errorbar(distance_new, dists_org, xerr=error_dist, fmt='none', c='k', zorder=1)
 axs[1].set_title(f"{title}: Distance (m)", fontsize=10)
-axs[1].set_xlim(0, 2000)
-axs[1].set_ylim(0, 2000)
+#axs[1].set_xlim(0, 2000)
+#axs[1].set_ylim(0, 2000)
 axs[1].axline((0, 0), slope=1, color='black', linestyle='--')
 axs[1].set_aspect('equal', adjustable='box')
-axs[1].set_xticks(np.arange(0, 2001, 1000))
-axs[1].set_yticks(np.arange(0, 2001, 1000))
+#axs[1].set_xticks(np.arange(0, 2001, 1000))
+#axs[1].set_yticks(np.arange(0, 2001, 1000))
 axs[1].set_xlabel('Nodal Data', fontsize=8)
 axs[1].set_ylabel('Flightradar24', fontsize=8)
 axs[1].tick_params(axis='both', labelsize=8)
@@ -236,11 +236,11 @@ x = np.linspace(min(distance_new), max(dists_org), 100)
 axs[1].plot(x, m * x + b, color='k')
 
 index = np.linspace(0,len(time_new)-1, len(time_new))
-scatter3 = axs[2].scatter(np.array(time_new)-np.array(times_org), index, c=temp_c_pre, cmap='coolwarm', s=15, zorder=2)
-axs[2].errorbar(np.array(time_new) - np.array(times_org), index, xerr=error_time, fmt='none', c='k', zorder=1)
+scatter3 = axs[2].scatter(np.array(time_new), np.array(times_org), c=temp_c_pre, cmap='coolwarm', s=15, zorder=2)
+axs[2].errorbar(np.array(time_new),  np.array(times_org), xerr=error_time, fmt='none', c='k', zorder=1)
 axs[2].set_title(f"{title}: Time (s)", fontsize=10)
 #axs[2].set_xlim(110, 120)
-axs[2].axvline(x=0, color='black', linestyle='--')  # Add vertical dashed line at x = 0
+#axs[2].axvline(x=0, color='black', linestyle='--')  # Add vertical dashed line at x = 0
 axs[2].set_xlabel('Nodal Data', fontsize=8)
 axs[2].set_ylabel('Flightradar24', fontsize=8)
 axs[2].tick_params(axis='both', labelsize=8)
@@ -256,9 +256,9 @@ cbar.set_label('Temperature (°C)')
 # Ensure all plots are square, with equal aspect ratio for Velocity and Distance plots
 
 for i, ax in enumerate(axs):
-    if i != 2:  # Velocity and Distance plots
-        ax.set_aspect('equal', adjustable='box')
-    else:  # Time plots
-        ax.set_aspect('auto')  # Allow auto aspect ratio for Time plots
-        ax.set_box_aspect(1)  # Make Time plots square
+    #if i != 2:  # Velocity and Distance plots
+    #    ax.set_aspect('equal', adjustable='box')
+    #else:  # Time plots
+    #    ax.set_aspect('auto')  # Allow auto aspect ratio for Time plots
+    ax.set_box_aspect(1)  # Make Time plots square
 plt.show()
