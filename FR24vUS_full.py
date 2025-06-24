@@ -78,7 +78,7 @@ for line in file_in.readlines():
     stat_list.append(text[9])
 file_in.close()
 
-file = 'output/Inversion_Results/CRJ2data_atmosphere_full.txt'
+file = 'output/Inversion_Results/B763data_atmosphere_full.txt'
 title = 'FH/VT'
 
 fig, axs = plt.subplots(1, 3, figsize=(24, 6), sharey=False, layout='constrained')
