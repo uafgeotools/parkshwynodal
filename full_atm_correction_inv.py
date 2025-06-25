@@ -21,7 +21,7 @@ elevations = seismo_data['Elevation']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-rerun_fig = False #Flag rerun the figures without saving the inversion results = True
+rerun_fig = True #False #Flag rerun the figures without saving the inversion results = True
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
@@ -39,14 +39,16 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip == 'nan':
+    if equip != 'DH8A':
         continue
     
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
     
-    if os.path.exists(spec_dir) and rerun_fig == False:
+    if os.path.exists(spec_dir): # and rerun_fig == False:
+        go = True
+    else:
         continue
     
     #flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
@@ -96,8 +98,8 @@ for li in file_in.readlines():
     for item in data_list:
         if item['parameter'] == 'Z':
             for i in range(len(item['values'])):
-                if abs(float(item['values'][i]) - float(alt)) < hold:
-                    hold = abs(float(item['values'][i]) - float(alt))
+                if abs(float(item['values'][i]) - float(alt/1000)) < hold:
+                    hold = abs(float(item['values'][i]) - float(alt/1000))
                     z_index = i
 
     for item in data_list:
@@ -196,7 +198,7 @@ for li in file_in.readlines():
 
     tf = np.arange(0, 240, 1)
 
-    coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=True) 
+    coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=False) 
 
     if len(coords) == 0:
         print('No picks for: ', date, flight_num, sta)
@@ -271,7 +273,7 @@ for li in file_in.readlines():
     mprior.append(l)
     mprior.append(tprime0)       
 
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=True)
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
     f0_array = []
     w = len(peaks)
     for o in range(w):
@@ -347,7 +349,7 @@ for li in file_in.readlines():
         print('No picks for: ', date, flight_num, sta)
         continue
 
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
 
     m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
     v0 = m[0]
