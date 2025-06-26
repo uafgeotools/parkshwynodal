@@ -258,10 +258,15 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
                 
     if Path(file_name).exists():
         coords = []
+        if Path(file_name).is_dir():
+            return []
         with open(file_name, 'r') as file:
             for line in file:
                 pick_data = line.split(',')
-                coords.append((float(pick_data[0]), float(pick_data[1])))
+                try:
+                    coords.append((float(pick_data[0]), float(pick_data[1])))
+                except:
+                    continue
         file.close()  
         return coords
     elif make_picks:

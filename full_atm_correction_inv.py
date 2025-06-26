@@ -39,7 +39,9 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip != 'DH8A':
+    if equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+        print('Go on')
+    else:
         continue
     
     folder_spec = equip + '_spec_c'
@@ -65,8 +67,8 @@ for li in file_in.readlines():
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
 
-    if rerun_fig == False:
-        output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
+    #if rerun_fig == False:
+    output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
@@ -125,7 +127,27 @@ for li in file_in.readlines():
         wind = 120
     else:
         wind = 120
-    start_time = tarrive - wind
+    #start_time = tarrive - wind
+    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'   
+    if Path(file_name).exists():
+        coords = []
+        if Path(file_name).is_dir():
+            continue
+        with open(file_name, 'r') as file:
+            for line in file:
+                pick_data = line.split(',')
+
+                try:
+                    start_time = float(pick_data[2])
+                    print('Start time: ', start_time)
+                    pp = 'yep'
+                    break
+                except:
+                    pp = 'nope'
+                    break
+    ht = datetime.fromtimestamp(start_time+120, tz=timezone.utc)                        
+    if pp == 'nope':
+        continue
     h = ht.hour
     mins = ht.minute
     secs = ht.second
@@ -199,6 +221,7 @@ for li in file_in.readlines():
     tf = np.arange(0, 240, 1)
 
     coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=False) 
+    coords_array = np.array(coords)
 
     if len(coords) == 0:
         print('No picks for: ', date, flight_num, sta)
@@ -274,6 +297,7 @@ for li in file_in.readlines():
     mprior.append(tprime0)       
 
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
+
     f0_array = []
     w = len(peaks)
     for o in range(w):
@@ -349,9 +373,12 @@ for li in file_in.readlines():
         print('No picks for: ', date, flight_num, sta)
         continue
 
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
-
-    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
+    try:
+        tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
+        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
+    except:
+        print('Inversion failed for: ', date, flight_num, sta)
+        continue
     v0 = m[0]
     l = m[1]
     tprime0 = m[2]
@@ -371,8 +398,8 @@ for li in file_in.readlines():
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
-    if rerun_fig == False:
-        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+    #if rerun_fig == False:
+    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
-    if rerun_fig == False:
-        output.close()
+    #if rerun_fig == False:
+    output.close()

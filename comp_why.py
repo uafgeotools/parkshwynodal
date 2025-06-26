@@ -44,7 +44,7 @@ def fit_l1_line(x, y, bounds=None):
     m, b = result.x
     return m, b
 
-file = open('output/Inversion_Results/C185data_atmosphere_full.txt','r')
+file = open('output/DH8Adata_atmosphere_full.txt','r')
 
 inverse_times = []
 inverse_dists = []
@@ -59,7 +59,8 @@ error_time = []
 for line in file.readlines():
     lines = line.split(',')
     inverse_times.append(float(lines[4]))
-    inverse_dists.append(float(lines[6]))
+    
+    inverse_dists.append(abs(float(lines[6])))
     inverse_speeds.append(float(lines[5]))
     comp_times.append(float(lines[3])) 
     flight_num = lines[1]
@@ -91,7 +92,8 @@ for line in file_in.readlines():
         continue
     index = comp_times.index(closest_time)
     c = c_array[index]
-    fr_dists.append(float(text[4]))
+    fr_dists.append(abs(np.sqrt(float(text[4])**2 + float(text[6])**2)))
+
     fr_speeds.append(float(text[7]))
     ta_old = calc_time(float(closest_time),float(text[4]),float(text[5]),float(c))
     fr_times.append(120)
