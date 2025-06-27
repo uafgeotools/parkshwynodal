@@ -125,7 +125,7 @@ for line in file_in.readlines():
 	
 	mnum = "FH/VT"
 	font2 = ImageFont.truetype('input/Arial.ttf', 25)
-	diff = np.inf
+
 			
 	text1 = 'Altitude: '+str(round(alt_m,2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(head,2))+ '\N{DEGREE SIGN}'
 	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'

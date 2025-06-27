@@ -29,8 +29,6 @@ file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db
 for li in file_in.readlines():
     text = li.split(',')
     date = text[0]
-    if int(date) < 20190227:
-        continue
     flight_num = text[1]
     x =  float(text[2])  # Replace with your UTM x-coordinate
     y = float(text[3])  # Replace with your UTM y-coordinate
@@ -40,24 +38,15 @@ for li in file_in.readlines():
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
     equip = text[10]
-
-    if equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+    if equip != 'DH8A' and int(sta) != 1263:
         continue
-    
-    folder_spec = equip + '_spec_c'
-    folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
     
     if os.path.exists(spec_dir): # and rerun_fig == False:
         go = True
     else:
         continue
-    
-    #flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
-    #flight = flight_data['flight_id']
-    #flight = flight.values.tolist()
-    #tailnumber = flight_data['aircraft_id']
-
+  
     for i in range(len(stations)):
         if stations[i] == sta:
             seismo_lat = seismo_latitudes[i]
@@ -66,9 +55,6 @@ for li in file_in.readlines():
             break
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
-
-    #if rerun_fig == False:
-    output = open('output/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
@@ -112,22 +98,6 @@ for li in file_in.readlines():
     sound_speed = c
     tarrive = calc_time(closest_time,dist_m,alt,c) 
 
-    flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
-    flight_data = pd.read_csv(flight_file, sep=",")
-    flight_latitudes = flight_data['latitude']
-    flight_longitudes = flight_data['longitude']
-    time = flight_data['snapshot_id']
-    timestamps = flight_data['snapshot_id']
-    speed = flight_data['speed']
-    altitude = flight_data['altitude']
-
-    #Must use the tarrive time to get the correct data
-    ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
-    if equip[0] == 'B' and equip[0:1] != 'BE':
-        wind = 120
-    else:
-        wind = 120
-    #start_time = tarrive - wind
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'   
     if Path(file_name).exists():
         coords = []
@@ -136,7 +106,6 @@ for li in file_in.readlines():
         with open(file_name, 'r') as file:
             for line in file:
                 pick_data = line.split(',')
-
                 try:
                     start_time = float(pick_data[2])
                     print('Start time: ', start_time)
@@ -173,7 +142,7 @@ for li in file_in.readlines():
     try:
         p = "/scratch/naalexeev/NODAL/2019-0"+str(month)+"-"+str(day)+"T"+str(h)+":00:00.000000Z.2019-0"+str(month)+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(sta)+".mseed"
         tr = obspy.read(p)
-        tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - wind, tr[2].stats.starttime + (mins * 60) + secs + wind)
+        tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - 120, tr[2].stats.starttime + (mins * 60) + secs + 120)
         data = tr[2][:]
         fs = int(tr[2].stats.sampling_rate)
         title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
@@ -193,7 +162,7 @@ for li in file_in.readlines():
             p = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
             tr = obspy.read(p)
 
-            tr.trim(tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs - wind, tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs + wind)
+            tr.trim(tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs - 120, tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs + 120)
 
             data = tr[0][:]
             fs = int(tr[0].stats.sampling_rate)
@@ -219,98 +188,29 @@ for li in file_in.readlines():
     l = np.sqrt(dist_m**2 + (height_m)**2)
 
     tf = np.arange(0, 240, 1)
-
+    plt.figure(figsize=(12, 6))
+    plt.pcolormesh(times, frequencies, spec, cmap='pink_r',shading='gouraud', vmin=vmin, vmax=vmax)
+    plt.colorbar(label='Amplitude (dB)')
     coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=False) 
     coords_array = np.array(coords)
-
+    try:
+        fobs = coords_array[:, 1]
+        tobs = coords_array[:, 0]
+        plt.scatter(tobs, fobs, color='red', s=15, marker='x')
+    except:
+        pass
     if len(coords) == 0:
         print('No picks for: ', date, flight_num, sta)
         continue
     # Convert the list of coordinates to a numpy array
     coords_array = np.array(coords)
 
-    f0 = 116
-    m0 = [f0, v0, l, tprime0]
 
-    m,covm, F_m = invert_f(m0, coords_array, c, num_iterations=8)
-    f0 = m[0]
-    v0 = m[1]
-    l = m[2]
-    tprime0 = m[3]
-    
-    ft = calc_ft(times, tprime0, f0, v0, l, c)
-    if isinstance(sta, int):
-        peaks = []
-        p, _ = find_peaks(middle_column, distance = 7)
-        corridor_width = (fs/2) / len(p) 
-        if equip[0] == 'B' and equip[0:1] != 'BE':
-            corridor_width = 3       
-        if len(p) == 0:
-            corridor_width = fs/4
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, 120, make_picks=False)
+    plt.scatter(freqpeak, peaks, color='red', s=15, marker='x')
 
-        coord_inv = []
-
-        for t_f in range(len(times)):
-            upper = int(ft[t_f] + corridor_width)
-            lower = int(ft[t_f] - corridor_width)
-            if lower < 0:
-                lower = 0
-            if upper > len(frequencies):
-                upper = len(frequencies)
-            tt = spec[lower:upper, t_f]
-
-            max_amplitude_index = np.argmax(tt)
-            
-            max_amplitude_frequency = frequencies[max_amplitude_index+lower]
-            peaks.append(max_amplitude_frequency)
-            coord_inv.append((times[t_f], max_amplitude_frequency))
-
-
-        coord_inv_array = np.array(coord_inv)
-
-        m,_,F_m = invert_f(m0, coord_inv_array, c, num_iterations=12)
-        f0 = m[0]
-        v0 = m[1]
-        l = m[2]
-        tprime0 = m[3]
-
-        ft = calc_ft(times, tprime0, f0, v0, l, c)
-        
-        delf = np.array(ft) - np.array(peaks)
-        
-        new_coord_inv_array = []
-        for i in range(len(delf)):
-            if np.abs(delf[i]) <= 3:
-                new_coord_inv_array.append(coord_inv_array[i])
-        coord_inv_array = np.array(new_coord_inv_array)
-
-        m,covm,F_m = invert_f(m0, coord_inv_array, c, num_iterations=12, sigma=5)
-        
-        f0 = m[0]
-        v0 = m[1]
-        l = m[2]
-        tprime0 = m[3]
-
-    mprior = []
-    mprior.append(v0)
-    mprior.append(l)
-    mprior.append(tprime0)       
-
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
-
-    f0_array = []
-    w = len(peaks)
-    for o in range(w):
-        tprime = freqpeak[o]
-        ft0p = peaks[o]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        mprior.append(f0)
-        f0_array.append(f0)
-    mprior = np.array(mprior)
-                    
     corridor_width = 10
-    if equip[0] == 'B' and equip[0:1] != 'BE':
-        corridor_width = 3
+
     peaks_assos = []
     fobs = []
     tobs = []
@@ -367,39 +267,8 @@ for li in file_in.readlines():
                     tobs.append(ttt[i])
                     count += 1
             peaks_assos.append(count)
-
-
-    if len(fobs) == 0:
-        print('No picks for: ', date, flight_num, sta)
-        continue
-
-    try:
-        tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
-        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
-    except:
-        print('Inversion failed for: ', date, flight_num, sta)
-        continue
-    v0 = m[0]
-    l = m[1]
-    tprime0 = m[2]
-    covm = np.sqrt(np.diag(covm))
-
-    closest_index = np.argmin(np.abs(tprime0 - times))
-    arrive_time = spec[:,closest_index]
-    for i in range(len(arrive_time)):
-        if arrive_time[i] < 0:
-            arrive_time[i] = 0
-
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
-    make_base_dir(BASE_DIR)
-    qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
-
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
-    make_base_dir(BASE_DIR)
-    plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
-    #if rerun_fig == False:
-    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
-
-    #if rerun_fig == False:
-    output.close()
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
+    plt.scatter(tobs, fobs, color='blue', s=15, marker='x')
+    plt.show()
+    plt.close()
