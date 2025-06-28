@@ -799,13 +799,13 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 20**2
+			cprior[row][row] = 20**2 
 		elif row == 1:
-			cprior[row][row] = 500**2
+			cprior[row][row] = 800**2 #make 800
 		elif row == 2:
-			cprior[row][row] = 20**2
+			cprior[row][row] = 50**2 #make 50
 		else:
-			cprior[row][row] = 1**2
+			cprior[row][row] = 7**2 # make 7
 	
 	Cd = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd, sigma**2)
