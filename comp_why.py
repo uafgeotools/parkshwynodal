@@ -61,7 +61,7 @@ for line in file.readlines():
     inverse_times.append(float(lines[4]))
     
     inverse_dists.append(abs(float(lines[6])))
-    inverse_speeds.append(float(lines[5]))
+    inverse_speeds.append(abs(float(lines[5])))
     comp_times.append(float(lines[3])) 
     flight_num = lines[1]
     c_array.append(float(lines[11]))
@@ -96,9 +96,9 @@ for line in file_in.readlines():
 
     fr_speeds.append(float(text[7]))
     ta_old = calc_time(float(closest_time),float(text[4]),float(text[5]),float(c))
-    fr_times.append(120)
+    #fr_times.append(120)
 
-fig, axs = plt.subplots(1, 3, figsize=(24, 6), sharey=False, layout='constrained')
+fig, axs = plt.subplots(1, 2, figsize=(24, 6), sharey=False, layout='constrained')
 scatter1 = axs[0].scatter(inverse_speeds, fr_speeds, c='k', s=15, zorder=2)
 axs[0].errorbar(inverse_speeds, fr_speeds, xerr=error_vel, fmt='none', c='k', zorder=1)
 axs[0].set_title("Velocity (m/s)", fontsize=10)
@@ -122,14 +122,14 @@ axs[1].tick_params(axis='both', labelsize=8)
 m, b = fit_l1_line(inverse_dists, fr_dists)
 x = np.linspace(min(inverse_dists), max(inverse_dists), 100)
 axs[1].plot(x, m * x + b, color='k')
-
+'''
 scatter3 = axs[2].scatter(inverse_times, fr_times, c='k', s=15, zorder=2)
 axs[2].errorbar(inverse_times, fr_times, xerr=error_time, fmt='none', c='k', zorder=1)
 axs[2].set_title("Time (s)", fontsize=10)
 axs[2].set_xlabel('Nodal Data', fontsize=8)
 axs[2].set_ylabel('Flightradar24', fontsize=8)
 axs[2].tick_params(axis='both', labelsize=8)
-
+'''
 for i, ax in enumerate(axs):
     ax.set_box_aspect(1)  # Make Time plots square
 plt.show()
