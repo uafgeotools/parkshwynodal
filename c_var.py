@@ -293,6 +293,23 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 	tobs = coords_array[:,0]
 	m = m0
 	n = 0
+     
+	cprior = np.zeros((5,5))
+
+	for row in range(len(cprior)):
+		if row == 0:
+			cprior[row][row] = 10**2 #10
+		elif row == 1:
+			cprior[row][row] = 10**2 #800
+		elif row == 2:
+			cprior[row][row] = 1000**2 #50
+		elif row == 3:
+			cprior[row][row] = 100**2 
+		else:
+			cprior[row][row] = 10**2
+	Cd = np.zeros((len(fobs), len(fobs)), int)
+	np.fill_diagonal(Cd, sigma**2)
+
 	while n < num_iterations:
 		fnew = []
 		G = np.zeros((w,5)) #partial derivative matrix of f with respect to m
@@ -315,14 +332,15 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 			covmlsq = (sigma**2)*la.inv(G.T@G)
 		except:
 			covmlsq = (sigma**2)*la.pinv(G.T@G)
-		try:
-			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
-		except:
-			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
-
+		#try:
+		#	m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
+		#except:
+		#	m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
+		#m = np.array(m0) + cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.array(fobs)- np.array(fnew))
+		m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
 		m0 = m
 		n += 1
-		print(m[4])
+		print(m)
 	F_m = Sd(fnew, fobs, len(fobs), sigma)
 	return m, covmlsq, F_m
 
@@ -350,15 +368,15 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 20**2 #10
+			cprior[row][row] = 5**2 #10
 		elif row == 1:
-			cprior[row][row] = 500**2 #800
+			cprior[row][row] = 800**2 #800
 		elif row == 2:
-			cprior[row][row] = 20**2 #50
+			cprior[row][row] = 80**2 #50
 		elif row == 3:
-			cprior[row][row] = 0**2 #??
+			cprior[row][row] = 5**2 #??
 		else:
-			cprior[row][row] = 1**2 #5
+			cprior[row][row] = 3**2 #5
 	
 	Cd = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd, sigma**2)
@@ -399,9 +417,9 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		c = mnew[3]
 		f0_array = mnew[4:]
 
-		print(m[3])
+		print(m)
 		qv += 1
-	covm = la.inv(G.T@la.inv(Cd)@G + la.inv(cprior))
+	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior))
 	F_m = Sd(fnew, fobs, len(fobs), sigma)
 	return m, covm, f0_array, F_m
 
@@ -739,7 +757,7 @@ for li in file_in.readlines():
                 coord_inv_array = np.array(coord_inv)
                 mtest = [f0,v0, l, tprime0,c]
                 mtest,_, F_m = invert_f(mtest, coord_inv_array, num_iterations=4)
-                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], c)
+                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
             else:
                 ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
 
@@ -753,15 +771,24 @@ for li in file_in.readlines():
                     count += 1
             peaks_assos.append(count)
 
-
+    tobs_hold = tobs
     if len(fobs) == 0:
         continue
 
-    try:
-        tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
-        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
-    except:
+
+    tprime0 = tarrive-start_time
+    v0 = speed_mps
+    height_m = alt - elev
+    l = np.sqrt(dist_m**2 + (height_m)**2)
+    c = speed_of_sound(Tc)
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
+    if len(tobs) == len(tobs_hold):
         continue
+    
+    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 4)
+    #except:
+    #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
+    #    continue
     v0 = m[0]
     l = m[1]
     tprime0 = m[2]

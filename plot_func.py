@@ -448,7 +448,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
 
             cid = plt.gcf().canvas.mpl_connect('button_press_event', onclick)
             plt.show(block=True)
-
+            plt.close()
             r3.close()
             pick_again = input("Do you want to repick you points? (y or n)")
         if len(set_time) == 0:
