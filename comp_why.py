@@ -44,7 +44,7 @@ def fit_l1_line(x, y, bounds=None):
     m, b = result.x
     return m, b
 
-file = open('output/DH8Adata_atmosphere_full.txt','r')
+file = open('output/B737data_atmosphere_full.txt','r')
 
 inverse_times = []
 inverse_dists = []
@@ -106,6 +106,8 @@ axs[0].axline((0, 0), slope=1, color='black', linestyle='--')
 axs[0].set_aspect('equal')
 axs[0].set_xlabel('Nodal Data', fontsize=8)
 axs[0].set_ylabel('Flightradar24', fontsize=8)
+axs[0].set_xlim(min(inverse_speeds) - 10, max(inverse_speeds) + 10)
+axs[0].set_ylim(min(fr_speeds) - 10, max(fr_speeds) + 10)
 axs[0].tick_params(axis='both', labelsize=8)
 m, b = fit_l1_line(inverse_speeds, fr_speeds)
 x = np.linspace(min(inverse_speeds), max(inverse_speeds), 100)
@@ -118,6 +120,8 @@ axs[1].axline((0, 0), slope=1, color='black', linestyle='--')
 axs[1].set_aspect('equal', adjustable='box')
 axs[1].set_xlabel('Nodal Data', fontsize=8)
 axs[1].set_ylabel('Flightradar24', fontsize=8)
+axs[1].set_xlim(min(inverse_dists) - 100, max(inverse_dists) + 100)
+axs[1].set_ylim(min(fr_dists) - 100, max(fr_dists) + 100)
 axs[1].tick_params(axis='both', labelsize=8)
 m, b = fit_l1_line(inverse_dists, fr_dists)
 x = np.linspace(min(inverse_dists), max(inverse_dists), 100)

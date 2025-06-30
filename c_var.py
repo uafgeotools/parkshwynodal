@@ -1,15 +1,19 @@
 import numpy as np
 import pandas as pd
+import numpy.linalg as la
 import json
 import obspy
-import datetime
+import os
+from pathlib import Path
+from pyproj import Proj
+from matplotlib import pyplot as plt
 from datetime import datetime, timezone
 from pyproj import Proj
-from prelude import *
+from prelude import calc_ft, Sd, calc_time, speed_of_sound, calc_f0, make_base_dir
 from scipy.signal import find_peaks, spectrogram
-from plot_func import *
+from plot_func import doppler_picks, overtone_picks, time_picks, remove_median
 from obspy.clients.nrl import NRL
-import os
+
 ##############################################################################################################################################################################################################
 
 def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
@@ -302,7 +306,7 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 			tprime = tobs[i]
 			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],c)
+			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
 			
 			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
 
@@ -315,9 +319,10 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
 		except:
 			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
-		print(m)
+
 		m0 = m
 		n += 1
+		print(m[4])
 	F_m = Sd(fnew, fobs, len(fobs), sigma)
 	return m, covmlsq, F_m
 
@@ -345,15 +350,15 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 20**2
+			cprior[row][row] = 20**2 #10
 		elif row == 1:
-			cprior[row][row] = 800**2
+			cprior[row][row] = 500**2 #800
 		elif row == 2:
-			cprior[row][row] = 80**2
+			cprior[row][row] = 20**2 #50
 		elif row == 3:
-			cprior[row][row] = 10**2
+			cprior[row][row] = 0**2 #??
 		else:
-			cprior[row][row] = 10**2
+			cprior[row][row] = 1**2 #5
 	
 	Cd = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd, sigma**2)
@@ -373,7 +378,7 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 				ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
 				f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0,v0,l,tprime0, tobs[j],c)
-			
+                #reccheck cunstruction of this matrix and how we include all f0's
 				new_row[0] = f_derivev0
 				new_row[1] = f_derivel
 				new_row[2] = f_derivetprime0
@@ -391,10 +396,10 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		v0 = mnew[0]
 		l = mnew[1]
 		tprime0 = mnew[2]
-		c = mnew[4]
+		c = mnew[3]
 		f0_array = mnew[4:]
 
-		print(m)
+		print(m[3])
 		qv += 1
 	covm = la.inv(G.T@la.inv(Cd)@G + la.inv(cprior))
 	F_m = Sd(fnew, fobs, len(fobs), sigma)
@@ -458,7 +463,6 @@ for li in file_in.readlines():
     try:
         file =  open(input_files, 'r') 
     except:
-        print('No tempurature file for: ', date, flight_num, sta)
         continue
 
     data = json.load(file)
@@ -492,7 +496,7 @@ for li in file_in.readlines():
             Tc = - 273.15 + float(item['values'][z_index])
 
     c = speed_of_sound(Tc)
-    sound_speed = c
+    print('Speed of sound: ', c)
     tarrive = calc_time(closest_time,dist_m,alt,c) 
 
     flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
@@ -506,11 +510,8 @@ for li in file_in.readlines():
 
     #Must use the tarrive time to get the correct data
     ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
-    if equip[0] == 'B' and equip[0:1] != 'BE':
-        wind = 120
-    else:
-        wind = 120
-    #start_time = tarrive - wind
+    
+    wind = 120
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'   
     if Path(file_name).exists():
         coords = []
@@ -522,7 +523,6 @@ for li in file_in.readlines():
 
                 try:
                     start_time = float(pick_data[2])
-                    print('Start time: ', start_time)
                     pp = 'yep'
                     break
                 except:
@@ -583,7 +583,6 @@ for li in file_in.readlines():
             title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
             torg = tr[0].times()
         except:
-            print(p)
             continue
 
     # Compute spectrogram
@@ -607,7 +606,6 @@ for li in file_in.readlines():
     coords_array = np.array(coords)
 
     if len(coords) == 0:
-        print('No picks for: ', date, flight_num, sta)
         continue
     # Convert the list of coordinates to a numpy array
     coords_array = np.array(coords)
@@ -757,14 +755,12 @@ for li in file_in.readlines():
 
 
     if len(fobs) == 0:
-        print('No picks for: ', date, flight_num, sta)
         continue
 
     try:
         tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
         m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
     except:
-        print('Inversion failed for: ', date, flight_num, sta)
         continue
     v0 = m[0]
     l = m[1]
@@ -782,7 +778,7 @@ for li in file_in.readlines():
     make_base_dir(BASE_DIR)
     qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
 
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c/spectrum/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
