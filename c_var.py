@@ -298,13 +298,13 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 10**2 #10
+			cprior[row][row] = 5**2 #10
 		elif row == 1:
 			cprior[row][row] = 10**2 #800
 		elif row == 2:
-			cprior[row][row] = 1000**2 #50
+			cprior[row][row] = 800**2 #50
 		elif row == 3:
-			cprior[row][row] = 100**2 
+			cprior[row][row] = 80**2 
 		else:
 			cprior[row][row] = 10**2
 	Cd = np.zeros((len(fobs), len(fobs)), int)
@@ -370,11 +370,11 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		if row == 0:
 			cprior[row][row] = 5**2 #10
 		elif row == 1:
-			cprior[row][row] = 800**2 #800
+			cprior[row][row] = 500**2 #800
 		elif row == 2:
-			cprior[row][row] = 80**2 #50
+			cprior[row][row] = 20**2 #50
 		elif row == 3:
-			cprior[row][row] = 5**2 #??
+			cprior[row][row] = 10**2 #??
 		else:
 			cprior[row][row] = 3**2 #5
 	
@@ -452,9 +452,11 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+    if equip == 'C185': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+        go= True
+    else:
         continue
-    
+    print('Processing station: ', sta, ' at time: ', closest_time, ' for equipment: ', equip)
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
@@ -463,7 +465,7 @@ for li in file_in.readlines():
         go = True
     else:
         continue
-
+    print('here')
     for i in range(len(stations)):
         if stations[i] == sta:
             seismo_lat = seismo_latitudes[i]
@@ -546,7 +548,10 @@ for li in file_in.readlines():
                 except:
                     pp = 'nope'
                     break
-    ht = datetime.fromtimestamp(start_time+120, tz=timezone.utc)                        
+    if equip == 'C185':
+        start_time = start_time - 120
+    
+    ht = datetime.fromtimestamp(start_time+120, tz=timezone.utc)                      
     if pp == 'nope':
         continue
     h = ht.hour
@@ -775,13 +780,16 @@ for li in file_in.readlines():
     if len(fobs) == 0:
         continue
 
-
     tprime0 = tarrive-start_time
     v0 = speed_mps
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
     c = speed_of_sound(Tc)
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
+    try:
+        tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
+    except:
+        print('Error in time picks for station:', sta, 'flight:', flight_num, 'date:', date)
+        continue
     if len(tobs) == len(tobs_hold):
         continue
     
