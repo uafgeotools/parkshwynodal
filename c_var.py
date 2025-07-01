@@ -332,10 +332,10 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 			covmlsq = (sigma**2)*la.inv(G.T@G)
 		except:
 			covmlsq = (sigma**2)*la.pinv(G.T@G)
-		try:
-			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
-		except:
-			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
+		#try:
+		#	m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
+		#except:
+		#	m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
 		#m = np.array(m0) + cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.array(fobs)- np.array(fnew))
 		m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
 		m0 = m
@@ -452,11 +452,11 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip == 'DH8A': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
-        go= True
-    else:
-        continue
-    print('Processing station: ', sta, ' at time: ', closest_time, ' for equipment: ', equip)
+    #if equip == 'DH8A': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+    #    go= True
+    #else:
+    #    continue
+
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
@@ -793,7 +793,7 @@ for li in file_in.readlines():
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
     c = speed_of_sound(Tc)
-    
+
     m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 4)
     #except:
     #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
