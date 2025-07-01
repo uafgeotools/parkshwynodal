@@ -44,7 +44,7 @@ def fit_l1_line(x, y, bounds=None):
     m, b = result.x
     return m, b
 
-file = open('output/B737data_atmosphere_full.txt','r')
+file = open('output/with_c/DH8Adata_atmosphere_full.txt','r')
 
 inverse_times = []
 inverse_dists = []
@@ -58,6 +58,8 @@ error_time = []
 
 for line in file.readlines():
     lines = line.split(',')
+    if str(lines[9]) == '11':
+        continue
     inverse_times.append(float(lines[4]))
     
     inverse_dists.append(abs(float(lines[6])))

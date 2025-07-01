@@ -332,10 +332,10 @@ def invert_f(m0, coords_array, num_iterations,sigma = 10):
 			covmlsq = (sigma**2)*la.inv(G.T@G)
 		except:
 			covmlsq = (sigma**2)*la.pinv(G.T@G)
-		#try:
-		#	m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
-		#except:
-		#	m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
+		try:
+			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.inv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
+		except:
+			m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(la.pinv(G.T@G)@G.T@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
 		#m = np.array(m0) + cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.array(fobs)- np.array(fnew))
 		m = np.reshape(np.reshape(m0,(5,1))+ np.reshape(cprior@G.T@la.inv(G@cprior@G.T+Cd)@(np.reshape(fobs, (len(coords_array), 1)) - np.reshape(np.array(fnew), (len(coords_array), 1))), (5,1)), (5,))
 		m0 = m
@@ -370,11 +370,11 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		if row == 0:
 			cprior[row][row] = 5**2 #10
 		elif row == 1:
-			cprior[row][row] = 500**2 #800
+			cprior[row][row] = 200**2 #800
 		elif row == 2:
 			cprior[row][row] = 20**2 #50
 		elif row == 3:
-			cprior[row][row] = 10**2 #??
+			cprior[row][row] = 20**2 #??
 		else:
 			cprior[row][row] = 3**2 #5
 	
@@ -452,7 +452,7 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip == 'C185': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+    if equip == 'DH8A': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
         go= True
     else:
         continue
@@ -780,11 +780,6 @@ for li in file_in.readlines():
     if len(fobs) == 0:
         continue
 
-    tprime0 = tarrive-start_time
-    v0 = speed_mps
-    height_m = alt - elev
-    l = np.sqrt(dist_m**2 + (height_m)**2)
-    c = speed_of_sound(Tc)
     try:
         tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
     except:
@@ -792,6 +787,12 @@ for li in file_in.readlines():
         continue
     if len(tobs) == len(tobs_hold):
         continue
+    
+    tprime0 = tarrive-start_time
+    v0 = speed_mps
+    height_m = alt - elev
+    l = np.sqrt(dist_m**2 + (height_m)**2)
+    c = speed_of_sound(Tc)
     
     m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 4)
     #except:

@@ -42,7 +42,7 @@ for line in file_in.readlines():
 				break
 			else:
 				continue
-		spec_dir = '/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+		spec_dir = '/scratch/irseppi/nodal_data/plane_info/with_c/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 		if os.path.exists(spec_dir):
 			for image in os.listdir(spec_dir):
 				im = os.path.join(spec_dir, image)
@@ -143,9 +143,9 @@ for line in file_in.readlines():
 			print('No image for: ' + image_path)
 			continue
 		try:
-			spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+			spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/with_c/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 		except:
-			print('No spectrum image for: ' + '/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+			print('No spectrum image for: ' + '/scratch/irseppi/nodal_data/plane_info/with_c/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 			continue
 
 		# Resize images
@@ -189,7 +189,7 @@ for line in file_in.readlines():
 		draw.rectangle(bbox, fill="white")
 		draw.text((google_slide_width - plane.width, 0), text3, fill='black', font=font)
 
-		BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/combine_images_all/'+str(equip)+'/'
+		BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/combine_images_all_c/'+str(equip)+'/'
 		make_base_dir(BASE_DIR)
 		name= BASE_DIR + '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.png'
 
