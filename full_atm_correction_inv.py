@@ -5,11 +5,173 @@ import obspy
 import datetime
 from datetime import datetime, timezone
 from pyproj import Proj
-from prelude import *
+#from prelude import 
 from scipy.signal import find_peaks, spectrogram
 from plot_func import *
 from obspy.clients.nrl import NRL
 import os
+
+def invert_f(mprior, coords_array, num_iterations,sigma = 10):
+	"""
+	Inverts the function f using the given initial parameters and data array.
+
+	Args:
+		m0 (numpy.ndarray): Initial parameters for the function f.
+		coords_array (numpy.ndarray): Data picks along overtone doppler curve.
+		num_iterations (int): Number of iterations to perform.
+
+	Returns:
+		numpy.ndarray: The inverted parameters for the function f.
+	"""
+	w,_ = coords_array.shape
+	fobs = coords_array[:,1]
+	tobs = coords_array[:,0]
+
+	n = 0
+     
+	cprior = np.zeros((5,5))
+
+	for row in range(len(cprior)):
+		if row == 0:
+			cprior[row][row] = 5**2 #10
+		elif row == 1:
+			cprior[row][row] = 10**2 #800
+		elif row == 2:
+			cprior[row][row] = 800**2 #50
+		elif row == 3:
+			cprior[row][row] = 80**2 
+		else:
+			cprior[row][row] = 20**2
+	Cd = np.zeros((len(fobs), len(fobs)), int)
+	np.fill_diagonal(Cd, sigma**2)
+	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
+	while n < num_iterations:
+		m = mnew
+		fpred = []
+		G = np.zeros((w,5)) #partial derivative matrix of f with respect to m
+		#partial derivative matrix of f with respect to m 
+		for i in range(0,w):
+			f0 = m[0]
+			v0 = m[1]
+			l = m[2]
+			tprime0 = m[3]
+			c = m[4]
+			tprime = tobs[i]
+			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
+			
+			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
+
+			fpred.append(ft0p) 
+		Gm = G
+		# steepest ascent vector (Eq. 6.307 or 6.312)
+		gamma = cprior @ Gm.T @ Cd @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
+		#===================================================
+		# QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
+		# approximate curvature
+		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
+		dm = -la.inv(H) @ gamma
+		mnew = m + dm
+          
+		try:
+			covmlsq = (sigma**2)*la.inv(G.T@G)
+		except:
+			covmlsq = (sigma**2)*la.pinv(G.T@G)
+
+		n += 1
+		print(mnew)
+	F_m = Sd(fpred, fobs, len(fobs), sigma)
+	return mnew, covmlsq, F_m
+
+#####################################################################################################################################################################################################################################################################################################################
+
+def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 10):
+	"""
+	Performs inversion using all picked overtones. 
+
+	Args:
+		fobs (numpy.ndarray): Picked frequency values from individual overtone inversion picks.
+		tobs (numpy.ndarray): Picked time values from individual overtone inversion picks.
+		freqpeak (numpy.ndarray): Center time value of doppler curve for each overtone
+		peaks (numpy.ndarray): Value of the frequency at the center time of the doppler curve for each overtone.
+
+	Returns:
+		numpy.ndarray: The inverted parameters for the function f. Velocity of the aircraft, distance of closest approach, time of closest approach, and the fundamental frequency produced by the aircraft.
+		numpy.ndarray: The covariance matrix of the inverted parameters.
+		numpy.ndarray: The array of the fundamental frequency produced by the aircraft.
+	"""
+
+	qv = 0
+
+	cprior = np.zeros((w+4,w+4))
+
+	for row in range(len(cprior)):
+		if row == 0:
+			cprior[row][row] = 5**2 #10
+		elif row == 1:
+			cprior[row][row] = 200**2 #800
+		elif row == 2:
+			cprior[row][row] = 20**2 #50
+		elif row == 3:
+			cprior[row][row] = 20**2 #??
+		else:
+			cprior[row][row] = 3**2 #5
+	
+	Cd = np.zeros((len(fobs), len(fobs)), int)
+	np.fill_diagonal(Cd, sigma**2)
+	mnew = np.array(mprior)
+	
+	while qv < num_iterations:
+		G = np.zeros((0,w+4))
+		m = mnew
+		fpred = []
+		cum = 0
+		for p in range(w):
+			new_row = np.zeros(w+4)
+			f0 = f0_array[p]
+			
+			for j in range(cum,cum+peaks_assos[p]):
+				tprime = tobs[j]
+				t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+				ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+
+				f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0,v0,l,tprime0, tobs[j],c)
+                #reccheck cunstruction of this matrix and how we include all f0's
+				new_row[0] = f_derivev0
+				new_row[1] = f_derivel
+				new_row[2] = f_derivetprime0
+				new_row[3] = f_derivec
+				new_row[4+p] = f_derivef0
+						
+				G = np.vstack((G, new_row))
+						
+				fpred.append(ft0p)
+		
+			cum = cum + peaks_assos[p]
+
+		Gm = G
+		# steepest ascent vector (Eq. 6.307 or 6.312)
+		gamma = cprior @ Gm.T @ Cd @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
+		#===================================================
+		# QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
+		# approximate curvature
+		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
+		dm = -la.inv(H) @ gamma
+		mnew = m + dm
+        
+		v0 = mnew[0]
+		l = mnew[1]
+		tprime0 = mnew[2]
+		c = mnew[3]
+		f0_array = mnew[4:]
+
+		print(mnew)
+		qv += 1
+	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior))
+	F_m = Sd(fpred, fobs, len(fobs), sigma)
+	return mnew, covm, f0_array, F_m
+
 
 nrl = NRL()
 
