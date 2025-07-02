@@ -632,7 +632,7 @@ def calc_ft(times, tprime0, f0, v0, l, c):
 
 ###################################################################################################################################################################
 
-def Sd(dnew, dobs, ndata, tsigma):
+def Sd(dnew, dobs, ndata,m, mprior,cprior, tsigma):
 	"""
 	Calculate the data misfit using the predictions and observations.
 	MISFIT FUNCTION: least squares, Tarantola (2005), Eq. 6.251
@@ -645,6 +645,7 @@ def Sd(dnew, dobs, ndata, tsigma):
 	Returns:
 		float: Data misfit value.
 	"""
+
 	sigma_obs = tsigma * np.ones((ndata))  # standard deviations
 	cobs0 = np.diag(np.square(sigma_obs))  # diagonal covariance matrix
 
@@ -653,8 +654,18 @@ def Sd(dnew, dobs, ndata, tsigma):
 	dobs = np.array(dobs)
 	cobs = Cdfac * cobs0              # with normalization factor
 	icobs = la.inv(cobs)
-	sd = 0.5 * (dnew - dobs).T @ icobs @ (dnew - dobs)
-	return sd
+	icprior = la.inv(cprior)  # inverse covariance matrix for prior model with normalization factor
+	#data misfit
+	Sd = 0.5 * (dnew - dobs).T @ icobs @ (dnew - dobs)
+
+	# model misfit (related to regularization)
+
+	Sm = 0.5 * (m - mprior).T @ icprior @ (m - mprior)
+	print("Sm:", Sm)
+	print("Sd:", Sd)
+	# total misfit
+	S = Sd + Sm
+	return S
 
 ###################################################################################################################################################################
 

@@ -333,12 +333,14 @@ def invert_f(mprior, coords_array, c, num_iterations,sigma = 10):
 
 		n += 1
 		print(mnew)
-	F_m = Sd(fpred, fobs, len(fobs), sigma)
+
+	F_m = Sd(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+
 	return mnew, covmlsq, F_m
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 10):
+def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 5):
 	"""
 	Performs inversion using all picked overtones. 
 
@@ -358,15 +360,15 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 	cprior0 = np.zeros((w+3,w+3))
 
-	for row in range(len(cprior)):
+	for row in range(len(cprior0)):
 		if row == 0:
-			cprior0[row][row] = 10**2 #10
+			cprior0[row][row] = 2**2 #10 2
 		elif row == 1:
-			cprior0[row][row] = 800**2 #800
+			cprior0[row][row] = 20**2 #800 10
 		elif row == 2:
-			cprior0[row][row] = 80**2 #50
+			cprior0[row][row] = 40**2 #80
 		else:
-			cprior0[row][row] = 3**2 #5
+			cprior0[row][row] = 10**2 #5
 	cprior = cprior0 * (w+3)
 	Cd = np.zeros((len(fobs), len(fobs)), float)
 	np.fill_diagonal(Cd, sigma**2)
@@ -416,8 +418,10 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 		print(mnew)
 		qv += 1
+	mnew[1] = abs(mnew[1])  # Ensure distance is positive
+	l = mnew[1]  # Distance of closest approach
 	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior0))
-	F_m = Sd(fpred, fobs, len(fobs), sigma)
+    #model misfit high due to bad approximation of the prior model covariance specifically for t0 which is dependent on speed of sound
 	return mnew, covm, f0_array, F_m
 
 
@@ -789,7 +793,7 @@ for li in file_in.readlines():
     l = np.sqrt(dist_m**2 + (height_m)**2)
     c = speed_of_sound(Tc)
     try:
-        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=8, sigma=5)
+        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=12, sigma=5)
     except Exception as e:
         print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
         print('Error message:', e)
