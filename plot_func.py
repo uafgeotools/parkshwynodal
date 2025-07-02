@@ -155,7 +155,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-    
+    plt.show()
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
 

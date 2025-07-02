@@ -106,9 +106,9 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
     if med_df == "NaN":
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % covm[3]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0] + ' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % covm[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
 
     ax2.legend(loc='upper right',fontsize = 'small')
@@ -142,7 +142,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-
+    plt.show()
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
 
@@ -262,20 +262,11 @@ def df(f0,v0,l,tp0,tp,c):
     c**2 * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2) + v0**2 * np.sqrt(l**2 + 
     (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2))**2))
 
-    #derivative of f with respect to c
-    f_derivec = (f0*v0**2*(-2*l**4*v0**4 + 2*l**2*(tp-tp0)**2*v0**6 + c**6*(tp-tp0)*(l**2 + (tp-tp0)**2*v0**2)*np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4) + 
-    c**2*(4*l**4*v0**2 - (tp-tp0)**4*v0**6 + l**2*(tp-tp0)*v0**4*(3*tp - 3*tp0 - 4*np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))) - 
-    c**4*(l**2 + (tp-tp0)**2*v0**2)*(2*l**2 - 3*(tp-tp0)*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))))) / (c**2*(c - v0)*(c + v0)*
-    np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4)*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2)) / 
-    c**4))**2)/(c**2 - v0**2)**2)*(c*(-tp + tp0)*v0**2 + c*v0**2*np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4) - 
-    c**2*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))**2)/(c**2 - v0**2)**2) + 
-    v0**2*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))**2)/(c**2 - v0**2)**2))**2) 
-
-    return f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec
+    return f_derivef0, f_derivev0, f_derivel, f_derivetprime0
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def invert_f(mprior, coords_array, num_iterations,sigma = 10):
+def invert_f(mprior, coords_array, c, num_iterations,sigma = 10):
 	"""
 	Inverts the function f using the given initial parameters and data array.
 
@@ -291,44 +282,41 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
 
-	n = 0
-     
-	cprior = np.zeros((5,5))
+	n = 0 
+	cprior = np.zeros((4,4))
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 10**2 #10
+			cprior[row][row] = 5**2 #10
 		elif row == 1:
-			cprior[row][row] = 5**2 #800
+			cprior[row][row] = 10**2 #800
 		elif row == 2:
 			cprior[row][row] = 800**2 #50
-		elif row == 3:
-			cprior[row][row] = 80**2 
 		else:
-			cprior[row][row] = 30**2
+			cprior[row][row] = 80**2
 	Cd = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd, sigma**2)
 	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
 	while n < num_iterations:
 		m = mnew
 		fpred = []
-		G = np.zeros((w,5)) #partial derivative matrix of f with respect to m
+		G = np.zeros((w,4)) #partial derivative matrix of f with respect to m
 		#partial derivative matrix of f with respect to m 
 		for i in range(0,w):
 			f0 = m[0]
 			v0 = m[1]
 			l = m[2]
 			tprime0 = m[3]
-			c = m[4]
 			tprime = tobs[i]
 			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
-			
-			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
+			f_derivef0, f_derivev0, f_derivel, f_derivetprime0 = df(m[0], m[1], m[2], m[3], tobs[i],c)
+
+			G[i,0:4] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0]
 
 			fpred.append(ft0p) 
 		Gm = G
+        
 		# steepest ascent vector (Eq. 6.307 or 6.312)
 		gamma = cprior @ Gm.T @ Cd @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
 		#===================================================
@@ -350,7 +338,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 0.1):
+def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 10):
 	"""
 	Performs inversion using all picked overtones. 
 
@@ -368,31 +356,29 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 	qv = 0
 
-	cprior = np.zeros((w+4,w+4))
+	cprior0 = np.zeros((w+3,w+3))
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 0**2 #10
+			cprior0[row][row] = 10**2 #10
 		elif row == 1:
-			cprior[row][row] = 20**2 #800
+			cprior0[row][row] = 800**2 #800
 		elif row == 2:
-			cprior[row][row] = 40**2 #50
-		elif row == 3:
-			cprior[row][row] = 30**2 #??
+			cprior0[row][row] = 80**2 #50
 		else:
-			cprior[row][row] = 2**2 #5
-	
+			cprior0[row][row] = 3**2 #5
+	cprior = cprior0 * (w+3)
 	Cd = np.zeros((len(fobs), len(fobs)), float)
 	np.fill_diagonal(Cd, sigma**2)
 	mnew = np.array(mprior)
 	
 	while qv < num_iterations:
-		G = np.zeros((0,w+4))
+		G = np.zeros((0,w+3))
 		m = mnew
 		fpred = []
 		cum = 0
 		for p in range(w):
-			new_row = np.zeros(w+4)
+			new_row = np.zeros(w+3)
 			f0 = f0_array[p]
 			
 			for j in range(cum,cum+peaks_assos[p]):
@@ -400,13 +386,12 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 				t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 				ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
-				f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0,v0,l,tprime0, tobs[j],c)
-                #reccheck cunstruction of this matrix and how we include all f0's
+				f_derivef0, f_derivev0, f_derivel, f_derivetprime0 = df(f0,v0,l,tprime0, tobs[j],c)
+
 				new_row[0] = f_derivev0
 				new_row[1] = f_derivel
 				new_row[2] = f_derivetprime0
-				new_row[3] = f_derivec
-				new_row[4+p] = f_derivef0
+				new_row[3+p] = f_derivef0
 						
 				G = np.vstack((G, new_row))
 						
@@ -422,19 +407,16 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		# approximate curvature
 		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
 		dm = -la.inv(H) @ gamma
-		mu = 0.1
-		mnew = m + mu*dm
-
+		mnew = m + dm
         
 		v0 = mnew[0]
 		l = mnew[1]
 		tprime0 = mnew[2]
-		c = mnew[3]
-		f0_array = mnew[4:]
+		f0_array = mnew[3:]
 
 		print(mnew)
 		qv += 1
-	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior))
+	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior0))
 	F_m = Sd(fpred, fobs, len(fobs), sigma)
 	return mnew, covm, f0_array, F_m
 
@@ -491,7 +473,7 @@ for li in file_in.readlines():
     lon, lat = utm_proj(x, y, inverse=True)
 
     #if rerun_fig == False:
-    output = open('output/with_c_quasi/' + equip + 'data_atmosphere_full.csv', 'a')
+    output = open('output/quasi/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
@@ -649,14 +631,13 @@ for li in file_in.readlines():
     coords_array = np.array(coords)
 
     f0 = 116
-    m0 = [f0, v0, l, tprime0, c]
+    m0 = [f0, v0, l, tprime0]
 
-    m,covm, F_m = invert_f(m0, coords_array, num_iterations=8)
+    m,covm, F_m = invert_f(m0, coords_array, c, num_iterations=8)
     f0 = m[0]
     v0 = m[1]
     l = m[2]
     tprime0 = m[3]
-    c = m[4]
     
     ft = calc_ft(times, tprime0, f0, v0, l, c)
     if isinstance(sta, int):
@@ -688,12 +669,12 @@ for li in file_in.readlines():
 
         coord_inv_array = np.array(coord_inv)
 
-        m,_,F_m = invert_f(m0, coord_inv_array,num_iterations=12)
+        m,_,F_m = invert_f(m0, coord_inv_array,c,num_iterations=12)
         f0 = m[0]
         v0 = m[1]
         l = m[2]
         tprime0 = m[3]
-        c = m[4]
+ 
 
         ft = calc_ft(times, tprime0, f0, v0, l, c)
         
@@ -705,19 +686,18 @@ for li in file_in.readlines():
                 new_coord_inv_array.append(coord_inv_array[i])
         coord_inv_array = np.array(new_coord_inv_array)
 
-        m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=12, sigma=5)
+        m,covm,F_m = invert_f(m0, coord_inv_array, c, num_iterations=12, sigma=5)
         
         f0 = m[0]
         v0 = m[1]
         l = m[2]
         tprime0 = m[3]
-        c = m[4]
+
 
     mprior = []
     mprior.append(v0)
     mprior.append(l)
-    mprior.append(tprime0) 
-    mprior.append(c)      
+    mprior.append(tprime0)     
 
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
 
@@ -775,9 +755,9 @@ for li in file_in.readlines():
         if len(coord_inv) > 0:
             if f0 < 200:
                 coord_inv_array = np.array(coord_inv)
-                mtest = [f0,v0, l, tprime0,c]
-                mtest,_, F_m = invert_f(mtest, coord_inv_array, num_iterations=4)
-                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
+                mtest = [f0,v0, l, tprime0]
+                mtest,_, F_m = invert_f(mtest, coord_inv_array, c, num_iterations=4)
+                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], c)
             else:
                 ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
 
@@ -808,15 +788,15 @@ for li in file_in.readlines():
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
     c = speed_of_sound(Tc)
-
-    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=6, sigma=5)
-    #except:
-    #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
-    #    continue
+    try:
+        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=8, sigma=5)
+    except Exception as e:
+        print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
+        print('Error message:', e)
+        continue
     v0 = m[0]
     l = m[1]
     tprime0 = m[2]
-    c = m[3]
     covm = np.sqrt(np.diag(covm))
 
     closest_index = np.argmin(np.abs(tprime0 - times))
@@ -825,11 +805,11 @@ for li in file_in.readlines():
         if arrive_time[i] < 0:
             arrive_time[i] = 0
 
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi_vlconst/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/quasi/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
-    qnum = "__"
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi_vlconst/spectrum/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/quasi/spectrum/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     

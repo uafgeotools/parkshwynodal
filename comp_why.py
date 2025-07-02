@@ -43,8 +43,11 @@ def fit_l1_line(x, y, bounds=None):
     # Extract the slope and intercept from the result
     m, b = result.x
     return m, b
+seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
+stations = seismo_data['Station']
+elevations = seismo_data['Elevation']
 
-file = open('output/with_c/DH8Adata_atmosphere_full.txt','r')
+file = open('output/with_c_quasi/DH8Adata_atmosphere_full.txt','r')
 
 inverse_times = []
 inverse_dists = []
@@ -89,12 +92,15 @@ fr_speeds = []
 for line in file_in.readlines():
     text = line.split(',')
     flight_id = text[1]
+    sta = text[9]
+    index = stations[stations == sta].index[0]
+    elev = float(elevations[index])
     closest_time = float(text[5])
     if flight_id not in flight_nums and closest_time not in comp_times:
         continue
     index = comp_times.index(closest_time)
     c = c_array[index]
-    fr_dists.append(abs(np.sqrt(float(text[4])**2 + float(text[6])**2)))
+    fr_dists.append(abs(np.sqrt(float(text[4])**2 + (float(text[6])-elev)**2)))
 
     fr_speeds.append(float(text[7]))
     ta_old = calc_time(float(closest_time),float(text[4]),float(text[5]),float(c))
