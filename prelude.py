@@ -632,7 +632,7 @@ def calc_ft(times, tprime0, f0, v0, l, c):
 
 ###################################################################################################################################################################
 
-def Sd(dnew, dobs, ndata,m, mprior,cprior, tsigma):
+def S(dnew, dobs, ndata,m, mprior,cprior, tsigma):
 	"""
 	Calculate the data misfit using the predictions and observations.
 	MISFIT FUNCTION: least squares, Tarantola (2005), Eq. 6.251
@@ -661,11 +661,13 @@ def Sd(dnew, dobs, ndata,m, mprior,cprior, tsigma):
 	# model misfit (related to regularization)
 
 	Sm = 0.5 * (m - mprior).T @ icprior @ (m - mprior)
-	print("Sm:", Sm)
-	print("Sd:", Sd)
+
+	print("Model Misfit:", Sm)
+	print("Data Misfit:", Sd)
 	# total misfit
 	S = Sd + Sm
-	return S
+	print("Total Misfit:", S)
+	return Sd
 
 ###################################################################################################################################################################
 
@@ -783,7 +785,7 @@ def invert_f(m0, coords_array, c, num_iterations,sigma = 3):
 		print(m)
 		m0 = m
 		n += 1
-	F_m = Sd(fnew, fobs, len(fobs), sigma)
+	F_m = S(fnew, fobs, len(fobs), sigma)
 	return m, covmlsq, F_m
 
 #####################################################################################################################################################################################################################################################################################################################
@@ -858,7 +860,7 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		print(m)
 		qv += 1
 	covm = la.inv(G.T@la.inv(Cd)@G + la.inv(cprior))
-	F_m = Sd(fnew, fobs, len(fobs), sigma)
+	F_m = S(fnew, fobs, len(fobs), sigma)
 	return m, covm, f0_array, F_m
 
 ########################################################################################################################################################################################

@@ -9,7 +9,7 @@ from pyproj import Proj
 from matplotlib import pyplot as plt
 from datetime import datetime, timezone
 from pyproj import Proj
-from prelude import calc_ft, Sd, calc_time, speed_of_sound, calc_f0, make_base_dir
+from prelude import calc_ft, S, calc_time, speed_of_sound, calc_f0, make_base_dir
 from scipy.signal import find_peaks, spectrogram
 from plot_func import doppler_picks, overtone_picks, time_picks, remove_median
 from obspy.clients.nrl import NRL
@@ -232,7 +232,7 @@ def df(f0,v0,l,tp0,tp,c):
 	Returns:
 	tuple: A tuple containing the derivatives of f with respect to f0, v0, l, and tp0.
 	"""
-
+    #print('f0: ', f0, 'v0: ', v0, 'l: ', l, 'tp0: ', tp0)
     #derivative with respect to f0
     f_derivef0 = (1 / (1 - (c * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))) /((c**2 - v0**2) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))**2) / (c**2 - v0**2)**2))))
 
@@ -261,7 +261,7 @@ def df(f0,v0,l,tp0,tp,c):
     (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2) * (c * (-tp + tp0) * v0**2 + c * v0**2 * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4) - 
     c**2 * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2) + v0**2 * np.sqrt(l**2 + 
     (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2))**2))
-
+    #print('f_derivef0: ', f_derivef0, 'f_derivev0: ', f_derivev0, 'f_derivel: ', f_derivel, 'f_derivetprime0: ', f_derivetprime0)
     return f_derivef0, f_derivev0, f_derivel, f_derivetprime0
 
 #####################################################################################################################################################################################################################################################################################################################
@@ -334,7 +334,7 @@ def invert_f(mprior, coords_array, c, num_iterations,sigma = 10):
 		n += 1
 		print(mnew)
 
-	F_m = Sd(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 
 	return mnew, covmlsq, F_m
 
@@ -370,10 +370,10 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		else:
 			cprior0[row][row] = 10**2 #5
 	cprior = cprior0 * (w+3)
-	Cd = np.zeros((len(fobs), len(fobs)), float)
-	np.fill_diagonal(Cd, sigma**2)
+	Cd0 = np.zeros((len(fobs), len(fobs)), float)
+	np.fill_diagonal(Cd0, sigma**2)
 	mnew = np.array(mprior)
-	
+	Cd = Cd0*(len(fobs))
 	while qv < num_iterations:
 		G = np.zeros((0,w+3))
 		m = mnew
@@ -419,8 +419,9 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		print(mnew)
 		qv += 1
 	mnew[1] = abs(mnew[1])  # Ensure distance is positive
-	l = mnew[1]  # Distance of closest approach
-	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior0))
+	l = mnew[1]  # Distance of closest approach'
+	covm = la.pinv(G.T@la.pinv(Cd0)@G + la.pinv(cprior0))
+	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
     #model misfit high due to bad approximation of the prior model covariance specifically for t0 which is dependent on speed of sound
 	return mnew, covm, f0_array, F_m
 
@@ -477,7 +478,7 @@ for li in file_in.readlines():
     lon, lat = utm_proj(x, y, inverse=True)
 
     #if rerun_fig == False:
-    output = open('output/quasi/' + equip + 'data_atmosphere_full.csv', 'a')
+    #output = open('output/quasi/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
@@ -787,11 +788,22 @@ for li in file_in.readlines():
     if len(tobs) == len(tobs_hold):
         continue
 
-    tprime0 = tarrive-start_time
+    #tprime0 = float(tarrive-start_time)
     v0 = speed_mps
     height_m = alt - elev
-    l = np.sqrt(dist_m**2 + (height_m)**2)
+    l = float((dist_m**2 + (height_m)**2)**0.5)
     c = speed_of_sound(Tc)
+    mprior = []
+    c = 322.68
+    mprior.append(v0)
+    mprior.append(l)
+    mprior.append(tprime0)
+    for o in range(len(peaks_assos)):
+        tprime = freqpeak[o]
+        ft0p = peaks[o]
+        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        mprior.append(float(f0))
+    print(mprior)
     try:
         m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=12, sigma=5)
     except Exception as e:
@@ -818,7 +830,7 @@ for li in file_in.readlines():
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
     #if rerun_fig == False:
-    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+    #output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
     #if rerun_fig == False:
-    output.close()
+    #output.close()
