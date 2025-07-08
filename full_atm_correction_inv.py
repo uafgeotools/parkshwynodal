@@ -81,7 +81,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 		n += 1
 		print(mnew)
-	F_m = Sd(fpred, fobs, len(fobs), sigma)
+	F_m = S(fpred, fobs, len(fobs), sigma)
 	return mnew, covmlsq, F_m
 
 #####################################################################################################################################################################################################################################################################################################################
@@ -169,7 +169,7 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		print(mnew)
 		qv += 1
 	covm = la.pinv(G.T@la.pinv(Cd)@G + la.pinv(cprior))
-	F_m = Sd(fpred, fobs, len(fobs), sigma)
+	F_m = S(fpred, fobs, len(fobs), sigma)
 	return mnew, covm, f0_array, F_m
 
 
