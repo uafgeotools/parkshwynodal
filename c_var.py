@@ -142,7 +142,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-
+    plt.show()
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
 
@@ -372,13 +372,13 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 	for row in range(len(cprior0)):
 		if row == 0:
-			cprior0[row][row] = 1**2 #10
+			cprior0[row][row] = 10**2 #10
 		elif row == 1:
-			cprior0[row][row] = 20**2 #800
+			cprior0[row][row] = 200**2 #800
 		elif row == 2:
 			cprior0[row][row] = 40**2 #50
 		elif row == 3:
-			cprior0[row][row] = 30**2 #??
+			cprior0[row][row] = 1**2 #??
 		else:
 			cprior0[row][row] = 10**2 #5
 	cprior = cprior0 * (w+3)
@@ -491,7 +491,7 @@ for li in file_in.readlines():
     lon, lat = utm_proj(x, y, inverse=True)
 
     #if rerun_fig == False:
-    output = open('output/with_c_quasi/' + equip + 'data_atmosphere_full.csv', 'a')
+    output = open('output/with_c_quasi/v10_l200_t40_c1_f10/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
