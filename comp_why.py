@@ -47,7 +47,7 @@ seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
 
-file = open('output/with_c_quasi/DH8Adata_atmosphere_full.txt','r')
+file = open('output/with_c_quasi/DH8Adata_atmosphere_full1.txt','r')
 
 inverse_times = []
 inverse_dists = []
