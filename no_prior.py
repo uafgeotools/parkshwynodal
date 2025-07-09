@@ -76,11 +76,11 @@ def invert_f(mprior, coords_array, c, num_iterations,sigma = 10):
 
 	for row in range(len(cprior)):
 		if row == 0:
-			cprior[row][row] = 100**2 
+			cprior[row][row] = 50**2 
 		elif row == 1:
-			cprior[row][row] = 80**2 
+			cprior[row][row] = 40**2 
 		elif row == 2:
-			cprior[row][row] = 1000**2 
+			cprior[row][row] = 800**2 
 		else:
 			cprior[row][row] = 80**2
 	Cd = np.zeros((len(fobs), len(fobs)), int)
@@ -178,14 +178,14 @@ while pick_again == 'y':
 coords_array = np.array(coords)
 
 #insert method to get initial model here
-f0 = coords_array[0,1]
+f0 = abs(coords_array[1,1]+coords_array[2,1])/2
 tprime0 = coords_array[0,0] 
-v0 = c*abs(coords_array[1,1]-coords_array[2,1]) / 2 * f0
+v0 = c*abs(coords_array[1,1]-coords_array[2,1]) / (2 * f0)
 slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
-l = ## distance of closest approach in meters
+l = (c**2*f0*v0**2*np.sqrt(c**2 - v0**2)/(c**2 - v0**2)**2)/slope
 
 m0 = [f0, v0, l, tprime0]
-
+print('Initial model:', m0)
 m, covm, F_m = invert_f(m0, coords_array, c, num_iterations=8)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], c)
 
@@ -200,9 +200,10 @@ for t_f in range(len(times)):
     if upper > len(frequencies):
         upper = len(frequencies)
     tt = spec[lower:upper, t_f]
-
-    max_amplitude_index = np.argmax(tt)
-    
+    try:
+        max_amplitude_index = np.argmax(tt)
+    except:
+        continue
     max_amplitude_frequency = frequencies[max_amplitude_index+lower]
     peaks.append(max_amplitude_frequency)
     coord_inv.append((times[t_f], max_amplitude_frequency))
@@ -229,8 +230,6 @@ l = m[2]
 tprime0 = m[3]
 covm = np.sqrt(np.diag(covm))
 
-vmin = np.min(tprime0) 
-vmax = np.max(tprime0)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
@@ -243,7 +242,7 @@ ax1.set_position([0.125, 0.6, 0.775, 0.3])  # Move ax1 plot upwards
 # Plot spectrogram
 cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
 ax2.set_xlabel('Time (s)')
-f0lab = []
+
 ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
 
 ft = calc_ft(times, tprime0, f0, v0, l, c)
