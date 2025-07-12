@@ -76,23 +76,37 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 	w,_ = coords_array.shape
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
-
 	n = 0
-     
+
+	f0_prior = 30
+	v0_prior = 50
+	l_prior = 10000
+	tprime0_prior = 60
+	c_prior = 30
 	cprior0 = np.zeros((5,5))
 
-	for row in range(len(cprior0)):
-		if row == 0:
-			cprior0[row][row] = 100**2 
-		elif row == 1:
-			cprior0[row][row] = 100**2 
-		elif row == 2:
-			cprior0[row][row] = 10000**2 
-		elif row == 3:
-			cprior0[row][row] = 100**2 
-		else:
-			cprior0[row][row] =50**2
-                  
+	cprior0[0][0] = f0_prior**2
+	cprior0[0][1] = -0.05*v0_prior*f0_prior
+	cprior0[0][2] = -0.05*l_prior*f0_prior
+	cprior0[0][3] =  -0.25*f0_prior*tprime0_prior
+
+	cprior0[1][1] = v0_prior**2
+	cprior0[1][0] = -0.05*f0_prior*v0_prior
+	cprior0[1][2] = -0.8*v0_prior*l_prior
+	cprior0[1][4] = -0.8*v0_prior*c_prior
+	
+	cprior0[2][2] = l_prior**2
+	cprior0[2][0] = -0.05*f0_prior*l_prior
+	cprior0[2][1] = -0.8*v0_prior*l_prior
+	cprior0[2][4] = -0.8*l_prior*c_prior
+
+	cprior0[3][3] = tprime0_prior**2
+	cprior0[3][0] =  -0.25*f0_prior*tprime0_prior
+      
+	cprior0[4][2] = -0.8*l_prior*c_prior     
+	cprior0[4][4] = c_prior**2
+	cprior0[4][1] = -0.8*v0_prior*c_prior
+      
 	cprior = cprior0 * (w+5)
 	Cd0 = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd0, sigma**2)
@@ -228,8 +242,34 @@ v0 = m[1]
 l = m[2]
 tprime0 = m[3]
 c = m[4]
-covm = np.sqrt(np.diag(covm))
+#covm = np.sqrt(np.diag(covm))
+nx,ny = covm.shape
 
+
+sigma = np.sqrt(np.diag(covm))
+outer_v = np.outer(sigma,sigma)
+Crho = covm / outer_v
+
+Crho[covm == 0] = 0
+#return Crho
+
+gridlines=False
+colormap='seismic'
+plt.figure(figsize=(10, 10))
+plt.imshow(Crho,cmap=colormap)
+plt.xticks(ticks=range(np.shape(Crho)[1]),labels=[str(val) for val in range(1,np.shape(Crho)[1]+1)])
+plt.yticks(ticks=range(np.shape(Crho)[0]),labels=[str(val) for val in range(1,np.shape(Crho)[0]+1)])
+if gridlines:
+	xgrid = np.array(range(np.shape(Crho)[1] + 1)) - 0.5
+	ygrid = np.array(range(np.shape(Crho)[0] + 1)) - 0.5
+	for gridline in xgrid:
+		plt.axvline(x=gridline,color='k',linewidth=1)
+	for gridline in ygrid:
+		plt.axhline(y=gridline,color='k',linewidth=1)
+plt.colorbar()
+plt.show()
+plt.close()
+covm = np.sqrt(np.diag(covm))
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
 ax1.plot(torg, data, 'k', linewidth=0.5)
