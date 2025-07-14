@@ -422,7 +422,7 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 		# approximate curvature
 		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
 		dm = -la.inv(H) @ gamma
-		mu = 0.1
+		mu = 1
 		mnew = m + mu*dm
 
         
