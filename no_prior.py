@@ -80,34 +80,35 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 	f0_prior = 30
 	v0_prior = 50
-	l_prior = 10000
-	tprime0_prior = 60
-	c_prior = 30
+	l_prior = 1000
+	tprime0_prior = 30
+	c_prior = 51
 	cprior0 = np.zeros((5,5))
 
 	cprior0[0][0] = f0_prior**2
-	cprior0[0][1] = -0.05*v0_prior*f0_prior
-	cprior0[0][2] = -0.05*l_prior*f0_prior
-	cprior0[0][3] =  -0.25*f0_prior*tprime0_prior
+	#cprior0[0][1] = -0.01*v0_prior*f0_prior
+	#cprior0[0][2] = 0.01*l_prior*f0_prior
+	cprior0[0][3] =  -0.4*f0_prior*tprime0_prior
 
 	cprior0[1][1] = v0_prior**2
-	cprior0[1][0] = -0.05*f0_prior*v0_prior
-	cprior0[1][2] = -0.8*v0_prior*l_prior
-	cprior0[1][4] = -0.8*v0_prior*c_prior
+	#cprior0[1][0] = -0.01*f0_prior*v0_prior
+	cprior0[1][2] = -0.9*v0_prior*l_prior
+	cprior0[1][4] = 0.9*v0_prior*c_prior
 	
 	cprior0[2][2] = l_prior**2
-	cprior0[2][0] = -0.05*f0_prior*l_prior
-	cprior0[2][1] = -0.8*v0_prior*l_prior
-	cprior0[2][4] = -0.8*l_prior*c_prior
+	#cprior0[2][0] = 0.01*f0_prior*l_prior
+	cprior0[2][1] = -0.9*v0_prior*l_prior
+	cprior0[2][4] = -0.9*l_prior*c_prior
 
 	cprior0[3][3] = tprime0_prior**2
-	cprior0[3][0] =  -0.25*f0_prior*tprime0_prior
+	cprior0[3][0] =  -0.4*f0_prior*tprime0_prior
       
-	cprior0[4][2] = -0.8*l_prior*c_prior     
 	cprior0[4][4] = c_prior**2
-	cprior0[4][1] = -0.8*v0_prior*c_prior
-      
+	cprior0[4][1] = 0.9*v0_prior*c_prior
+	cprior0[4][2] = -0.9*l_prior*c_prior     
+
 	cprior = cprior0 * (w+5)
+	print('cprior:', cprior)
 	Cd0 = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd0, sigma**2)
 	Cd = Cd0*(len(fobs))
@@ -235,7 +236,7 @@ for i in range(len(delf)):
         new_coord_inv_array.append(coord_inv_array[i])
 coord_inv_array = np.array(new_coord_inv_array)
 
-m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=12, sigma=3)
+m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=20, sigma=3)
 print(covm)
 f0 = m[0]
 v0 = m[1]
