@@ -16,8 +16,18 @@ def speed_of_sound(Tc):
     return c
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-temp_array = []
-c_array = []
+seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
+seismo_latitudes = seismo_data['Latitude']
+seismo_longitudes = seismo_data['Longitude']
+station_elevations = seismo_data['Elevation']
+stations = seismo_data['Station']
+
+air_temp_array = []
+air_wind_array = []
+air_c_array = []
+sta_temp_array = []
+sta_wind_array = []
+sta_c_array = []
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 for li in file_in.readlines():
     text = li.split(',')
@@ -26,6 +36,14 @@ for li in file_in.readlines():
     sta = text[9]
     time = float(text[5])
     start_time = time - 120
+
+    for i, station in enumerate(stations):
+        if str(station) == str(sta):
+            index = i
+            break
+
+    sta_lat = seismo_latitudes[index]
+    sta_lon = seismo_longitudes[index]
 
     # Print the converted latitude and longitude
     ht = datetime.fromtimestamp(time, tz=timezone.utc)
@@ -38,63 +56,144 @@ for li in file_in.readlines():
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
 
-    input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat'
-    try:
-        file =  open(input_files, 'r') #as file:
-    except:
+    input_files = ['/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat','/scratch/irseppi/nodal_data/plane_info/atmosphere_data_nodes/' + str(time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat']
+
+    if os.path.exists(input_files[0]):
+        if os.path.exists(input_files[1]):
+            pass
+        else:
+            print('No file for: ', date, flight_num, sta)
+            continue
+    else:
         print('No file for: ', date, flight_num, sta)
         continue
-    data = json.load(file)
+    for ii,input_file in enumerate(input_files):
+        file = open(input_file, 'r')
+        data = json.load(file)
 
-    # Extract metadata
-    metadata = data['metadata']
-    sourcefile = metadata['sourcefile']
-    datetim = metadata['time']['datetime']
-    latitude = metadata['location']['latitude']
-    longitude = metadata['location']['longitude']
-    parameters = metadata['parameters']
+        # Extract metadata
+        metadata = data['metadata']
+        parameters = metadata['parameters']
 
-    # Extract data
-    data_list = data['data']
+        # Extract data
+        data_list = data['data']
 
-    # Convert data to a DataFrame
-    data_frame = pd.DataFrame(data_list)
+        # Convert data to a DataFrame
+        data_frame = pd.DataFrame(data_list)
 
-    # Find the "Z" parameter and extract the value at index
-    z_index = None
-    hold = np.inf
-    for item in data_list:
-        if item['parameter'] == 'Z':
-            for i in range(len(item['values'])):
-                if abs(float(item['values'][i]) - float(alt)) < hold:
-                    hold = abs(float(item['values'][i]) - float(alt))
-                    z_index = i
+        if ii == 0:
+            # Find the "Z" parameter and extract the value at index
+            z_index = None
+            hold = np.inf
+            for item in data_list:
+                if item['parameter'] == 'Z':
+                    for i in range(len(item['values'])):
+                        if abs(float(item['values'][i]) - float(alt)) < hold:
+                            hold = abs(float(item['values'][i]) - float(alt))
+                            z_index = i
 
-    for item in data_list:
-        if item['parameter'] == 'T':
-            Tc = - 273.15 + float(item['values'][z_index])
-            temp = Tc
-            Tc_low = - 273.15 + float(item['values'][1])
-    c = speed_of_sound(Tc)
-    c_low = speed_of_sound(Tc_low)
-    sound_speed = c
-    print(f"Speed of sound: {c} m/s")
-    print(f"Speed of sound low: {c_low} m/s")
-    print(f"Temperature: {Tc} degrees Celsius")
-    print(f"Temperature_low: {Tc_low} degrees Celsius")
-    temp_array.append(Tc)
-    c_array.append(c)
-    file.close()
-plt.figure()
-plt.hist(temp_array, bins=20)
-median_temp = np.median(temp_array)
-plt.axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
-plt.legend()
-plt.show()
+            for item in data_list:
+                if item['parameter'] == 'T':
+                    Tc_air = - 273.15 + float(item['values'][z_index])
+                elif item['parameter'] == 'V':
+                    meridional_winds = float(item['values'][z_index])
+                elif item['parameter'] == 'U':
+                    zonal_winds = float(item['values'][z_index])
+            if zonal_winds > 0:
+                v1_angle = 90
+            else:
+                v1_angle = 270
+            if meridional_winds > 0:
+                v2_angle = 0
+            else:
+                v2_angle = 180
+            wind_air, az_air = add_vectors(zonal_winds, v1_angle, meridional_winds, v2_angle)
+            c_air = speed_of_sound(Tc_air)
+            air_temp_array.append(Tc_air)
+            air_c_array.append(c_air)
+            #Figure out component of wind in direction of station (90 degrees to heading direction?)
+            air_wind_array.append(abs(wind_air))
+            file.close()
 
-plt.figure()
-plt.hist(c_array,bins=20)
-median_c = np.median(c_array)
-plt.axvline(median_c, color='r', linestyle='--', label=str(median_c))
-plt.legend()
+        else:
+            # Find the "T" parameter and extract the value at index
+            for item in data_list:
+                # Find the "Z" parameter and extract the value at index
+                z_index = None
+                hold = np.inf
+                for item in data_list:
+                    if item['parameter'] == 'Z0':
+                        ground_height = float(item['values'][0])
+                        break 
+
+                for item in data_list:
+                    if item['parameter'] == 'Z':
+                        for i in range(len(item['values'])):
+                            if abs(float(item['values'][i]) - float(ground_height)) < hold:
+                                hold = abs(float(item['values'][i]) - float(ground_height))
+                                z_index = i
+                for item in data_list:
+                    if item['parameter'] == 'T':
+                        Tc_sta = - 273.15 + float(item['values'][z_index])
+                    elif item['parameter'] == 'V':
+                        meridional_winds = float(item['values'][z_index])
+                    elif item['parameter'] == 'U':
+                            zonal_winds = float(item['values'][z_index])
+            if zonal_winds > 0:
+                v1_angle = 90
+            else:
+                v1_angle = 270
+            if meridional_winds > 0:
+                v2_angle = 0
+            else:
+                v2_angle = 180
+            wind_sta, az_sta = add_vectors(zonal_winds, v1_angle, meridional_winds, v2_angle)
+            c_sta = speed_of_sound(Tc_sta)
+            sta_temp_array.append(Tc_sta)
+            sta_c_array.append(c_sta)
+            sta_wind_array.append(abs(wind_sta))
+            file.close()
+
+fig, ax = plt.subplots(3,3, figsize=(15, 10), sharex=False, sharey=False)
+ax[0, 0].hist(air_temp_array, bins=20)
+median_temp = np.median(air_temp_array)
+ax[0, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
+ax[0, 0].set_title('Temperature Distribution')
+ax[0, 0].set_ylabel('Aircraft Location Data')
+
+ax[0, 1].hist(air_wind_array, bins=20)
+median_wind = np.median(air_wind_array)
+ax[0, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
+ax[0, 1].set_title('Wind Speed Distribution')
+
+ax[0, 2].hist(air_c_array, bins=20)
+median_c = np.median(air_c_array)
+ax[0, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
+ax[0, 2].set_title('Speed of Sound Distribution')
+
+ax[1, 0].hist(sta_temp_array, bins=20)
+median_temp = np.median(sta_temp_array)
+ax[1, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
+ax[1, 0].set_ylabel('Station Location Data')
+
+ax[1, 1].hist(sta_wind_array, bins=20)
+median_wind = np.median(sta_wind_array)
+ax[1, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
+
+ax[1, 2].hist(sta_c_array, bins=20)
+median_c = np.median(sta_c_array)
+ax[1, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
+
+ax[2, 0].hist(np.array(air_temp_array)-np.array(sta_temp_array), bins=20)
+median_temp = np.median(np.array(air_temp_array)-np.array(sta_temp_array))
+ax[2, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
+ax[2, 0].set_ylabel('Difference (Aircraft - Station)')
+
+ax[2, 1].hist(np.array(air_wind_array) - np.array(sta_wind_array), bins=20)
+median_wind = np.median(np.array(air_wind_array) - np.array(sta_wind_array))
+ax[2, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
+
+ax[2, 2].hist(np.array(air_c_array) - np.array(sta_c_array), bins=20)
+median_c = np.median(np.array(air_c_array) - np.array(sta_c_array))
+ax[2, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
 plt.show()
