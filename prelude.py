@@ -97,21 +97,18 @@ def add_wind_vector(zonal_winds, meridional_winds):
 	Adds two vectors given their magnitudes and directions (angles in degrees, clockwise from the positive y-axis).
 
 	Args:
-		v1_magnitude (float): Magnitude of the first vector.
-		v1_angle (float): Direction angle (in degrees, clockwise from the positive y-axis) of the first vector.
-		v2_magnitude (float): Magnitude of the second vector.
-		v2_angle (float): Direction angle (in degrees, clockwise from the positive y-axis) of the second vector.
+		zonal_winds (float): Magnitude of winds eastward.
+		meridional_winds (float): Magnitude of winds northward.
 
 	Returns:
-		tuple: A tuple containing the magnitude and direction (angle in degrees, clockwise from the positive y-axis) 
-			   of the resultant vector.
+		tuple: A tuple containing the magnitude and direction (angle in degrees, clockwise from North).
 	"""
 
 	# Calculate magnitude of the resultant vector
 	resultant_magnitude = math.sqrt(zonal_winds **2 + meridional_winds **2)
 
 	# Calculate direction (angle) of the resultant vector
-	resultant_angle_rad = math.atan2(meridional_winds,zonal_winds)                                 							# Here, we swap dx and dy to get angle from Y-axis (North)
+	resultant_angle_rad = math.atan2(meridional_winds,zonal_winds)                                 							
 	resultant_angle_deg = (90 - math.degrees(resultant_angle_rad)) % 360
 
 	return resultant_magnitude, resultant_angle_deg
