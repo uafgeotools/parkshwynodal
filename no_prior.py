@@ -24,10 +24,10 @@ def df(f0,v0,l,tp0,tp,c):
 	"""
     #print('f0: ', f0, 'v0: ', v0, 'l: ', l, 'tp0: ', tp0)
     #derivative with respect to f0
-    f_derivef0 = (1 / (1 - (c * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))) /((c**2 - v0**2) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))**2) / (c**2 - v0**2)**2))))
+    f_derivef0 = (1 / (1 - (c * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2  + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))) /((c**2 - v0**2) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))**2) / (c**2 - v0**2)**2))))
 
     #derivative of f with respect to v0
-    f_derivev0 = (-f0 * v0 * (-2 * l**4 * v0**4 + l**2 * (tp - tp0)**2 * v0**6 + c**6 * (tp - tp0) * (2 * l**2 + (tp - tp0)**2 * v0**2) * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4) + 
+    f_derivev0 = -(f0 * v0 * (-2 * l**4 * v0**4 + l**2 * (tp - tp0)**2 * v0**6 + c**6 * (tp - tp0) * (2 * l**2 + (tp - tp0)**2 * v0**2) * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4) + 
     c**2 * (4 * l**4 * v0**2 - (tp - tp0)**4 * v0**6 + l**2 * (tp - tp0) * v0**4 * (5 * tp - 5 * tp0 - 3 * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))) - c**4 * 
     (2 * l**4 - 3 * (tp - tp0)**3 * v0**4 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4)) - l**2 * (tp - tp0) * v0**2 * (-6 * tp + 6 * tp0 + np.sqrt((-l**2 * v0**2 + c**2 * 
     (l**2 + (tp - tp0)**2 * v0**2))/c**4)))) / (c * (c - v0) * (c + v0) * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * 
@@ -73,42 +73,40 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 	Returns:
 		numpy.ndarray: The inverted parameters for the function f.
 	"""
+	off_diagonal = False #if True, the covariance matrix will have off-diagonal elements, if False, it will be diagonal
 	w,_ = coords_array.shape
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
 	n = 0
 
-	f0_prior = 30
-	v0_prior = 50
-	l_prior = 1000
-	tprime0_prior = 30
-	c_prior = 51
+	f0_prior = 80
+	v0_prior = 100
+	l_prior = 14000
+	tprime0_prior = 40
+	c_prior = 70
 	cprior0 = np.zeros((5,5))
 
 	cprior0[0][0] = f0_prior**2
-	#cprior0[0][1] = -0.01*v0_prior*f0_prior
-	#cprior0[0][2] = 0.01*l_prior*f0_prior
-	cprior0[0][3] =  -0.4*f0_prior*tprime0_prior
-
 	cprior0[1][1] = v0_prior**2
-	#cprior0[1][0] = -0.01*f0_prior*v0_prior
-	cprior0[1][2] = -0.9*v0_prior*l_prior
-	cprior0[1][4] = 0.9*v0_prior*c_prior
-	
 	cprior0[2][2] = l_prior**2
-	#cprior0[2][0] = 0.01*f0_prior*l_prior
-	cprior0[2][1] = -0.9*v0_prior*l_prior
-	cprior0[2][4] = -0.9*l_prior*c_prior
-
 	cprior0[3][3] = tprime0_prior**2
-	cprior0[3][0] =  -0.4*f0_prior*tprime0_prior
-      
 	cprior0[4][4] = c_prior**2
-	cprior0[4][1] = 0.9*v0_prior*c_prior
-	cprior0[4][2] = -0.9*l_prior*c_prior     
+	if off_diagonal:
+		cprior0[0][3] =  -0.4*f0_prior*tprime0_prior
+
+		cprior0[1][2] = -0.7*v0_prior*l_prior
+		cprior0[1][4] = 0.85*v0_prior*c_prior
+		
+		cprior0[2][1] = -0.7*v0_prior*l_prior
+		cprior0[2][4] = -0.7*l_prior*c_prior
+
+		cprior0[3][0] =  -0.4*f0_prior*tprime0_prior
+		
+		cprior0[4][1] = 0.85*v0_prior*c_prior
+		cprior0[4][2] = -0.7*l_prior*c_prior     
 
 	cprior = cprior0 * (w+5)
-	print('cprior:', cprior)
+
 	Cd0 = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd0, sigma**2)
 	Cd = Cd0*(len(fobs))
@@ -196,7 +194,7 @@ f0 = coords_array[1,1]+coords_array[2,1]/2
 tprime0 = coords_array[0,0] 
 v0 = c*abs(coords_array[1,1]-coords_array[2,1]) / (2 * f0)
 slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
-l = (c**2*f0*v0**2*np.sqrt(c**2 - v0**2)/(c**2 - v0**2)**2)/slope
+l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope #(c**2*f0*v0**2*np.sqrt(c**2 - v0**2)/(c**2 - v0**2)**2)/abs(slope)
 
 m0 = [f0, v0, l, tprime0,c]
 print('Initial model:', m0)
@@ -237,13 +235,13 @@ for i in range(len(delf)):
 coord_inv_array = np.array(new_coord_inv_array)
 
 m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=20, sigma=3)
-print(covm)
+
 f0 = m[0]
 v0 = m[1]
 l = m[2]
 tprime0 = m[3]
 c = m[4]
-#covm = np.sqrt(np.diag(covm))
+
 nx,ny = covm.shape
 
 
@@ -252,8 +250,7 @@ outer_v = np.outer(sigma,sigma)
 Crho = covm / outer_v
 
 Crho[covm == 0] = 0
-#return Crho
-
+'''
 gridlines=False
 colormap='seismic'
 plt.figure(figsize=(10, 10))
@@ -270,6 +267,7 @@ if gridlines:
 plt.colorbar()
 plt.show()
 plt.close()
+'''
 covm = np.sqrt(np.diag(covm))
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 

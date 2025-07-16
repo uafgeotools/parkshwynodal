@@ -293,21 +293,23 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 	n = 0
      
-	cprior = np.zeros((5,5))
+	cprior0 = np.zeros((5,5))
 
-	for row in range(len(cprior)):
+	for row in range(len(cprior0)):
 		if row == 0:
-			cprior[row][row] = 10**2 #10
+			cprior0[row][row] = 10**2 
 		elif row == 1:
-			cprior[row][row] = 5**2 #800
+			cprior0[row][row] = 5**2 
 		elif row == 2:
-			cprior[row][row] = 800**2 #50
+			cprior0[row][row] = 800**2 
 		elif row == 3:
-			cprior[row][row] = 80**2 
+			cprior0[row][row] = 80**2 
 		else:
-			cprior[row][row] = 30**2
-	Cd = np.zeros((len(fobs), len(fobs)), int)
-	np.fill_diagonal(Cd, sigma**2)
+			cprior0[row][row] = 30**2
+	cprior = cprior0 * (w+3)
+	Cd0 = np.zeros((len(fobs), len(fobs)), float)
+	np.fill_diagonal(Cd0, sigma**2)
+	Cd = Cd0 *(len(fobs))
 	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
 	while n < num_iterations:
 		m = mnew
@@ -337,12 +339,18 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
 		dm = -la.inv(H) @ gamma
 		mnew = m + dm
-          
+
+		f0 = mnew[0]        
+		v0 = mnew[1]
+		l = mnew[2]
+		tprime0 = mnew[3]
+		c = mnew[4]
+
 		try:
 			covmlsq = (sigma**2)*la.inv(G.T@G)
 		except:
 			covmlsq = (sigma**2)*la.pinv(G.T@G)
-
+        #Check to use mprior or mnew in steepest ascent vector
 		n += 1
 		print(mnew)
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
@@ -367,20 +375,40 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 	"""
 
 	qv = 0
-
+	off_diagonal = False
 	cprior0 = np.zeros((w+4,w+4))
 
+	f0_prior = 20
+	v0_prior = 10
+	l_prior = 200
+	tprime0_prior = 60
+	c_prior = 50
+
+	if off_diagonal:
+		cprior0[4:][2] =  -0.4*f0_prior*tprime0_prior
+
+		cprior0[0][1] = -0.7*v0_prior*l_prior
+		cprior0[0][3] = 0.85*v0_prior*c_prior
+		
+		cprior0[1][0] = -0.7*v0_prior*l_prior
+		cprior0[1][3] = -0.7*l_prior*c_prior
+
+		cprior0[2][4:] =  -0.4*f0_prior*tprime0_prior
+		
+		cprior0[3][0] = 0.85*v0_prior*c_prior
+		cprior0[3][1] = -0.7*l_prior*c_prior  
+    
 	for row in range(len(cprior0)):
 		if row == 0:
-			cprior0[row][row] = 10**2 #10
+			cprior0[row][row] = v0_prior**2 
 		elif row == 1:
-			cprior0[row][row] = 200**2 #800
+			cprior0[row][row] = l_prior**2 
 		elif row == 2:
-			cprior0[row][row] = 40**2 #50
+			cprior0[row][row] = tprime0_prior**2 
 		elif row == 3:
-			cprior0[row][row] = 1**2 #??
+			cprior0[row][row] = c_prior**2 
 		else:
-			cprior0[row][row] = 10**2 #5
+			cprior0[row][row] = f0_prior**2
 	cprior = cprior0 * (w+3)
 	Cd0 = np.zeros((len(fobs), len(fobs)), float)
 	np.fill_diagonal(Cd0, sigma**2)
@@ -434,7 +462,7 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 		print(mnew)
 		qv += 1
-	covm = la.pinv(G.T@la.pinv(Cd0)@G + la.pinv(cprior0))
+	covm = la.pinv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 	return mnew, covm, f0_array, F_m
 
@@ -490,8 +518,8 @@ for li in file_in.readlines():
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
 
-    #if rerun_fig == False:
-    output = open('output/with_c_quasi/v10_l200_t40_c1_f10/' + equip + 'data_atmosphere_full.csv', 'a')
+    if rerun_fig == False:
+        output = open('output/with_c_quasi/v10_l200_t40_c1_f10/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
@@ -648,9 +676,10 @@ for li in file_in.readlines():
     # Convert the list of coordinates to a numpy array
     coords_array = np.array(coords)
 
-    f0 = 116
+    f0 = (np.max(coords_array[:,1])+np.min(coords_array[:,1]))/2
     m0 = [f0, v0, l, tprime0, c]
-
+    print('Initial guess: ', m0)
+    print(coords_array)
     m,covm, F_m = invert_f(m0, coords_array, num_iterations=8)
     f0 = m[0]
     v0 = m[1]
@@ -659,91 +688,76 @@ for li in file_in.readlines():
     c = m[4]
     
     ft = calc_ft(times, tprime0, f0, v0, l, c)
-    if isinstance(sta, int):
-        peaks = []
-        p, _ = find_peaks(middle_column, distance = 7)
-        corridor_width = (fs/2) / len(p) 
-        if equip[0] == 'B' and equip[0:1] != 'BE':
-            corridor_width = 3       
-        if len(p) == 0:
-            corridor_width = fs/4
 
-        coord_inv = []
+    peaks = []
+    p, _ = find_peaks(middle_column, distance = 7)
 
-        for t_f in range(len(times)):
-            upper = int(ft[t_f] + corridor_width)
-            lower = int(ft[t_f] - corridor_width)
-            if lower < 0:
-                lower = 0
-            if upper > len(frequencies):
-                upper = len(frequencies)
-            tt = spec[lower:upper, t_f]
+    if equip[0] == 'B' and equip[0:1] != 'BE':
+        corridor_width = 3       
 
-            max_amplitude_index = np.argmax(tt)
-            
-            max_amplitude_frequency = frequencies[max_amplitude_index+lower]
-            peaks.append(max_amplitude_frequency)
-            coord_inv.append((times[t_f], max_amplitude_frequency))
+    corridor_width = (250/len(p))
 
+    coord_inv = []
 
-        coord_inv_array = np.array(coord_inv)
+    for t_f in range(len(times)):
 
-        m,_,F_m = invert_f(m0, coord_inv_array,num_iterations=12)
-        f0 = m[0]
-        v0 = m[1]
-        l = m[2]
-        tprime0 = m[3]
-        c = m[4]
+        upper = int(ft[t_f] + corridor_width)
+        lower = int(ft[t_f] - corridor_width)
+        if lower < 0:
+            lower = 0
+        if upper > 250:
+            upper = 250
+        tt = spec[lower:upper, t_f]
 
-        ft = calc_ft(times, tprime0, f0, v0, l, c)
+        max_amplitude_index = np.argmax(tt)
         
-        delf = np.array(ft) - np.array(peaks)
-        
-        new_coord_inv_array = []
-        for i in range(len(delf)):
-            if np.abs(delf[i]) <= 3:
-                new_coord_inv_array.append(coord_inv_array[i])
-        coord_inv_array = np.array(new_coord_inv_array)
+        max_amplitude_frequency = frequencies[max_amplitude_index+lower]
+        peaks.append(max_amplitude_frequency)
+        coord_inv.append((times[t_f], max_amplitude_frequency))
 
-        m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=12, sigma=5)
-        
-        f0 = m[0]
-        v0 = m[1]
-        l = m[2]
-        tprime0 = m[3]
-        c = m[4]
+    coord_inv_array = np.array(coord_inv)
+    print(coord_inv_array)
+    m,_,F_m = invert_f(m0, coord_inv_array,num_iterations=5)
+    f0 = m[0]
+    v0 = m[1]
+    l = m[2]
+    tprime0 = m[3]
+    c = m[4]
 
-    mprior = []
-    mprior.append(v0)
-    mprior.append(l)
-    mprior.append(tprime0) 
-    mprior.append(c)      
+    ft = calc_ft(times, tprime0, f0, v0, l, c)
+    
+    delf = np.array(ft) - np.array(peaks)
+    
+    new_coord_inv_array = []
+    for i in range(len(delf)):
+        if np.abs(delf[i]) <= 3:
+            new_coord_inv_array.append(coord_inv_array[i])
+    coord_inv_array = np.array(new_coord_inv_array)
+    m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=5, sigma=5)
+        
+    f0 = m[0]
+    v0 = m[1]
+    l = m[2]
+    tprime0 = m[3]
+    c = m[4]
 
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
 
-    f0_array = []
     w = len(peaks)
-    for o in range(w):
-        tprime = freqpeak[o]
-        ft0p = peaks[o]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        mprior.append(f0)
-        f0_array.append(f0)
-    mprior = np.array(mprior)
-                    
+ 
     corridor_width = 10
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 3
     peaks_assos = []
     fobs = []
     tobs = []
-
+    f0_array = []
     for pp in range(len(peaks)):
         tprime = freqpeak[pp]
         ft0p = peaks[pp]
         f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        ft = calc_ft(times,  tprime0, f0, v0, l, c)
-        
+        f0_array.append(f0)
+
         maxfreq = []
         coord_inv = []
         ttt = []
@@ -754,7 +768,6 @@ for li in file_in.readlines():
         lower = calc_ft(times,  tprime0, f02, v0, l, c)
 
         for t_f in range(len(times)):
-
             try:      
                 tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
 
@@ -803,21 +816,11 @@ for li in file_in.readlines():
     if len(tobs) == len(tobs_hold):
         continue
 
-    #tprime0 = tarrive-start_time
     v0 = speed_mps
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)    
-    mprior = []
-    mprior.append(v0)
-    mprior.append(l)
-    mprior.append(tprime0)
-    for o in range(len(peaks_assos)):
-        tprime = freqpeak[o]
-        ft0p = peaks[o]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        mprior.append(float(f0))
-    print(mprior)
     c = speed_of_sound(Tc)
+
     mprior = []
     mprior.append(v0)
     mprior.append(l)
@@ -828,8 +831,9 @@ for li in file_in.readlines():
         ft0p = peaks[o]
         f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
         mprior.append(float(f0))
-    print(mprior)
-    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=6, sigma=5)
+    print("mprior:", mprior)
+
+    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5)
     #except:
     #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
     #    continue
@@ -845,16 +849,16 @@ for li in file_in.readlines():
         if arrive_time[i] < 0:
             arrive_time[i] = 0
 
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi_vlconst/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
     qnum = "__"
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi_vlconst/spectrum/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/spectrum/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
-    #if rerun_fig == False:
-    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+    if rerun_fig == False:
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
-    #if rerun_fig == False:
-    output.close()
+    if rerun_fig == False:
+        output.close()
