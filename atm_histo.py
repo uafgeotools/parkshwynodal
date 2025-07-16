@@ -49,7 +49,7 @@ for li in file_in.readlines():
     ht = datetime.fromtimestamp(time, tz=timezone.utc)
     h = ht.hour
 
-    alt = float(text[4])*0.0003048 #convert between feet and km
+    alt_m = float(text[6]) 
     x =  float(text[2])  # Replace with your UTM x-coordinate
     y = float(text[3])  # Replace with your UTM y-coordinate
 
@@ -88,8 +88,8 @@ for li in file_in.readlines():
             for item in data_list:
                 if item['parameter'] == 'Z':
                     for i in range(len(item['values'])):
-                        if abs(float(item['values'][i]) - float(alt)) < hold:
-                            hold = abs(float(item['values'][i]) - float(alt))
+                        if abs(float(item['values'][i]) - float(alt_m/1000)) < hold:
+                            hold = abs(float(item['values'][i]) - float(alt_m/1000))
                             z_index = i
 
             for item in data_list:
@@ -99,15 +99,8 @@ for li in file_in.readlines():
                     meridional_winds = float(item['values'][z_index])
                 elif item['parameter'] == 'U':
                     zonal_winds = float(item['values'][z_index])
-            if zonal_winds > 0:
-                v1_angle = 90
-            else:
-                v1_angle = 270
-            if meridional_winds > 0:
-                v2_angle = 0
-            else:
-                v2_angle = 180
-            wind_air, az_air = add_vectors(zonal_winds, v1_angle, meridional_winds, v2_angle)
+
+            wind_air, az_air = add_wind_vector(zonal_winds, meridional_winds)
             c_air = speed_of_sound(Tc_air)
             air_temp_array.append(Tc_air)
             air_c_array.append(c_air)
@@ -138,16 +131,8 @@ for li in file_in.readlines():
                     elif item['parameter'] == 'V':
                         meridional_winds = float(item['values'][z_index])
                     elif item['parameter'] == 'U':
-                            zonal_winds = float(item['values'][z_index])
-            if zonal_winds > 0:
-                v1_angle = 90
-            else:
-                v1_angle = 270
-            if meridional_winds > 0:
-                v2_angle = 0
-            else:
-                v2_angle = 180
-            wind_sta, az_sta = add_vectors(zonal_winds, v1_angle, meridional_winds, v2_angle)
+                        zonal_winds = float(item['values'][z_index])
+            wind_sta, az_sta = add_wind_vector(zonal_winds, meridional_winds)
             c_sta = speed_of_sound(Tc_sta)
             sta_temp_array.append(Tc_sta)
             sta_c_array.append(c_sta)
@@ -160,30 +145,30 @@ median_temp = np.median(air_temp_array)
 ax[0, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
 ax[0, 0].set_title('Temperature Distribution')
 ax[0, 0].set_ylabel('Aircraft Location Data')
-
+print('Median temperature:', median_temp)
 ax[0, 1].hist(air_wind_array, bins=20)
 median_wind = np.median(air_wind_array)
 ax[0, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
 ax[0, 1].set_title('Wind Speed Distribution')
-
+print('Median wind speed:', median_wind)
 ax[0, 2].hist(air_c_array, bins=20)
 median_c = np.median(air_c_array)
 ax[0, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
 ax[0, 2].set_title('Speed of Sound Distribution')
-
+print('Median speed of sound:', median_c)
 ax[1, 0].hist(sta_temp_array, bins=20)
 median_temp = np.median(sta_temp_array)
 ax[1, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
 ax[1, 0].set_ylabel('Station Location Data')
-
+print('Median station temperature:', median_temp)
 ax[1, 1].hist(sta_wind_array, bins=20)
 median_wind = np.median(sta_wind_array)
 ax[1, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
-
+print('Median station wind speed:', median_wind)
 ax[1, 2].hist(sta_c_array, bins=20)
 median_c = np.median(sta_c_array)
 ax[1, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
-
+print('Median station speed of sound:', median_c)
 ax[2, 0].hist(np.array(air_temp_array)-np.array(sta_temp_array), bins=20)
 median_temp = np.median(np.array(air_temp_array)-np.array(sta_temp_array))
 ax[2, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))

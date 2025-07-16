@@ -5,7 +5,7 @@ import glob
 import numpy as np
 import json
 from pyproj import Proj
-from prelude import speed_of_sound, add_vectors, make_base_dir
+from prelude import speed_of_sound, add_wind_vector, make_base_dir
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
@@ -24,7 +24,8 @@ for line in file_in.readlines():
 	head = float(text[8])
 	sta = str(text[9])
 	equip = text[10]
-
+	if equip != "DH8A":
+		continue
 	day = str(date[6:8])
 	month = str(date[4:6])
 
@@ -42,14 +43,14 @@ for line in file_in.readlines():
 				break
 			else:
 				continue
-		spec_dir = '/scratch/irseppi/nodal_data/plane_info/with_c/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+		spec_dir = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 		if os.path.exists(spec_dir):
 			for image in os.listdir(spec_dir):
 				im = os.path.join(spec_dir, image)
 				split_array = np.array(image.split('_'))
 				plot_time = split_array[0]
 		else:
-			print('No data for', equip, 'on', date, 'flight', flight_num, 'station', sta)
+			#print('No data for', equip, 'on', date, 'flight', flight_num, 'station', sta)
 			continue
 		input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
 		file =  open(input_files, 'r') 
@@ -86,15 +87,7 @@ for line in file_in.readlines():
 			if item['parameter'] == 'V':
 				meridional_wind = float(item['values'][z_index])
 
-		if zonal_wind > 0:
-			v1_angle = 90
-		else:
-			v1_angle = 270
-		if meridional_wind > 0:
-			v2_angle = 0
-		else:
-			v2_angle = 180
-		wind, az = add_vectors(zonal_wind, v1_angle, meridional_wind, v2_angle)
+		wind, az = add_wind_vector(zonal_wind, meridional_wind)
 		c = speed_of_sound(Tc)
 		diff = np.inf
 
@@ -143,9 +136,9 @@ for line in file_in.readlines():
 			print('No image for: ' + image_path)
 			continue
 		try:
-			spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/with_c/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+			spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 		except:
-			print('No spectrum image for: ' + '/scratch/irseppi/nodal_data/plane_info/with_c/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+			print('No spectrum image for: ' + '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 			continue
 
 		# Resize images
@@ -189,7 +182,7 @@ for line in file_in.readlines():
 		draw.rectangle(bbox, fill="white")
 		draw.text((google_slide_width - plane.width, 0), text3, fill='black', font=font)
 
-		BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/combine_images_all_c/'+str(equip)+'/'
+		BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/combine_images_all_c_test/'+str(equip)+'/'
 		make_base_dir(BASE_DIR)
 		name= BASE_DIR + '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.png'
 

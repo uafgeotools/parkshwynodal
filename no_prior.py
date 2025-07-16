@@ -74,16 +74,16 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		numpy.ndarray: The inverted parameters for the function f.
 	"""
 	off_diagonal = False #if True, the covariance matrix will have off-diagonal elements, if False, it will be diagonal
-	w,_ = coords_array.shape
+	dw,_ = coords_array.shape
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
 	n = 0
 
 	f0_prior = 80
 	v0_prior = 100
-	l_prior = 14000
+	l_prior = 10000
 	tprime0_prior = 40
-	c_prior = 70
+	c_prior = 60
 	cprior0 = np.zeros((5,5))
 
 	cprior0[0][0] = f0_prior**2
@@ -105,18 +105,18 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		cprior0[4][1] = 0.85*v0_prior*c_prior
 		cprior0[4][2] = -0.7*l_prior*c_prior     
 
-	cprior = cprior0 * (w+5)
+	cprior = cprior0 * (5)
 
 	Cd0 = np.zeros((len(fobs), len(fobs)), int)
 	np.fill_diagonal(Cd0, sigma**2)
-	Cd = Cd0*(len(fobs))
+	Cd = Cd0*(dw)
 	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
 	while n < num_iterations:
 		m = mnew
 		fpred = []
-		G = np.zeros((w,5)) #partial derivative matrix of f with respect to m
+		G = np.zeros((dw,5)) #partial derivative matrix of f with respect to m
 		#partial derivative matrix of f with respect to m 
-		for i in range(0,w):
+		for i in range(0,dw):
 			f0 = m[0]
 			v0 = m[1]
 			l = m[2]
@@ -132,23 +132,17 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 			fpred.append(ft0p) 
 		Gm = G
 		# steepest ascent vector (Eq. 6.307 or 6.312)
-		gamma = cprior @ Gm.T @ Cd @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
+		gamma = cprior @ Gm.T @ la.inv(Cd) @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
 		#===================================================
 		# QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
 		# approximate curvature
-		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
+		H = np.identity(len(mnew)) + cprior @ Gm.T @ la.inv(Cd) @ Gm
 		dm = -la.inv(H) @ gamma
 		mnew = m + dm
-          
-		covmlsq = la.pinv(G.T@la.pinv(Cd0)@G + la.pinv(cprior0))
-		#try:
-		#	covmlsq = (sigma**2)*la.inv(G.T@G)
-		#except:
-		#	covmlsq = (sigma**2)*la.pinv(G.T@G)
 
 		n += 1
 		print(mnew)
-
+	covmlsq = la.pinv(G.T@la.pinv(Cd)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 	return mnew, covmlsq, F_m
 

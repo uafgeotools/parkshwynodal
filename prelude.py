@@ -92,7 +92,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 #################################################################################################################################
 
-def add_vectors(v1_magnitude, v1_angle, v2_magnitude, v2_angle):
+def add_wind_vector(zonal_winds, meridional_winds):
 	"""
 	Adds two vectors given their magnitudes and directions (angles in degrees, clockwise from the positive y-axis).
 
@@ -107,25 +107,11 @@ def add_vectors(v1_magnitude, v1_angle, v2_magnitude, v2_angle):
 			   of the resultant vector.
 	"""
 
-	# Convert angles to radians for trigonometric functions
-	v1_angle_rad = math.radians(90 - v1_angle)
-	v2_angle_rad = math.radians(90 - v2_angle)
-
-	# Calculate components of the vectors
-	v1_x = v1_magnitude * math.cos(v1_angle_rad)
-	v1_y = v1_magnitude * math.sin(v1_angle_rad)
-	v2_x = v2_magnitude * math.cos(v2_angle_rad)
-	v2_y = v2_magnitude * math.sin(v2_angle_rad)
-
-	# Add the components
-	resultant_x = v1_x + v2_x
-	resultant_y = v1_y + v2_y
-
 	# Calculate magnitude of the resultant vector
-	resultant_magnitude = math.sqrt(resultant_x**2 + resultant_y**2)
+	resultant_magnitude = math.sqrt(zonal_winds **2 + meridional_winds **2)
 
 	# Calculate direction (angle) of the resultant vector
-	resultant_angle_rad = math.atan2(resultant_y, resultant_x)
+	resultant_angle_rad = math.atan2(meridional_winds,zonal_winds)                                 							# Here, we swap dx and dy to get angle from Y-axis (North)
 	resultant_angle_deg = (90 - math.degrees(resultant_angle_rad)) % 360
 
 	return resultant_magnitude, resultant_angle_deg

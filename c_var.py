@@ -142,7 +142,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-    plt.show()
+
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
 
@@ -232,7 +232,7 @@ def df(f0,v0,l,tp0,tp,c):
 	Returns:
 	tuple: A tuple containing the derivatives of f with respect to f0, v0, l, and tp0.
 	"""
-    #print('f0: ', f0, 'v0: ', v0, 'l: ', l, 'tp0: ', tp0)
+
     #derivative with respect to f0
     f_derivef0 = (1 / (1 - (c * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))) /((c**2 - v0**2) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))**2) / (c**2 - v0**2)**2))))
 
@@ -270,7 +270,7 @@ def df(f0,v0,l,tp0,tp,c):
     c**4))**2)/(c**2 - v0**2)**2)*(c*(-tp + tp0)*v0**2 + c*v0**2*np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4) - 
     c**2*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))**2)/(c**2 - v0**2)**2) + 
     v0**2*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))**2)/(c**2 - v0**2)**2))**2) 
-    #print('f_derivef0: ', f_derivef0, 'f_derivev0: ', f_derivev0, 'f_derivel: ', f_derivel, 'f_derivetprime0: ', f_derivetprime0, 'f_derivec: ', f_derivec)
+    
     return f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec
 
 #####################################################################################################################################################################################################################################################################################################################
@@ -287,7 +287,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 	Returns:
 		numpy.ndarray: The inverted parameters for the function f.
 	"""
-	w,_ = coords_array.shape
+	dw,_ = coords_array.shape
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
 
@@ -297,68 +297,62 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 	for row in range(len(cprior0)):
 		if row == 0:
-			cprior0[row][row] = 10**2 
+			cprior0[row][row] = 100**2 
 		elif row == 1:
-			cprior0[row][row] = 5**2 
+			cprior0[row][row] = 100**2 
 		elif row == 2:
-			cprior0[row][row] = 800**2 
+			cprior0[row][row] = 1000**2 
 		elif row == 3:
-			cprior0[row][row] = 80**2 
+			cprior0[row][row] = 100**2 
 		else:
-			cprior0[row][row] = 30**2
-	cprior = cprior0 * (w+3)
+			cprior0[row][row] = 100**2
+	cprior = cprior0 * (5)
 	Cd0 = np.zeros((len(fobs), len(fobs)), float)
 	np.fill_diagonal(Cd0, sigma**2)
 	Cd = Cd0 *(len(fobs))
-	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
+     
+	mnew = mprior
 	while n < num_iterations:
 		m = mnew
+		f0 = m[0]
+		v0 = m[1]
+		l = m[2]
+		tprime0 = m[3]
+		c = m[4]
+        
 		fpred = []
-		G = np.zeros((w,5)) #partial derivative matrix of f with respect to m
+		G = np.zeros((len(fobs),5)) #partial derivative matrix of f with respect to m
 		#partial derivative matrix of f with respect to m 
-		for i in range(0,w):
-			f0 = m[0]
-			v0 = m[1]
-			l = m[2]
-			tprime0 = m[3]
-			c = m[4]
+		for i in range(0,dw):
 			tprime = tobs[i]
 			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
-			
-			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
 
+			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
 			fpred.append(ft0p) 
 		Gm = G
+
 		# steepest ascent vector (Eq. 6.307 or 6.312)
-		gamma = cprior @ Gm.T @ Cd @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
+		gamma = cprior @ Gm.T @ la.inv(Cd) @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
 		#===================================================
 		# QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
 		# approximate curvature
-		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
+		H = np.identity(len(mnew)) + cprior @ Gm.T @ la.inv(Cd) @ Gm
 		dm = -la.inv(H) @ gamma
 		mnew = m + dm
-
-		f0 = mnew[0]        
-		v0 = mnew[1]
-		l = mnew[2]
-		tprime0 = mnew[3]
-		c = mnew[4]
-
-		try:
-			covmlsq = (sigma**2)*la.inv(G.T@G)
-		except:
-			covmlsq = (sigma**2)*la.pinv(G.T@G)
+          
         #Check to use mprior or mnew in steepest ascent vector
 		n += 1
 		print(mnew)
+    
+	cpost0 = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	return mnew, covmlsq, F_m
+	return mnew, cpost0, F_m
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 0.1):
+def full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 3,off_diagonal = False):
 	"""
 	Performs inversion using all picked overtones. 
 
@@ -375,7 +369,6 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 	"""
 
 	qv = 0
-	off_diagonal = False
 	cprior0 = np.zeros((w+4,w+4))
 
 	f0_prior = 20
@@ -462,9 +455,10 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 
 		print(mnew)
 		qv += 1
-	covm = la.pinv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+
+	cpost0 = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	return mnew, covm, f0_array, F_m
+	return mnew, cpost0, f0_array, F_m
 
 
 nrl = NRL()
@@ -477,7 +471,7 @@ elevations = seismo_data['Elevation']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-rerun_fig = True #False #Flag rerun the figures without saving the inversion results = True
+rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
@@ -519,7 +513,7 @@ for li in file_in.readlines():
     lon, lat = utm_proj(x, y, inverse=True)
 
     if rerun_fig == False:
-        output = open('output/with_c_quasi/v10_l200_t40_c1_f10/' + equip + 'data_atmosphere_full.csv', 'a')
+        output = open('output/fixed_quasi/' + equip + 'data_atmosphere_full.csv', 'a')
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
@@ -559,7 +553,7 @@ for li in file_in.readlines():
             Tc = - 273.15 + float(item['values'][z_index])
 
     c = speed_of_sound(Tc)
-    print('Speed of sound: ', c)
+
     tarrive = calc_time(closest_time,dist_m,alt,c) 
 
     flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
@@ -679,7 +673,7 @@ for li in file_in.readlines():
     f0 = (np.max(coords_array[:,1])+np.min(coords_array[:,1]))/2
     m0 = [f0, v0, l, tprime0, c]
     print('Initial guess: ', m0)
-    print(coords_array)
+
     m,covm, F_m = invert_f(m0, coords_array, num_iterations=8)
     f0 = m[0]
     v0 = m[1]
@@ -716,7 +710,7 @@ for li in file_in.readlines():
         coord_inv.append((times[t_f], max_amplitude_frequency))
 
     coord_inv_array = np.array(coord_inv)
-    print(coord_inv_array)
+
     m,_,F_m = invert_f(m0, coord_inv_array,num_iterations=5)
     f0 = m[0]
     v0 = m[1]
@@ -833,7 +827,7 @@ for li in file_in.readlines():
         mprior.append(float(f0))
     print("mprior:", mprior)
 
-    m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5)
+    m, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5)
     #except:
     #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
     #    continue
@@ -858,7 +852,7 @@ for li in file_in.readlines():
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
     if rerun_fig == False:
-        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
     if rerun_fig == False:
         output.close()
