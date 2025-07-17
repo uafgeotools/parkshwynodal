@@ -6,6 +6,11 @@ import numpy as np
 import json
 from pyproj import Proj
 from prelude import speed_of_sound, add_wind_vector, make_base_dir
+seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
+seismo_latitudes = seismo_data['Latitude']
+seismo_longitudes = seismo_data['Longitude']
+station_elevations = seismo_data['Elevation']
+stations = seismo_data['Station']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
@@ -24,10 +29,17 @@ for line in file_in.readlines():
 	head = float(text[8])
 	sta = str(text[9])
 	equip = text[10]
-	if equip != "DH8A":
-		continue
+	#if equip != "DH8A":
+	#	continue
 	day = str(date[6:8])
 	month = str(date[4:6])
+
+	index = None
+	for i, station in enumerate(stations):
+		if str(station) == str(sta):
+			index = i
+			break
+	sta_elv = station_elevations[index]
 
 	# Convert UTM coordinates to latitude and longitude
 	lon, lat = utm_proj(x_m, y_m, inverse=True)
@@ -112,7 +124,7 @@ for line in file_in.readlines():
 				continue
 
 		deg = (90 -  np.degrees(direction)) % 360
-		dist = np.sqrt(dist_m**2 + alt_m**2)
+		dist = np.sqrt(dist_m**2 + (alt_m-sta_elv)**2)
 		temp = Tc
 		sound = c
 		
@@ -120,7 +132,7 @@ for line in file_in.readlines():
 		font2 = ImageFont.truetype('input/Arial.ttf', 25)
 
 				
-		text1 = 'Altitude: '+str(round(alt_m,2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(head,2))+ '\N{DEGREE SIGN}'
+		text1 = 'Altitude: '+str(round((alt_m-sta_elv),2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(head,2))+ '\N{DEGREE SIGN}'
 		text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 		text3 = 'Callsign: ' +  str(call) + ' (' + str(equip) + ')'
 

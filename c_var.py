@@ -189,26 +189,25 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
             continue
         if ft0p > 250:
             continue
-        try:
-            upper = int(ft0p + 10)
-            lower = int(ft0p - 10)
-            tt = spec[lower:upper, closest_index]
-            if upper > 250:
-                freqp = ft0p
-                ampp = np.interp(ft0p, frequencies, arrive_time)
-            elif lower < 0:
-                freqp = ft0p
-                ampp = np.interp(ft0p, frequencies, arrive_time)
-            else:
-                ampp = np.max(tt)
-                freqp = np.argmax(tt)+lower
-            plt.scatter(freqp, ampp, color='black', marker='x', s=100)
-            if isinstance(sta, int):
-                plt.text(freqp - 10, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
-            else:
-                plt.text(freqp - 1, ampp + 0.8, freqp, fontsize=17, fontweight='bold')  
-        except:
-            continue
+        
+        upper = int(ft0p + 5)
+        lower = int(ft0p - 5)
+        tt = spec[lower:upper, closest_index]
+        if upper > 250:
+            freqp = ft0p
+            ampp = np.interp(ft0p, frequencies, arrive_time)
+        elif lower < 0:
+            freqp = ft0p
+            ampp = np.interp(ft0p, frequencies, arrive_time)
+            #elif lower > 250:
+            #freqp = ft0p
+            #ampp = np.interp(ft0p, frequencies, arrive_time)
+        else:
+            ampp = np.max(tt)
+            freqp = np.argmax(tt)+lower
+        plt.scatter(freqp, ampp, color='black', marker='x', s=100)
+        plt.text(freqp - 10, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
+
     plt.xlim(0, int(fs/2))
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
@@ -489,10 +488,8 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    if equip == 'DH8A': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
-        go= True
-    else:
-        continue
+    #if equip == 'DH8A': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
+    #    go= True
 
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
@@ -690,19 +687,23 @@ for li in file_in.readlines():
         corridor_width = 3       
 
     corridor_width = (250/len(p))
-
     coord_inv = []
 
     for t_f in range(len(times)):
-
+        print(ft[t_f])
         upper = int(ft[t_f] + corridor_width)
         lower = int(ft[t_f] - corridor_width)
         if lower < 0:
             lower = 0
+        elif lower >= 250:
+            lower = 200
+        else:
+            pass
         if upper > 250:
             upper = 250
-        tt = spec[lower:upper, t_f]
 
+        tt = spec[lower:upper, t_f]
+        print(upper, lower, len(tt))
         max_amplitude_index = np.argmax(tt)
         
         max_amplitude_frequency = frequencies[max_amplitude_index+lower]
@@ -763,6 +764,14 @@ for li in file_in.readlines():
 
         for t_f in range(len(times)):
             try:      
+                if lower < 0:
+                    lower = 0
+                elif lower > 250:
+                    lower = 200
+                else:
+                    pass
+                if upper > 250:
+                    upper = 250
                 tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
 
                 #For Boeing Jets

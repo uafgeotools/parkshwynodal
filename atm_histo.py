@@ -36,7 +36,10 @@ for li in file_in.readlines():
     sta = text[9]
     time = float(text[5])
     start_time = time - 120
-
+    equip = text[10]
+    if equip in ['B737', 'B738', 'B739', 'B77W', 'B772', 'B788', 'B789', 'B763', 'B744','B733','B732','B77L','B748','CRJ2', 'A332', 'A359', 'E75S']:
+        print(equip)
+        continue
     for i, station in enumerate(stations):
         if str(station) == str(sta):
             index = i
