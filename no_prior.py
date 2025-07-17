@@ -148,7 +148,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 #################################################################################################################################################################################################################################################################################################################################################################
 
-c = speed_of_sound(-3.12)
+c = speed_of_sound(-33)
 
 start_time = 1550158642.26246    
 ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
@@ -318,6 +318,4 @@ ax4.set_xlim(vmax2*1.1, vmin2)
 ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
 ax4.grid(axis='y')
 plt.show()
-
-
 

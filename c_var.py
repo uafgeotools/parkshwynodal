@@ -324,6 +324,8 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		#partial derivative matrix of f with respect to m 
 		for i in range(0,dw):
 			tprime = tobs[i]
+			if c > v0:
+				continue
 			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
@@ -514,43 +516,42 @@ for li in file_in.readlines():
 
     input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
     
-    try:
+    if Path(input_files).exists():
         file =  open(input_files, 'r') 
-    except:
-        continue
 
-    data = json.load(file)
+        data = json.load(file)
 
-    # Extract metadata
-    metadata = data['metadata']
-    sourcefile = metadata['sourcefile']
-    datetim = metadata['time']['datetime']
-    latitude = metadata['location']['latitude']
-    longitude = metadata['location']['longitude']
-    parameters = metadata['parameters']
+        # Extract metadata
+        metadata = data['metadata']
+        sourcefile = metadata['sourcefile']
+        datetim = metadata['time']['datetime']
+        latitude = metadata['location']['latitude']
+        longitude = metadata['location']['longitude']
+        parameters = metadata['parameters']
 
-    # Extract data
-    data_list = data['data']
+        # Extract data
+        data_list = data['data']
 
-    # Convert data to a DataFrame
-    data_frame = pd.DataFrame(data_list)
+        # Convert data to a DataFrame
+        data_frame = pd.DataFrame(data_list)
 
-    # Find the "Z" parameter and extract the value at index
-    z_index = None
-    hold = np.inf
-    for item in data_list:
-        if item['parameter'] == 'Z':
-            for i in range(len(item['values'])):
-                if abs(float(item['values'][i]) - float(alt/1000)) < hold:
-                    hold = abs(float(item['values'][i]) - float(alt/1000))
-                    z_index = i
+        # Find the "Z" parameter and extract the value at index
+        z_index = None
+        hold = np.inf
+        for item in data_list:
+            if item['parameter'] == 'Z':
+                for i in range(len(item['values'])):
+                    if abs(float(item['values'][i]) - float(alt/1000)) < hold:
+                        hold = abs(float(item['values'][i]) - float(alt/1000))
+                        z_index = i
 
-    for item in data_list:
-        if item['parameter'] == 'T':
-            Tc = - 273.15 + float(item['values'][z_index])
+        for item in data_list:
+            if item['parameter'] == 'T':
+                Tc = - 273.15 + float(item['values'][z_index])
 
-    c = speed_of_sound(Tc)
-
+        c = speed_of_sound(Tc)
+    else: 
+        c = 311 # Default speed of sound in m/s if no data is available
     tarrive = calc_time(closest_time,dist_m,alt,c) 
 
     flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
@@ -574,20 +575,22 @@ for li in file_in.readlines():
         with open(file_name, 'r') as file:
             for line in file:
                 pick_data = line.split(',')
-
-                try:
+                if len(pick_data) == 3:
                     start_time = float(pick_data[2])
-                    pp = 'yep'
-                    break
-                except:
-                    pp = 'nope'
-                    break
+                elif len(pick_data) == 2:
+                    print('No start time in file: ', file_name)
+                    continue
+                else:
+                    #if there is no data in the file at all delete the file
+                    print('No data in file: ', file_name)
+                    print("data: ", pick_data)
+                    #os.remove(file_name)
+                    continue
     if equip == 'C185':
         start_time = start_time - 120
     
     ht = datetime.fromtimestamp(start_time+120, tz=timezone.utc)                      
-    if pp == 'nope':
-        continue
+
     h = ht.hour
     mins = ht.minute
     secs = ht.second
@@ -610,9 +613,11 @@ for li in file_in.readlines():
         day = '0'+str(day)
         day2 = day
 
-    try:
-        p = "/scratch/naalexeev/NODAL/2019-0"+str(month)+"-"+str(day)+"T"+str(h)+":00:00.000000Z.2019-0"+str(month)+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(sta)+".mseed"
-        tr = obspy.read(p)
+
+    waveform1 = "/scratch/naalexeev/NODAL/2019-0"+str(month)+"-"+str(day)+"T"+str(h)+":00:00.000000Z.2019-0"+str(month)+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(sta)+".mseed"
+    waveform2 = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
+    if Path(waveform1).exists():
+        tr = obspy.read(waveform1)
         tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - wind, tr[2].stats.starttime + (mins * 60) + secs + wind)
         data = tr[2][:]
         fs = int(tr[2].stats.sampling_rate)
@@ -628,19 +633,19 @@ for li in file_in.readlines():
                 fs = int(tr[0].stats.sampling_rate)
                 title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
                 torg = tr[0].times()
-    except:
-        try:
-            p = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
-            tr = obspy.read(p)
 
-            tr.trim(tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs - wind, tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs + wind)
 
-            data = tr[0][:]
-            fs = int(tr[0].stats.sampling_rate)
-            title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-            torg = tr[0].times()
-        except:
-            continue
+    elif Path(waveform2).exists():
+        tr = obspy.read(waveform2)
+
+        tr.trim(tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs - wind, tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs + wind)
+
+        data = tr[0][:]
+        fs = int(tr[0].stats.sampling_rate)
+        title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+        torg = tr[0].times()
+    else:
+        continue
 
     # Compute spectrogram
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
@@ -763,30 +768,28 @@ for li in file_in.readlines():
         lower = calc_ft(times,  tprime0, f02, v0, l, c)
 
         for t_f in range(len(times)):
-            try:      
-                if lower < 0:
-                    lower = 0
-                elif lower > 250:
-                    lower = 200
-                else:
-                    pass
-                if upper > 250:
-                    upper = 250
-                tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
+      
+            if lower < 0:
+                lower = 0
+            elif lower > 250:
+                lower = 200
+            else:
+                pass
+            if upper > 250:
+                upper = 250
+            tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
 
-                #For Boeing Jets
-                if equip[0] == 'B' and equip[0:1] != 'BE':
-                    max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
-                else:
-                    max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
-                maxa = np.argmax(tt[max_amplitude_index])
-                max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
-                maxfreq.append(max_amplitude_frequency)
-                coord_inv.append((times[t_f], max_amplitude_frequency))
-                ttt.append(times[t_f])
+            #For Boeing Jets
+            if equip[0] == 'B' and equip[0:1] != 'BE':
+                max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
+            else:
+                max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+            maxa = np.argmax(tt[max_amplitude_index])
+            max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
+            maxfreq.append(max_amplitude_frequency)
+            coord_inv.append((times[t_f], max_amplitude_frequency))
+            ttt.append(times[t_f])
 
-            except:
-                continue
 
         if len(coord_inv) > 0:
             if f0 < 200:
@@ -811,11 +814,9 @@ for li in file_in.readlines():
     if len(fobs) == 0:
         continue
 
-    try:
-        tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
-    except:
-        print('Error in time picks for station:', sta, 'flight:', flight_num, 'date:', date)
-        continue
+
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
+
     if len(tobs) == len(tobs_hold):
         continue
 
