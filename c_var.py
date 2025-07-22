@@ -137,6 +137,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     ax4.set_xlim(vmax2*1.1, vmin2) 
     ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     ax4.grid(axis='y')
+    plt.show()
     if plot_show:
         plt.show()     
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
@@ -302,7 +303,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		elif row == 2:
 			cprior0[row][row] = 1000**2 
 		elif row == 3:
-			cprior0[row][row] = 100**2 
+			cprior0[row][row] = 200**2 
 		else:
 			cprior0[row][row] = 100**2
 	cprior = cprior0 * (5)
@@ -318,20 +319,20 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		l = m[2]
 		tprime0 = m[3]
 		c = m[4]
-        
+
 		fpred = []
 		G = np.zeros((len(fobs),5)) #partial derivative matrix of f with respect to m
 		#partial derivative matrix of f with respect to m 
 		for i in range(0,dw):
 			tprime = tobs[i]
-			if c > v0:
-				continue
+
 			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
 
 			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
 			fpred.append(ft0p) 
+
 		Gm = G
 
 		# steepest ascent vector (Eq. 6.307 or 6.312)
@@ -342,7 +343,16 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 		H = np.identity(len(mnew)) + cprior @ Gm.T @ la.inv(Cd) @ Gm
 		dm = -la.inv(H) @ gamma
 		mnew = m + dm
-          
+		if mnew[4] > mnew[1]:
+			if n != 0:
+				mnew = m 
+				Gm = Gm_hold
+				fpred = fpred_hold
+				n += 1
+			break
+		else:
+			Gm_hold = Gm
+			fpred_hold = fpred
         #Check to use mprior or mnew in steepest ascent vector
 		n += 1
 		print(mnew)
@@ -373,10 +383,16 @@ def full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_arr
 	cprior0 = np.zeros((w+4,w+4))
 
 	f0_prior = 20
-	v0_prior = 10
-	l_prior = 200
-	tprime0_prior = 60
-	c_prior = 50
+	if v0 > 100:
+		v0_prior = 10
+	else:
+		v0_prior = 5
+	if l > 5000:
+		l_prior = 1000
+	else:
+		l_prior = 500
+	tprime0_prior = 150
+	c_prior = 80
 
 	if off_diagonal:
 		cprior0[4:][2] =  -0.4*f0_prior*tprime0_prior
@@ -438,7 +454,7 @@ def full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_arr
 
 		Gm = G
 		# steepest ascent vector (Eq. 6.307 or 6.312)
-		gamma = cprior @ Gm.T @ Cd @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
+		gamma = cprior @ Gm.T @ la.inv(Cd) @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
 		#===================================================
 		# QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
 		# approximate curvature
@@ -490,16 +506,13 @@ for li in file_in.readlines():
     sta = text[9]
     equip = text[10]
 
-    #if equip == 'DH8A': #DH8A' or equip == 'AT73': #equip == 'C185': #equip == 'B737' or equip == 'DH8A' or equip == 'AT73' or equip == 'B763':
-    #    go= True
-
+    if equip != 'A359':
+        continue
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
     
-    if os.path.exists(spec_dir): 
-        go = True
-    else:
+    if not os.path.exists(spec_dir): 
         continue
 
     for i in range(len(stations)):
@@ -566,7 +579,7 @@ for li in file_in.readlines():
     #Must use the tarrive time to get the correct data
     ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
     
-    wind = 120
+    spec_window = 120
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'   
     if Path(file_name).exists():
         coords = []
@@ -575,10 +588,11 @@ for li in file_in.readlines():
         with open(file_name, 'r') as file:
             for line in file:
                 pick_data = line.split(',')
-                if len(pick_data) == 3:
+                if len(pick_data) == 4:
                     start_time = float(pick_data[2])
-                elif len(pick_data) == 2:
+                elif len(pick_data) == 3:
                     print('No start time in file: ', file_name)
+                    start_time = tarrive
                     continue
                 else:
                     #if there is no data in the file at all delete the file
@@ -586,9 +600,11 @@ for li in file_in.readlines():
                     print("data: ", pick_data)
                     #os.remove(file_name)
                     continue
+    #else:
+    start_time = tarrive
     if equip == 'C185':
         start_time = start_time - 120
-    
+
     ht = datetime.fromtimestamp(start_time+120, tz=timezone.utc)                      
 
     h = ht.hour
@@ -618,11 +634,39 @@ for li in file_in.readlines():
     waveform2 = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
     if Path(waveform1).exists():
         tr = obspy.read(waveform1)
-        tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs - wind, tr[2].stats.starttime + (mins * 60) + secs + wind)
+        # Trim all traces in the Stream object
+        for trace in tr:
+            trace.trim(trace.stats.starttime + (mins * 60) + secs - spec_window,
+                   trace.stats.starttime + (mins * 60) + secs + spec_window)
         data = tr[2][:]
         fs = int(tr[2].stats.sampling_rate)
         title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
         torg = tr[2].times()
+        if len(data) == 0:
+            data = tr[1][:]
+            #tr[1].trim(tr[1].stats.starttime + (mins * 60) + secs - spec_window, tr[1].stats.starttime + (mins * 60) + secs + spec_window)
+            fs = int(tr[1].stats.sampling_rate)
+            title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
+            torg = tr[1].times()
+            if len(data) == 0:
+                data = tr[0][:]
+                #tr[0].trim(tr[0].stats.starttime + (mins * 60) + secs - spec_window, tr[0].stats.starttime + (mins * 60) + secs + spec_window)
+                fs = int(tr[0].stats.sampling_rate)
+                title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+                torg = tr[0].times()
+                if len(data) == 0:
+                    continue
+        
+
+    elif Path(waveform2).exists():
+        tr = obspy.read(waveform2)
+        for trace in tr:
+            trace.trim(trace.stats.starttime+ (float(h) * 3600) + (mins * 60) + secs - spec_window,
+                   trace.stats.starttime + (float(h) * 3600) + (mins * 60) + secs + spec_window)
+        data = tr[0][:]
+        fs = int(tr[0].stats.sampling_rate)
+        title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+        torg = tr[0].times()
         if len(data) == 0:
             data = tr[1][:]
             fs = int(tr[1].stats.sampling_rate)
@@ -634,16 +678,6 @@ for li in file_in.readlines():
                 title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
                 torg = tr[0].times()
 
-
-    elif Path(waveform2).exists():
-        tr = obspy.read(waveform2)
-
-        tr.trim(tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs - wind, tr[0].stats.starttime + (int(h) * 3600) + (mins * 60) + secs + wind)
-
-        data = tr[0][:]
-        fs = int(tr[0].stats.sampling_rate)
-        title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-        torg = tr[0].times()
     else:
         continue
 
@@ -666,6 +700,11 @@ for li in file_in.readlines():
 
     coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=False) 
     coords_array = np.array(coords)
+    print(sta,equip,date,flight_num)
+    plt.figure(figsize=(10, 6))
+    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+    plt.show()
+    plt.close()
 
     if len(coords) == 0:
         continue
@@ -688,14 +727,14 @@ for li in file_in.readlines():
     peaks = []
     p, _ = find_peaks(middle_column, distance = 7)
 
+    corridor_width = 10 # (250/len(p))
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 3       
 
-    corridor_width = (250/len(p))
     coord_inv = []
 
     for t_f in range(len(times)):
-        print(ft[t_f])
+
         upper = int(ft[t_f] + corridor_width)
         lower = int(ft[t_f] - corridor_width)
         if lower < 0:
@@ -708,7 +747,6 @@ for li in file_in.readlines():
             upper = 250
 
         tt = spec[lower:upper, t_f]
-        print(upper, lower, len(tt))
         max_amplitude_index = np.argmax(tt)
         
         max_amplitude_frequency = frequencies[max_amplitude_index+lower]
@@ -741,7 +779,7 @@ for li in file_in.readlines():
     tprime0 = m[3]
     c = m[4]
 
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=False)
 
     w = len(peaks)
  
@@ -768,22 +806,19 @@ for li in file_in.readlines():
         lower = calc_ft(times,  tprime0, f02, v0, l, c)
 
         for t_f in range(len(times)):
-      
-            if lower < 0:
-                lower = 0
-            elif lower > 250:
-                lower = 200
-            else:
-                pass
-            if upper > 250:
-                upper = 250
+
+            if lower[t_f] < 0 or lower[t_f] > 250 or upper[t_f] > 250 or np.isnan(upper[t_f]) or np.isnan(lower[t_f]):
+                continue
+
             tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
 
             #For Boeing Jets
-            if equip[0] == 'B' and equip[0:1] != 'BE':
+            if str(equip[0]) == 'B' and str(equip[0:1]) != 'BE':
                 max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
             else:
                 max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+            if len(max_amplitude_index) == 0:
+                continue
             maxa = np.argmax(tt[max_amplitude_index])
             max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
             maxfreq.append(max_amplitude_frequency)
@@ -836,8 +871,12 @@ for li in file_in.readlines():
         f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
         mprior.append(float(f0))
     print("mprior:", mprior)
-
-    m, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5)
+    plt.figure(figsize=(15, 10))
+    plt.pcolormesh(times, frequencies, spec, vmin=vmin, vmax=vmax, shading='gouraud')
+    plt.scatter(tobs, fobs, color='red', label='Picks', s=10)
+    plt.show()
+    plt.close()
+    m, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5,off_diagonal=False)
     #except:
     #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
     #    continue
@@ -857,7 +896,7 @@ for li in file_in.readlines():
     make_base_dir(BASE_DIR)
     qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
     qnum = "__"
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/spectrum/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     

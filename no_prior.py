@@ -131,6 +131,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 			fpred.append(ft0p) 
 		Gm = G
+		
 		# steepest ascent vector (Eq. 6.307 or 6.312)
 		gamma = cprior @ Gm.T @ la.inv(Cd) @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
 		#===================================================
@@ -142,7 +143,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 		n += 1
 		print(mnew)
-	covmlsq = la.pinv(G.T@la.pinv(Cd)@G + la.inv(cprior0))
+	covmlsq = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 	return mnew, covmlsq, F_m
 
