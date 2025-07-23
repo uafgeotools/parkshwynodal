@@ -6,6 +6,8 @@ import math
 from pathlib import Path
 from pyproj import Proj
 from datetime import datetime, timezone
+
+
 ###############################################################
 
 def make_base_dir(base_dir):
@@ -327,7 +329,7 @@ def speed_of_sound(Tc):
 
 ####################################################################################################################
 
-def calc_time(t0,dist,alt,c):
+def calc_time(t0, dist, alt, c):
 	"""
 	Calculate the time at which the acoustic wave reaches the station.
 
@@ -437,7 +439,7 @@ def calc_f0(tprime, tprime0, ft0p, v0, l, c):
 	return f0
 
 ####################################################################################################################################################################################################################################################################################################################
-def df(f0,v0,l,tp0,tp,c):   
+def df(f0, v0, l, tp0, tp, c):   
     """
 	Calculate the derivatives of f with respect to f0, v0, l, tprime0 and c.
 
@@ -495,7 +497,7 @@ def df(f0,v0,l,tp0,tp,c):
 
 
 #####################################################################################################################################################################################################################################################################################################################
-def invert_f(mprior, prior_sigma, coords_array, num_iterations,sigma = 10,off_diagonal = False):
+def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_diagonal = False):
 	"""
 	Inverts the function f using the given initial parameters and data array.
 
@@ -591,7 +593,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations,sigma = 10,off_di
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations = 4, sigma = 3, off_diagonal = False):
+def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 3, off_diagonal = False):
 	"""
 	Performs inversion using all picked overtones. 
 
@@ -677,7 +679,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 				ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
 				f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0,v0,l,tprime0, tobs[j],c)
-                #reccheck cunstruction of this matrix and how we include all f0's
+                
 				new_row[0] = f_derivev0
 				new_row[1] = f_derivel
 				new_row[2] = f_derivetprime0
@@ -710,6 +712,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 
 		print(mnew)
 		qv += 1
+	
 	Cpost = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior))
 	Cpost0 = la.inv(Gm.T@la.inv(Cd0)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
@@ -852,7 +855,7 @@ def get_equip(date, flight_num):
 	Returns:
 		str: Equipment type associated with the flight number.
 	"""
-	
+
 	equip_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_flights.csv'
 	equip_data = pd.read_csv(equip_file, sep=",")
 	equip_list = equip_data['equip']

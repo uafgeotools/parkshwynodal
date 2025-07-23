@@ -3,7 +3,7 @@ import pyproj
 import concurrent.futures
 import os
 from prelude import flight_list, dist_less, time_check, find_closest_point, get_equip, closest_time_calc, load_flight_file, avg_return
-from plot_func import plot_map
+from main_inv_fig_functions import plot_map
 
 num_workers = os.cpu_count()
 
