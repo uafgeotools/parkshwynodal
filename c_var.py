@@ -356,10 +356,10 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
         #Check to use mprior or mnew in steepest ascent vector
 		n += 1
 		print(mnew)
-    
-	cpost0 = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior0))
+	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+	Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	return mnew, cpost0, F_m
+	return mnew, Cpost0, Cpost, F_m
 
 #####################################################################################################################################################################################################################################################################################################################
 
@@ -472,10 +472,10 @@ def full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_arr
 
 		print(mnew)
 		qv += 1
-
-	cpost0 = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior0))
+	Cpost = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior))
+	Cpost0 = la.inv(Gm.T@la.inv(Cd0)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	return mnew, cpost0, f0_array, F_m
+	return mnew, Cpost0, Cpost, f0_array, F_m
 
 
 nrl = NRL()
@@ -593,12 +593,7 @@ for li in file_in.readlines():
                     start_time = tarrive
                     continue
                 else:
-                    #if there is no data in the file at all delete the file
-                    print('No data in file: ', file_name)
-                    print("data: ", pick_data)
-                    #os.remove(file_name)
                     continue
-    #else:
     start_time = tarrive
     if equip == 'C185':
         start_time = start_time - 120
@@ -713,7 +708,7 @@ for li in file_in.readlines():
     m0 = [f0, v0, l, tprime0, c]
     print('Initial guess: ', m0)
 
-    m,covm, F_m = invert_f(m0, coords_array, num_iterations=8)
+    m,_,_, F_m = invert_f(m0, coords_array, num_iterations=8)
     f0 = m[0]
     v0 = m[1]
     l = m[2]
@@ -722,12 +717,9 @@ for li in file_in.readlines():
     
     ft = calc_ft(times, tprime0, f0, v0, l, c)
 
-    peaks = []
-    p, _ = find_peaks(middle_column, distance = 7)
-
-    corridor_width = 10 # (250/len(p))
+    corridor_width = 20
     if equip[0] == 'B' and equip[0:1] != 'BE':
-        corridor_width = 3       
+        corridor_width = 5      
 
     coord_inv = []
 
@@ -748,12 +740,11 @@ for li in file_in.readlines():
         max_amplitude_index = np.argmax(tt)
         
         max_amplitude_frequency = frequencies[max_amplitude_index+lower]
-        peaks.append(max_amplitude_frequency)
         coord_inv.append((times[t_f], max_amplitude_frequency))
 
     coord_inv_array = np.array(coord_inv)
 
-    m,_,F_m = invert_f(m0, coord_inv_array,num_iterations=5)
+    m,_,_,F_m = invert_f(m0, coord_inv_array,num_iterations=5)
     f0 = m[0]
     v0 = m[1]
     l = m[2]
@@ -769,7 +760,7 @@ for li in file_in.readlines():
         if np.abs(delf[i]) <= 3:
             new_coord_inv_array.append(coord_inv_array[i])
     coord_inv_array = np.array(new_coord_inv_array)
-    m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=5, sigma=5)
+    m,_,_,F_m = invert_f(m0, coord_inv_array, num_iterations=5, sigma=5)
         
     f0 = m[0]
     v0 = m[1]
@@ -781,7 +772,7 @@ for li in file_in.readlines():
 
     w = len(peaks)
  
-    corridor_width = 10
+    corridor_width = (fs/2) / len(peaks) 
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 3
     peaks_assos = []
@@ -828,7 +819,7 @@ for li in file_in.readlines():
             if f0 < 200:
                 coord_inv_array = np.array(coord_inv)
                 mtest = [f0,v0, l, tprime0,c]
-                mtest,_, F_m = invert_f(mtest, coord_inv_array, num_iterations=4)
+                mtest,_,_, F_m = invert_f(mtest, coord_inv_array, num_iterations=4)
                 ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
             else:
                 ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
@@ -874,7 +865,7 @@ for li in file_in.readlines():
     plt.scatter(tobs, fobs, color='red', label='Picks', s=10)
     plt.show()
     plt.close()
-    m, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5,off_diagonal=False)
+    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations=4, sigma=5,off_diagonal=False)
     #except:
     #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
     #    continue

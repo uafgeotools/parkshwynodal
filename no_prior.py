@@ -61,7 +61,7 @@ def df(f0,v0,l,tp0,tp,c):
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def invert_f(mprior, coords_array, num_iterations,sigma = 10):
+def invert_f(mprior, coords_array, num_iterations,sigma = 10,round = 2):
 	"""
 	Inverts the function f using the given initial parameters and data array.
 
@@ -78,12 +78,20 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
 	n = 0
+	if round == 1:
+		f0_prior = 50
+            
+		v0_prior = 70
+		l_prior = 2000
+		tprime0_prior = 30
+		c_prior = 60  
+	else:
+		f0_prior = 5
 
-	f0_prior = 80
-	v0_prior = 100
-	l_prior = 10000
-	tprime0_prior = 40
-	c_prior = 60
+		v0_prior = 10
+		l_prior = 1200
+		tprime0_prior = 5
+		c_prior = 30  
 	cprior0 = np.zeros((5,5))
 
 	cprior0[0][0] = f0_prior**2
@@ -143,9 +151,11 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 		n += 1
 		print(mnew)
-	covmlsq = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior0))
+	print(mnew)
+	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+	Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	return mnew, covmlsq, F_m
+	return mnew, Cpost0, Cpost, F_m
 
 #################################################################################################################################################################################################################################################################################################################################################################
 
@@ -183,9 +193,34 @@ y = [140.02964002964, 188.29218829218826, 93.7170937170937, 153.9234039234039, 1
 
 coords = [(x[i], y[i]) for i in range(len(x))]
 coords_array = np.array(coords)
+# Create a subplot for the visualization
+fig, ax = plt.subplots(6,1,figsize=(8, 12),sharex=True)
+cax = ax[0].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+ax[0].axhline(y=188.29218829218826, color='black', linestyle='--', linewidth=1)
+ax[0].axhline(y=93.7170937170937, color='black', linestyle='--', linewidth=1)
+ax[0].axhline(y=(188.29218829218826+93.7170937170937)/2, color='red', linestyle='--', linewidth=0.7)
+ax[0].axvline(x=112.48911983478979, color='red', linestyle='--', linewidth=0.7)
+slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
+#Create dashed line with the slope that is tangent to the first point
+x_values = [coords_array[3,0], coords_array[4,0]]
+y_values = [coords_array[3,1], coords_array[4,1]]
+# Plot the dashed line before scatter plots so it appears underneath
+ax[0].plot(x_values, y_values, color='blue', linestyle='--', linewidth=1, zorder=1)
+
+# Add points at x=70 and x=150 using the slope
+y_70 = coords_array[3,1] + slope * (70 - coords_array[3,0])
+y_150 = coords_array[3,1] + slope * (150 - coords_array[3,0])
+ax[0].plot([70, 150], [y_70, y_150], color='blue', linestyle='--', linewidth=1, zorder=1)
+# Move scatter plots after all lines so they appear on top
+ax[0].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x', s=100, linewidths=3,label="f_initial + f_final")
+ax[0].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
+ax[0].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
+ax[0].set_ylabel('Frequency (Hz)')
+
+cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 
 #insert method to get initial model here
-f0 = coords_array[1,1]+coords_array[2,1]/2
+f0 = (coords_array[1,1]+coords_array[2,1])/2 
 tprime0 = coords_array[0,0] 
 v0 = c*abs(coords_array[1,1]-coords_array[2,1]) / (2 * f0)
 slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
@@ -193,12 +228,23 @@ l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope #(c**2*f0*v0**2*np.sqrt(c**2 - v
 
 m0 = [f0, v0, l, tprime0,c]
 print('Initial model:', m0)
-m, covm, F_m = invert_f(m0, coords_array, num_iterations=8)
+ft = calc_ft(times, m0[3], m0[0], m0[1], m0[2], m0[4])
+ax[1].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
+ax[1].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x', s=100, linewidths=3,label="f_initial + f_final")
+ax[1].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
+ax[1].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
+ax[1].set_ylabel('Frequency (Hz)')
+m, covm,_, F_m = invert_f(m0, coords_array, num_iterations=5,round=1)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
+cax = ax[2].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+ax[2].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
+ax[2].set_ylabel('Frequency (Hz)')
 peaks = []
 coord_inv = []
-corridor_width = 6 
+upper_array = []
+lower_array = []
+corridor_width = 10 
 for t_f in range(len(times)):
     upper = int(ft[t_f] + corridor_width)
     lower = int(ft[t_f] - corridor_width)
@@ -214,10 +260,13 @@ for t_f in range(len(times)):
     max_amplitude_frequency = frequencies[max_amplitude_index+lower]
     peaks.append(max_amplitude_frequency)
     coord_inv.append((times[t_f], max_amplitude_frequency))
-
+    upper_array.append(upper)
+    lower_array.append(lower)
 coord_inv_array = np.array(coord_inv)
-
-m,_,F_m = invert_f(m, coord_inv_array, num_iterations=4)
+cax = ax[3].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
+ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
+m,_,_,F_m = invert_f(m, coord_inv_array, num_iterations=3)
 
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
@@ -229,7 +278,10 @@ for i in range(len(delf)):
         new_coord_inv_array.append(coord_inv_array[i])
 coord_inv_array = np.array(new_coord_inv_array)
 
-m,covm,F_m = invert_f(m0, coord_inv_array, num_iterations=20, sigma=3)
+ax[3].scatter(coord_inv_array[:, 0], coord_inv_array[:, 1], c='black', marker='x', s=20)
+ax[3].set_xlabel('Time (s)')
+ax[3].set_ylabel('Frequency (Hz)')
+m,covm0,covm_norm,F_m = invert_f(m, coord_inv_array, num_iterations=6, sigma=5)
 
 f0 = m[0]
 v0 = m[1]
@@ -237,14 +289,45 @@ l = m[2]
 tprime0 = m[3]
 c = m[4]
 
-nx,ny = covm.shape
+ft = calc_ft(times, tprime0, f0, v0, l, c)
+cax = ax[4].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+ax[4].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
+ax[4].set_ylabel('Frequency (Hz)')
+plt.tight_layout()
 
 
-sigma = np.sqrt(np.diag(covm))
+nx,ny = covm0.shape
+# initialize samples
+covm_samples = np.empty((5,1000))
+m_samples = np.zeros((5,1000))
+ft_matrix = np.zeros((1000,len(times)))
+# generate samples of the posterior
+R = np.linalg.cholesky(covm0)
+cax = ax[5].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+for jj in range(1000):
+	covm_samples[:,jj] = (R @ np.random.randn(5,1)).flatten()
+	m_samples[:,jj] = covm_samples[:,jj] + m.flatten()
+	f0_s = m_samples[0,jj]
+	v0_s = m_samples[1,jj]
+	l_s = m_samples[2,jj]
+	tprime0_s = m_samples[3,jj]
+	c_s = m_samples[4,jj]
+	ft = calc_ft(times, tprime0_s, f0_s, v0_s, l_s, c_s)
+	ft_matrix[jj, :] = ft
+	#ax[5].plot(times, ft, '#377eb8',ls = (0,(5,20)), linewidth=0.7) 
+ax[5].set_ylim(0, 250)
+std_samples  = 3*np.std(ft_matrix,axis=0)
+ft = calc_ft(times, tprime0, f0, v0, l, c)
+plt.plot(times, ft+std_samples, color='red', linewidth=0.5)
+plt.plot(times, ft-std_samples, color='red', linewidth=0.5)
+ax[5].set_xlabel('Time (s)')
+plt.show()
+
+sigma = np.sqrt(np.diag(covm_norm))
 outer_v = np.outer(sigma,sigma)
-Crho = covm / outer_v
+Crho = covm_norm / outer_v
 
-Crho[covm == 0] = 0
+Crho[covm_norm == 0] = 0
 '''
 gridlines=False
 colormap='seismic'
@@ -263,7 +346,7 @@ plt.colorbar()
 plt.show()
 plt.close()
 '''
-covm = np.sqrt(np.diag(covm))
+covm = np.sqrt(np.diag(covm_norm))
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
 ax1.plot(torg, data, 'k', linewidth=0.5)
