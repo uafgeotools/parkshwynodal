@@ -22,7 +22,6 @@ def df(f0,v0,l,tp0,tp,c):
 	Returns:
 	tuple: A tuple containing the derivatives of f with respect to f0, v0, l, and tp0.
 	"""
-    #print('f0: ', f0, 'v0: ', v0, 'l: ', l, 'tp0: ', tp0)
     #derivative with respect to f0
     f_derivef0 = (1 / (1 - (c * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2  + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))) /((c**2 - v0**2) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2)) / c**4))**2) / (c**2 - v0**2)**2))))
 
@@ -158,7 +157,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10,round = 2):
 	return mnew, Cpost0, Cpost, F_m
 
 #################################################################################################################################################################################################################################################################################################################################################################
-
+generate_samples = False
 c = speed_of_sound(-33)
 
 start_time = 1550158642.26246    
@@ -193,8 +192,12 @@ y = [140.02964002964, 188.29218829218826, 93.7170937170937, 153.9234039234039, 1
 
 coords = [(x[i], y[i]) for i in range(len(x))]
 coords_array = np.array(coords)
+if generate_samples:
+	fig_num = 6
+else:
+	fig_num = 5
 # Create a subplot for the visualization
-fig, ax = plt.subplots(6,1,figsize=(8, 12),sharex=True)
+fig, ax = plt.subplots(fig_num,1,figsize=(8, 12),sharex=True)
 cax = ax[0].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[0].axhline(y=188.29218829218826, color='black', linestyle='--', linewidth=1)
 ax[0].axhline(y=93.7170937170937, color='black', linestyle='--', linewidth=1)
@@ -293,59 +296,37 @@ ft = calc_ft(times, tprime0, f0, v0, l, c)
 cax = ax[4].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[4].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[4].set_ylabel('Frequency (Hz)')
+
+if generate_samples:
+	nx,ny = covm0.shape
+	# initialize samples
+	covm_samples = np.empty((5,1000))
+	m_samples = np.zeros((5,1000))
+	ft_matrix = np.zeros((1000,len(times)))
+	# generate samples of the posterior
+	R = np.linalg.cholesky(covm0)
+	cax = ax[5].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+	for jj in range(1000):
+		covm_samples[:,jj] = (R @ np.random.randn(5,1)).flatten()
+		m_samples[:,jj] = covm_samples[:,jj] + m.flatten()
+		f0_s = m_samples[0,jj]
+		v0_s = m_samples[1,jj]
+		l_s = m_samples[2,jj]
+		tprime0_s = m_samples[3,jj]
+		c_s = m_samples[4,jj]
+		ft = calc_ft(times, tprime0_s, f0_s, v0_s, l_s, c_s)
+		ft_matrix[jj, :] = ft
+		#ax[5].plot(times, ft, '#377eb8',ls = (0,(5,20)), linewidth=0.7) 
+	ax[5].set_ylim(0, 250)
+	std_samples  = np.std(ft_matrix,axis=0)
+	ft = calc_ft(times, tprime0, f0, v0, l, c)
+	ax[5].plot(times, ft+std_samples, color='red', linewidth=0.5)
+	ax[5].plot(times, ft-std_samples, color='red', linewidth=0.5)
+ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
-
-
-nx,ny = covm0.shape
-# initialize samples
-covm_samples = np.empty((5,1000))
-m_samples = np.zeros((5,1000))
-ft_matrix = np.zeros((1000,len(times)))
-# generate samples of the posterior
-R = np.linalg.cholesky(covm0)
-cax = ax[5].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-for jj in range(1000):
-	covm_samples[:,jj] = (R @ np.random.randn(5,1)).flatten()
-	m_samples[:,jj] = covm_samples[:,jj] + m.flatten()
-	f0_s = m_samples[0,jj]
-	v0_s = m_samples[1,jj]
-	l_s = m_samples[2,jj]
-	tprime0_s = m_samples[3,jj]
-	c_s = m_samples[4,jj]
-	ft = calc_ft(times, tprime0_s, f0_s, v0_s, l_s, c_s)
-	ft_matrix[jj, :] = ft
-	#ax[5].plot(times, ft, '#377eb8',ls = (0,(5,20)), linewidth=0.7) 
-ax[5].set_ylim(0, 250)
-std_samples  = 3*np.std(ft_matrix,axis=0)
-ft = calc_ft(times, tprime0, f0, v0, l, c)
-plt.plot(times, ft+std_samples, color='red', linewidth=0.5)
-plt.plot(times, ft-std_samples, color='red', linewidth=0.5)
-ax[5].set_xlabel('Time (s)')
-plt.show()
-
-sigma = np.sqrt(np.diag(covm_norm))
-outer_v = np.outer(sigma,sigma)
-Crho = covm_norm / outer_v
-
-Crho[covm_norm == 0] = 0
-'''
-gridlines=False
-colormap='seismic'
-plt.figure(figsize=(10, 10))
-plt.imshow(Crho,cmap=colormap)
-plt.xticks(ticks=range(np.shape(Crho)[1]),labels=[str(val) for val in range(1,np.shape(Crho)[1]+1)])
-plt.yticks(ticks=range(np.shape(Crho)[0]),labels=[str(val) for val in range(1,np.shape(Crho)[0]+1)])
-if gridlines:
-	xgrid = np.array(range(np.shape(Crho)[1] + 1)) - 0.5
-	ygrid = np.array(range(np.shape(Crho)[0] + 1)) - 0.5
-	for gridline in xgrid:
-		plt.axvline(x=gridline,color='k',linewidth=1)
-	for gridline in ygrid:
-		plt.axhline(y=gridline,color='k',linewidth=1)
-plt.colorbar()
 plt.show()
 plt.close()
-'''
+
 covm = np.sqrt(np.diag(covm_norm))
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
@@ -402,4 +383,36 @@ ax4.set_xlim(vmax2*1.1, vmin2)
 ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
 ax4.grid(axis='y')
 plt.show()
+plt.close()
 
+if generate_samples:
+	plt.figure()
+	plt.plot(times, 2*std_samples)
+	plt.ylim(0,2)
+	plt.show()
+	plt.close()
+
+plot_posterior = False
+if plot_posterior:
+	sigma = np.sqrt(np.diag(covm_norm))
+	outer_v = np.outer(sigma,sigma)
+	Crho = covm_norm / outer_v
+
+	Crho[covm_norm == 0] = 0
+
+	gridlines=False
+	colormap='seismic'
+	plt.figure(figsize=(10, 10))
+	plt.imshow(Crho,cmap=colormap)
+	plt.xticks(ticks=range(np.shape(Crho)[1]),labels=[str(val) for val in range(1,np.shape(Crho)[1]+1)])
+	plt.yticks(ticks=range(np.shape(Crho)[0]),labels=[str(val) for val in range(1,np.shape(Crho)[0]+1)])
+	if gridlines:
+		xgrid = np.array(range(np.shape(Crho)[1] + 1)) - 0.5
+		ygrid = np.array(range(np.shape(Crho)[0] + 1)) - 0.5
+		for gridline in xgrid:
+			plt.axvline(x=gridline,color='k',linewidth=1)
+		for gridline in ygrid:
+			plt.axhline(y=gridline,color='k',linewidth=1)
+	plt.colorbar()
+	plt.show()
+	plt.close()
