@@ -3,134 +3,12 @@ import fileinput
 import os
 import pandas as pd
 from datetime import datetime
-from pathlib import Path
 
-###############################################################
-
-def make_base_dir(base_dir):
-	"""
-	Create a directory and its parent directories if they don't exist.
-
-	Args:
-		base_dir (str): The path of the directory to be created.
-
-	Returns:
-		None
-	"""
-	base_dir = Path(base_dir)
-	if not base_dir.exists():
-		current_path = Path("/")
-		for parent in base_dir.parts:
-			current_path = current_path / parent
-			if not current_path.exists():
-				current_path.mkdir()
-
-#############################################################################################################################################################
-
-def load_flights(month1, month2, first_day, last_day):
-	"""
-	Load flight files based on the specified months and days.
-
-	Args:
-		month1 (int): The starting month.
-		month2 (int): The ending month.
-		first_day (int): The first day of the range.
-		last_day (int): The last day of the range.
-
-		for only Feb use month1 = 2 and month2 = 3
-		for only March use month1 = 3 and month2 = 4
-		for Fab and March use month1 = 2 and month2 = 4
-		for entire deployment use month1 = 2,first_day = 11,month2 = 4, and last_day = 27
-
-	Returns:
-		tuple: A tuple containing two lists - flight_files and filenames.
-			   flight_files: A list of file paths for the flight files.
-			   filenames: A list of filenames for the flight files.
-	"""
-	flight_files = []
-	filenames = []
-
-	for month in range(month1, month2):
-		if month1 == 2 and month2 == 4:
-			if month == 2:
-				month = '02'
-				for day in range(first_day, 29):
-					day = str(day)
-					directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
-					for filename in os.listdir(directory):
-						filenames.append(filename)
-						f = os.path.join(directory, filename)
-						if os.path.isfile(f):
-							flight_files.append(f)
-			elif month == 3:
-				month = '03'
-				for day in range(1, last_day):
-					if day < 10:
-						day = '0' + str(day)
-						directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
-						for filename in os.listdir(directory):
-							filenames.append(filename)
-							f = os.path.join(directory, filename)
-							if os.path.isfile(f):
-								flight_files.append(f)
-					else:
-						day = str(day)
-						directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
-						for filename in os.listdir(directory):
-							filenames.append(filename)
-							f = os.path.join(directory, filename)
-							if os.path.isfile(f):
-								flight_files.append(f)
-		elif month1 == 2 and month2 == 3:
-			month = '02'
-			for day in range(first_day, last_day):
-				day = str(day)
-				directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
-				for filename in os.listdir(directory):
-					filenames.append(filename)
-					f = os.path.join(directory, filename)
-					if os.path.isfile(f):
-						flight_files.append(f)
-		elif month1 == 2 and month2 == 4:
-			month = '03'
-			for day in range(first_day, last_day):
-				if day < 10:
-					day = '0' + str(day)
-					directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
-					for filename in os.listdir(directory):
-						filenames.append(filename)
-						f = os.path.join(directory, filename)
-						if os.path.isfile(f):
-							flight_files.append(f)
-				else:
-					day = str(day)
-					directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
-					for filename in os.listdir(directory):
-						filenames.append(filename)
-						f = os.path.join(directory, filename)
-						if os.path.isfile(f):
-							flight_files.append(f)
-	return flight_files, filenames
-
-####################################################
-
-def modify_content(content):
-	"""
-	Function to modify the content of the file by making all the letters uppercase. 
-
-	Args:
-		content (str): The content to be modified.
-
-	Returns:
-		str: The modified content.
-	"""
-	return content.upper()
-
-#############################################################
+#############################################################################################################################
 
 def modify_file(input_file_name, output_file_name):
 	"""
-	Makes all the letters in the input file and writes this modified content to the output file.
+	Takes all the letters in the input file and makes them uppercase, then writes this modified content to the output file.
 
 	Args:
 		input_file_name (str): The path of the input file.
@@ -139,12 +17,13 @@ def modify_file(input_file_name, output_file_name):
 	Returns:
 		None
 	"""
+
 	# Read the input file
 	with open(input_file_name, 'r') as file:
 		content = file.read()
 
 	# Modify the content
-	modified_content = modify_content(content)
+	modified_content = content.upper()
 
 	# Write the modified content to the output file
 	with open(output_file_name, 'w') as file:
@@ -161,11 +40,13 @@ def station_subset(filename, steps, outputname):
 	- steps (int): The amount of steps to subset stations by. (ie. every 4th station is in the subset)
 	- outputname (str): The filename for the output file.
 	"""
-	
+
+	output = open(outputname, 'w')
 	with open(filename) as handle:
 		for lineno, line in enumerate(handle):
 			if lineno % steps == 0:
-				print(line)
+				output.write(line)
+	output.close()
 
 #######################################################################################
 
@@ -179,6 +60,7 @@ def replace(filename, old_string, new_string):
 		old_string (str): The string to be replaced.
 		new_string (str): The string to replace the old_string with.
 	"""
+
 	for i, line in enumerate(fileinput.input(filename, inplace=1)):
 		sys.stdout.write(line.replace(old_string, new_string))
 
@@ -186,12 +68,11 @@ def replace(filename, old_string, new_string):
 	# replace('filename.site', '', ' "')
 	# or replace('#', '\n#')
 
-##############################################################################################
-
+############################################################################################################################
 
 def round_replace(filename, col_2round, precision, m2km):
 	"""
-	Replace the values in a specific column of a text file with rounded values.
+	Replace the values, in meters, in a specific column of a text file with rounded values, in either meters or kilometers.
 
 	Args:
 		filename (str): The path of the text file.
@@ -219,7 +100,7 @@ def round_replace(filename, col_2round, precision, m2km):
 			new_val = round(float(val[col_2round]) / 1000, precision)
 			sys.stdout.write(line.replace(str(val[col_2round]), str(new_val)))
 
-#########################################################################################################
+#################################################################################################################################
 
 def rename_file(flight_name):
 	"""
@@ -232,6 +113,7 @@ def rename_file(flight_name):
 	Returns:
 		None
 	"""
+
 	os.getcwd()
 	collection = flight_name + '/'
 	for i, filename in enumerate(os.listdir(collection)):
@@ -242,7 +124,7 @@ def rename_file(flight_name):
 			
 def extract_flight(equipment):
 	"""
-	Extracts all rows from the 'all_station_crossing_db.txt' file whith the designated equipment type 
+	Extracts all rows from the 'nodes_crossings_db_UTM.txt' file whith the designated equipment type 
 	and prints them into an individual file labeled with the equipment type.
 	
 	Args:
@@ -250,11 +132,10 @@ def extract_flight(equipment):
 
 	Returns:
 		None
-
 	"""
 
-	input = open('input/all_station_crossing_db.txt','r')
-	output = open('input/all_station_crossing_db_'+str(equipment)+'.txt','w')
+	input = open('input/nodes_crossings_db_UTM.txt','r')
+	output = open('input/nodes_crossings_db_UTM_'+str(equipment)+'.txt','w')
 
 	for line in input.readlines():
 		val = line.split(',')
@@ -280,6 +161,7 @@ def extract_col(input_file, output_file, col, split_str):
 	Returns:
 		None
 	"""
+
 	i = int(col)
 	with open(input_file, 'r') as f_in, open(output_file, 'w') as f_out:
 		for line in f_in:
@@ -301,6 +183,7 @@ def date_round(input_file, output_file):
 	Returns:
 		None
 	"""
+
 	# Remove the milliseconds from the timestamp
 	with open(input_file, 'r') as f_in, open(output_file, 'w') as f_out:
 		for line in f_in:
@@ -323,6 +206,7 @@ def count_flight(input_file, col_f, output_file, designator):
 	Returns:
 		None
 	"""
+
 	text = open(input_file, 'r')
 	f = open(output_file, 'w')
 	i = int(col_f)
@@ -346,9 +230,10 @@ def count_flight(input_file, col_f, output_file, designator):
 
 def print_eq():
 	"""
-	Prints the aircraft type designator for each line in the 'all_station_crossing_db.txt' file.
+	Prints the aircraft type designator for each line in the 'nodes_crossings_db_UTM.txt' file.
 	"""
-	text = open('all_station_crossing_db.txt', 'r')
+
+	text = open('nodes_crossings_db_UTM.txt', 'r')
 
 	for line in text.readlines():
 		val = line.split(',')
@@ -367,6 +252,7 @@ def comb_lines(filename):
 	Returns:
 		None
 	"""
+
 	with open(filename, "r") as file:
 		lines = file.readlines()
 
@@ -387,8 +273,19 @@ def comb_lines(filename):
 	with open(filename, "w") as file:
 		file.write("\n".join(new_lines))
 
-# Write a function to take one column of a text file and order it in increasing order. Using that column, all rows will be rearranged in order.
+############################################################################################################
+
 def order_rows_by_column(filename, col,split_symbol=','):
+	"""
+	Function to take one column of a text file and order it in increasing order. 
+	Using that column, all rows will be rearranged in order.
+
+	Args:
+		filename (str): Path to the input file.
+		col (int): The column index to sort by (0-based index).
+		split_symbol (str): The symbol used to split the columns in the file. Default is ','.
+	"""
+
 	with open(filename, 'r') as file:
 		lines = file.readlines()
 
@@ -414,8 +311,19 @@ def order_rows_by_column(filename, col,split_symbol=','):
 	with open(filename, 'w') as file:
 		file.writelines(rearranged_lines)
 
+############################################################################################################
 
 def check_matching_values(file1, col1, file2, col2):
+	"""
+	Compares values in specific columns of two text files and prints the values if they differ.
+
+	Args:
+		file1 (str): Path to the first input file.
+		col1 (int): Column index in the first file to compare (0-based index).
+		file2 (str): Path to the second input file.
+		col2 (int): Column index in the second file to compare (0-based index).
+	"""
+
 	with open(file1, 'r') as f1, open(file2, 'r') as f2:
 		lines1 = f1.readlines()
 		lines2 = f2.readlines()
@@ -429,8 +337,25 @@ def check_matching_values(file1, col1, file2, col2):
 		print(value1, value2)
 		if value1 != value2:
 			print(f"Row {i+1} in {file1} and {file2} have different values.")
-			
+############################################################################################################
+		
 def cojoin_columns(file1, start_col1, end_col1, file2, start_col2, end_col2, output_file):
+	"""
+	Function to take two text files, extract specific columns from each file, and cojoin them into a new file.
+
+	Args:
+		file1 (str): Path to the first input file.
+		start_col1 (int): Starting column index for the first file.
+		end_col1 (int): Ending column index for the first file.
+		file2 (str): Path to the second input file.
+		start_col2 (int): Starting column index for the second file.
+		end_col2 (int): Ending column index for the second file.
+		output_file (str): Path to the output file.
+
+	Returns:
+		None
+	"""	
+
 	with open(file1, 'r') as f1, open(file2, 'r') as f2, open(output_file, 'w') as output:
 		lines1 = f1.readlines()
 		lines2 = f2.readlines()
@@ -445,3 +370,55 @@ def cojoin_columns(file1, start_col1, end_col1, file2, start_col2, end_col2, out
 
 			cojoined_line = ','.join(values1 + values2) + '\n'
 			output.write(cojoined_line)
+
+##############################################################################################################
+
+def delete_empty_file(file_path):
+    """
+    Checks if a given file is empty and deletes it if it is.
+
+    Args:
+        file_path (str): The path to the file to be checked.
+    """
+
+    if not os.path.exists(file_path):
+        print(f"Error: File '{file_path}' does not exist.")
+        return
+
+    try:
+        if os.path.getsize(file_path) == 0:
+            os.remove(file_path)
+            print(f"File '{file_path}' was empty and has been deleted.")
+        else:
+            print(f"File '{file_path}' is not empty.")
+    except OSError as e:
+        print(f"Error processing file '{file_path}': {e}")
+
+###############################################################################################################
+
+def remove_files_with_no_picks(base_dir='/home/irseppi/REPOSITORIES/parkshwynodal/output/'):
+	"""
+	Removes files that do not contain any data picks from users.
+	Args:
+		base_dir (str): The base directory where the files are located. Default is '/home/irseppi/REPOSITORIES/parkshwynodal/output/'.
+	"""
+
+	# loop through the directories in the directory
+	for dir_name in os.listdir(base_dir):
+		dir_path = os.path.join(base_dir, dir_name)
+		if os.path.isdir(dir_path):
+			for equip_dir in os.listdir(dir_path):
+				equip_dir_path = os.path.join(dir_path, equip_dir)
+				if os.path.isdir(equip_dir_path):
+					for date_dir in os.listdir(equip_dir_path):
+						date_dir_path = os.path.join(equip_dir_path, date_dir)
+						if os.path.isdir(date_dir_path):
+							for flight_dir in os.listdir(date_dir_path):
+								flight_dir_path = os.path.join(date_dir_path, flight_dir)
+								if os.path.isdir(flight_dir_path):
+									for sta_dir in os.listdir(flight_dir_path):
+										sta_dir_path = os.path.join(flight_dir_path, sta_dir)
+										if os.path.isdir(sta_dir_path):
+											for file_name in os.listdir(sta_dir_path):
+												file_path = os.path.join(sta_dir_path, file_name)
+												delete_empty_file(file_path)

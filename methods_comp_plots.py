@@ -11,7 +11,7 @@ from matplotlib import colors as mcolors
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
 # Read input file containing station crossing data
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_UTM.txt', 'r')
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
 latc = []  # List to store latitudes
 lonc = []  # List to store longitudes
 timec = []  # List to store times
