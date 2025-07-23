@@ -60,7 +60,7 @@ def df(f0,v0,l,tp0,tp,c):
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def invert_f(mprior, coords_array, num_iterations,sigma = 10,round = 2):
+def invert_f(mprior, prior_sigma, coords_array, num_iterations,sigma = 10,round = 2):
 	"""
 	Inverts the function f using the given initial parameters and data array.
 
@@ -77,40 +77,32 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10,round = 2):
 	fobs = coords_array[:,1]
 	tobs = coords_array[:,0]
 	n = 0
-	if round == 1:
-		f0_prior = 50
-            
-		v0_prior = 70
-		l_prior = 2000
-		tprime0_prior = 30
-		c_prior = 60  
-	else:
-		f0_prior = 5
-
-		v0_prior = 10
-		l_prior = 1200
-		tprime0_prior = 5
-		c_prior = 30  
+ 
 	cprior0 = np.zeros((5,5))
+	f0_sigma = prior_sigma[0]
+	v0_sigma = prior_sigma[1]
+	l_sigma = prior_sigma[2]
+	tprime0_sigma = prior_sigma[3]
+	c_sigma = prior_sigma[4]
 
-	cprior0[0][0] = f0_prior**2
-	cprior0[1][1] = v0_prior**2
-	cprior0[2][2] = l_prior**2
-	cprior0[3][3] = tprime0_prior**2
-	cprior0[4][4] = c_prior**2
+	cprior0[0][0] = f0_sigma**2
+	cprior0[1][1] = v0_sigma**2
+	cprior0[2][2] = l_sigma**2
+	cprior0[3][3] = tprime0_sigma**2
+	cprior0[4][4] = c_sigma**2
 	if off_diagonal:
-		cprior0[0][3] =  -0.4*f0_prior*tprime0_prior
+		cprior0[0][3] =  -0.4*f0_sigma*tprime0_sigma
 
-		cprior0[1][2] = -0.7*v0_prior*l_prior
-		cprior0[1][4] = 0.85*v0_prior*c_prior
-		
-		cprior0[2][1] = -0.7*v0_prior*l_prior
-		cprior0[2][4] = -0.7*l_prior*c_prior
+		cprior0[1][2] = -0.7*v0_sigma*l_sigma
+		cprior0[1][4] = 0.85*v0_sigma*c_sigma
 
-		cprior0[3][0] =  -0.4*f0_prior*tprime0_prior
-		
-		cprior0[4][1] = 0.85*v0_prior*c_prior
-		cprior0[4][2] = -0.7*l_prior*c_prior     
+		cprior0[2][1] = -0.7*v0_sigma*l_sigma
+		cprior0[2][4] = -0.7*l_sigma*c_sigma
+
+		cprior0[3][0] =  -0.4*f0_sigma*tprime0_sigma
+
+		cprior0[4][1] = 0.85*v0_sigma*c_sigma
+		cprior0[4][2] = -0.7*l_sigma*c_sigma
 
 	cprior = cprior0 * (5)
 
@@ -219,6 +211,7 @@ ax[0].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x',
 ax[0].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
 ax[0].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[0].set_ylabel('Frequency (Hz)')
+ax[0].set_title("Steps to get Prior Model", fontsize='small')
 
 cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 
@@ -230,6 +223,9 @@ slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_ar
 l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope #(c**2*f0*v0**2*np.sqrt(c**2 - v0**2)/(c**2 - v0**2)**2)/abs(slope)
 
 m0 = [f0, v0, l, tprime0,c]
+prior_sigma = [50, 70, 2000, 30, 60] #initial prior sigma values for f0, v0, l, tprime0, c
+
+
 print('Initial model:', m0)
 ft = calc_ft(times, m0[3], m0[0], m0[1], m0[2], m0[4])
 ax[1].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
@@ -237,12 +233,14 @@ ax[1].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x',
 ax[1].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
 ax[1].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[1].set_ylabel('Frequency (Hz)')
-m, covm,_, F_m = invert_f(m0, coords_array, num_iterations=5,round=1)
+ax[1].set_title("Initial Prior Model", fontsize='small')
+m, covm,_, F_m = invert_f(m0, prior_sigma, coords_array, num_iterations=5,round=1)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
 cax = ax[2].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[2].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[2].set_ylabel('Frequency (Hz)')
+ax[2].set_title("Inverted Model = Updated Prior Model", fontsize='small')
 peaks = []
 coord_inv = []
 upper_array = []
@@ -269,7 +267,10 @@ coord_inv_array = np.array(coord_inv)
 cax = ax[3].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
-m,_,_,F_m = invert_f(m, coord_inv_array, num_iterations=3)
+ax[3].set_title("Data Points extracted from within Corridor around the Updated Prior Model", fontsize='small')
+
+prior_sigma = [5,10,1000,5,30] #prior sigma values for f0, v0, l, tprime0, c
+m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
 
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
@@ -284,7 +285,9 @@ coord_inv_array = np.array(new_coord_inv_array)
 ax[3].scatter(coord_inv_array[:, 0], coord_inv_array[:, 1], c='black', marker='x', s=20)
 ax[3].set_xlabel('Time (s)')
 ax[3].set_ylabel('Frequency (Hz)')
-m,covm0,covm_norm,F_m = invert_f(m, coord_inv_array, num_iterations=6, sigma=5)
+
+prior_sigma = [5,10,1000,5,30] #prior sigma values for f0, v0, l, tprime0, c
+m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=5)
 
 f0 = m[0]
 v0 = m[1]
@@ -296,6 +299,7 @@ ft = calc_ft(times, tprime0, f0, v0, l, c)
 cax = ax[4].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[4].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[4].set_ylabel('Frequency (Hz)')
+ax[4].set_title("Posterior Model", fontsize='small')
 
 if generate_samples:
 	nx,ny = covm0.shape
@@ -322,6 +326,7 @@ if generate_samples:
 	ft = calc_ft(times, tprime0, f0, v0, l, c)
 	ax[5].plot(times, ft+std_samples, color='red', linewidth=0.5)
 	ax[5].plot(times, ft-std_samples, color='red', linewidth=0.5)
+	ax[5].set_title("Standard Deviation of Posterior Model Samples", fontsize='small')
 ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
 plt.show()
