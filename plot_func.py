@@ -9,7 +9,8 @@ from prelude import make_base_dir, calc_ft
 ################################################################################################################################################
 
 def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km, closest_time, d, index, flight_num, date, seismometer, closest_p, head, station):
-    """Plot the flight path and seismometer locations on a map.
+    """
+    Plot the flight path and seismometer locations on a map.
 
     Args:
         flight_utm_x_km (list): List of UTM x coordinates for the flight path.
@@ -78,6 +79,7 @@ def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km,
     axs[0].scatter(seismo_utm_x_km, seismo_utm_y_km, c='#e41a1c', s = 3, label='seismometers')
     axs[0].plot(flight_utm_x_km, flight_utm_y_km, '-', c='#377eb8', lw=1, ms = 1, label='flight path')
 
+    # Plot arrows indicating the direction of the flight path
     for i in range(1, len(flight_utm_y_km)-1, int(len(flight_utm_y_km)/5)):
         direction = np.arctan2(flight_utm_y_km[i+1] - flight_utm_y_km[i], flight_utm_x_km[i+1] - flight_utm_x_km[i])
         if (flight_utm_x_km[i+1] - flight_utm_x_km[i]) == 0:
@@ -116,7 +118,7 @@ def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km,
     axs[1].ticklabel_format(useOffset=False, style='plain')
 
     direction = np.arctan2(flight_utm_y_km[index+1] - flight_utm_y_km[index], flight_utm_x_km[index+1] - flight_utm_x_km[index])
-        
+    
     axs[1].quiver(closest_x, closest_y, np.cos(direction), np.sin(direction), angles='xy', color='#377eb8', scale=8)
 
     axs[1].quiver(closest_x, closest_y, np.cos(heading), np.sin(heading), angles='xy', scale = 8, color='#999999')
@@ -164,11 +166,11 @@ def remove_median(Sxx):
     spec = 10 * np.log10(Sxx) - (10 * np.log10(MDF))
     return spec, MDF
 
-##############################################################################################################################################################################################################
+############################################################################################################################################################################################################################
 
-def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
+def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
     """
-    Plot the spectrogram and spectrum of the given data.
+    Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions and tprime0 initial guess compared to the final.
 
     Args:
         data (array): The waveform data.
@@ -183,13 +185,16 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         l (float): The distance.
         c (float): The speed of sound.
         f0_array (array): The array of frequencies.
+        F_m (float): The data misfit value.
         arrive_time (array): The arrival time array.
         MDF (array): Median removed from spectrogram.
-        covm (array): The covariance matrix.
+        Cpost (array): The normalized posterior covariance matrix.
         flight (int): The flight number.
         middle_index (int): The index of the middle column.
-        closest_time (float): The closest time.
+        tarrive (float): The initial estimation of the arrival time at the station from wave generated at aircraft at closest approach.
+        closest_time (float): The time of closest approach of aircraft, for saving the file.
         dir_name (str): The directory name.
+        plot_show (bool): If True, show the plot and ask user to provide a quality number. If False, save the plot without showing it. 
 
     Returns:
         str: The user assigned quality number.
@@ -238,9 +243,9 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         NTRY = 1000
         for N in range(NTRY):
             ftry = []
-            for c_index  in range(3, len(covm)):
-                xmin = f0_array[c_index-3] - covm[c_index]
-                xmax = f0_array[c_index-3] + covm[c_index]
+            for c_index  in range(3, len(Cpost)):
+                xmin = f0_array[c_index-3] - Cpost[c_index]
+                xmax = f0_array[c_index-3] + Cpost[c_index]
                 xtry = xmin + (xmax-xmin)*np.random.rand()
                 ftry.append(xtry)
 
@@ -256,9 +261,9 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
     if med_df == "NaN":
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[0] +' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(covm[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
 
     ax2.legend(loc='upper right',fontsize = 'small')
@@ -298,11 +303,11 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
 
     return qnum
 
-##############################################################################################################################################################################################################
+################################################################################################################################################################################################################################################################################################################################
 
 def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, dir_name):
     """
-    Plot the spectrum with arrival time markers.
+    Plot and save the spectrum with markers for the overtones arriving at the station at tprime0.
 
     Args:
         spec (numpy.ndarray): The spectrum data.
@@ -386,13 +391,17 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
         day (int): The day of the data.
         flight (int): The flight number.
         sta (int or str): The station identifier.
+        equip (str): The equipment identifier.
         closest_time (float): The time of closest approach.
+        start_time (float): The start time of the spectrogram, to save for future reference on plotting the spectrogram.
+        make_picks (bool): If you come to this function and no picks exist, it will allow you to make new picks.
 
     Returns:
         list: The list of picks the user picked along the most prominent overtone.
     """
-    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight)+'.csv'
-                
+
+    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
+
     if Path(file_name).exists():
         coords = []
         if Path(file_name).is_dir():
@@ -406,12 +415,13 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
                     continue
         file.close()  
         return coords
+    
     elif make_picks:
-        BASE_DIR = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'
+        BASE_DIR = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
         make_base_dir(BASE_DIR)
         pick_again = 'y'
         while pick_again == 'y':
-            r1 = open(file_name,'w')
+            r1 = open(file_name, 'w')
             coords = []
             plt.figure()
             plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
@@ -447,14 +457,19 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
         day (int): The day of the data.
         flight (int): The flight number.
         sta (int or str): The station identifier.
+        equip (str): The equipment identifier.
         closest_time (float): The time of closest approach.
-        tprime0 (float): The estimated arrival time.
+        start_time (float): The start time of the spectrogram, to save for future reference on plotting the spectrogram.
+        tprime0 (float): The estimated acoustic wave arrival time.
+        tarrive (float): The initial calculated time of acoustic wave arrival.
+        make_picks (bool): If you come to this function and no picks exist, it will allow you to make new picks.
 
     Returns:
-        list: The list of peak amplitudes.
-        list: The list of peak frequencies.
+        list: List of frequencies picked by user along different overtones.
+        list: List of times corresponding to the picked frequencies.
     """
-    output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/overtonepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight)+'.csv'
+
+    output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
     if Path(output2).exists():
 
         peaks = []
@@ -466,12 +481,13 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
                 freqpeak.append(float(pick_data[0]))
         file.close()  
         return peaks, freqpeak
+    
     elif make_picks:
-        BASE_DIR = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/overtonepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'
+        BASE_DIR = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
         make_base_dir(BASE_DIR)
         pick_again = 'y'
         while pick_again == 'y':
-            r2 = open(output2,'w')
+            r2 = open(output2, 'w')
             peaks = []
             freqpeak = []
             plt.figure()
@@ -508,21 +524,27 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         day (int): The day of the data.
         flight (int): The flight number.
         sta (int or str): The station identifier.
+        equip (str): The equipment identifier.
         tobs (list): The time array.
         fobs (list): The frequency array.
         closest_time (float): The time of closest approach.
+        start_time (float): The start time of the spectrogram, to save for future refrence on plotting the spectrogram.
         spec (numpy.ndarray): The spectrogram data.
         times (numpy.ndarray): The time array.
         frequencies (numpy.ndarray): The frequency array.
         vmin (float): The minimum amplitude value for the center line of the spectrogram. Used for adjusting colorbar.
         vmax (float): The maximum amplitude value for the center line of the spectrogram. Used for adjusting colorbar.
         w (int): The number of peaks.
+        peaks_assos (list or bool): The number of peaks associated with each overtone.
+        make_picks (bool): If you come to this function and no picks exist, it will allow you to make new picks.
 
     Returns:
-        list: The time array.
-        list: The frequency array.
+        list: The time array, including data for all overtones.
+        list: The frequency array, including data for all overtones.
+        list: The number of data points associated with each overtone, for indexing purposes.
     """
-    output3 = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/timepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight)+'.csv'
+
+    output3 = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/timepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
     if Path(output3).exists():
         set_time = []
         with open(output3, 'r') as file:
@@ -621,3 +643,5 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         return tobs, fobs, peaks_assos
     else:
         return tobs, fobs, []
+
+###############################################################################################################################
