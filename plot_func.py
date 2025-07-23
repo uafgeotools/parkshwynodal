@@ -1,6 +1,142 @@
+import pyproj
 import numpy as np
 import matplotlib.pyplot as plt
-from prelude import *
+import matplotlib.patches as mpatch
+from pathlib import Path
+from matplotlib.patches import Rectangle
+from prelude import make_base_dir, calc_ft
+
+################################################################################################################################################
+
+def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km, closest_time, d, index, flight_num, date, seismometer, closest_p, head, station):
+    """Plot the flight path and seismometer locations on a map.
+
+    Args:
+        flight_utm_x_km (list): List of UTM x coordinates for the flight path.
+        flight_utm_y_km (list): List of UTM y coordinates for the flight path.
+        seismo_utm_x_km (list): List of UTM x coordinates for the seismometers.
+        seismo_utm_y_km (list): List of UTM y coordinates for the seismometers.
+        closest_time (str): The closest time to the seismometer.
+        d (float): Distance to the closest point in kilometers.
+        index (int): Index of the closest point in the flight path.
+        flight_num (int): Flight number.
+        date (str): Date of the flight.
+        seismometer (tuple): Coordinates of the seismometer.
+        closest_p (tuple): Coordinates of the closest point on the flight path.
+        head (list): List of headings for the flight path.
+        station (str): Station identifier.
+
+    Returns:
+        None
+    """
+
+    utm_proj = pyproj.Proj(proj='utm', zone='6', ellps='WGS84')
+
+    closest_x, closest_y = closest_p
+    min_lon = -150.7
+    max_lon = -147.3
+    min_lat = 62.2
+    max_lat = 65.3
+    lxmin,lymin = utm_proj(min_lon, min_lat)
+    lxmax, lymax = utm_proj(max_lon, max_lat)
+    y = [closest_y, seismometer[1]]
+    x = [closest_x, seismometer[0]]
+    yy = sum(y) / len(y)
+    xx = sum(x) / len(x)
+    
+    #set the size of the map depending on the distance
+    min_x = int(xx - 2)
+    max_x = int(xx + 2)
+    min_y = int(yy - 2)
+    max_y = int(yy + 2)
+    if d < 0.5:
+        min_x = (xx - 1)
+        max_x = (xx + 1)
+        min_y = (yy - 1)
+        max_y = (yy + 1)
+    if d < 0.1:
+        min_x = (xx - 0.1)
+        max_x = (xx + 0.1)
+        min_y = (yy - 0.1)
+        max_y = (yy + 0.1)
+
+    # Create a figure with two subplots side by side
+    fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 2]}) 
+    fig.subplots_adjust(wspace=1) 
+
+    # Ploting the entire array and the flight path
+    axs[0].set_xticks(np.arange(int(lxmin/1000)-7, int(lxmax/1000), 50))
+    axs[0].set_yticks(np.arange(int(lymin/1000)-1, int(lymax/1000), 50))
+    axs[0].set_xlabel('UTM Easting (km)')
+    axs[0].set_ylabel('UTM Northing (km)')
+    axs[0].set_aspect('equal')
+    axs[1].set_aspect('equal')
+
+    axs[0].grid(True, linestyle='dotted', color='gray')
+    axs[1].grid(True, linestyle='dotted', color='gray')
+
+    axs[0].scatter(seismo_utm_x_km, seismo_utm_y_km, c='#e41a1c', s = 3, label='seismometers')
+    axs[0].plot(flight_utm_x_km, flight_utm_y_km, '-', c='#377eb8', lw=1, ms = 1, label='flight path')
+
+    for i in range(1, len(flight_utm_y_km)-1, int(len(flight_utm_y_km)/5)):
+        direction = np.arctan2(flight_utm_y_km[i+1] - flight_utm_y_km[i], flight_utm_x_km[i+1] - flight_utm_x_km[i])
+        if (flight_utm_x_km[i+1] - flight_utm_x_km[i]) == 0:
+            continue
+        m = (flight_utm_y_km[i+1] - flight_utm_y_km[i])/(flight_utm_x_km[i+1] - flight_utm_x_km[i])
+        if m == 0:
+            continue
+        b = flight_utm_y_km[i] - m*flight_utm_x_km[i]
+        axs[0].quiver((flight_utm_y_km[i]-b)/m, flight_utm_y_km[i], np.cos(direction), np.sin(direction), angles='xy', color='#377eb8', headwidth = 10)
+
+    # Set labels and title
+    axs[0].set_xlim(int(lxmin/1000), int(lxmax/1000))
+    axs[0].set_ylim(int(lymin/1000), int(lymax/1000))
+    axs[0].tick_params(axis='both', which='major', labelsize=9)
+
+    head_avg = (head[index]+head[index+1])/2
+    converted_angle = (90 - head_avg) % 360
+    heading = np.deg2rad(converted_angle)
+
+    # Define the UTM and latitude/longitude coordinate systems
+    rect = Rectangle((min_x, min_y), (max_x-min_x), (max_y-min_y), ls="-", lw = 1, ec = 'k', fc="none", zorder=2.5)
+    axs[0].add_patch(rect)
+
+    axs[1].set_xticks(np.arange(min_x, max_x, np.round(((max_x - min_x) / 4), 1)))
+    axs[1].set_yticks(np.arange(min_y, max_y, np.round(((max_y - min_y) / 4), 1)))
+
+    # Plot the zoomed in map on the second subplot
+    axs[1].plot(x,y, '--', c='#ff7f00')
+    axs[1].plot(flight_utm_x_km, flight_utm_y_km, c='#377eb8',linestyle ='dotted')
+    axs[1].scatter(flight_utm_x_km, flight_utm_y_km, c='#377eb8', s=20)
+
+    axs[1].set_xlim(min_x, max_x)
+    axs[1].set_ylim(min_y, max_y)
+
+    axs[1].tick_params(axis='both', which='major', labelsize=9)
+    axs[1].ticklabel_format(useOffset=False, style='plain')
+
+    direction = np.arctan2(flight_utm_y_km[index+1] - flight_utm_y_km[index], flight_utm_x_km[index+1] - flight_utm_x_km[index])
+        
+    axs[1].quiver(closest_x, closest_y, np.cos(direction), np.sin(direction), angles='xy', color='#377eb8', scale=8)
+
+    axs[1].quiver(closest_x, closest_y, np.cos(heading), np.sin(heading), angles='xy', scale = 8, color='#999999')
+    axs[1].scatter(closest_x, closest_y, c='#377eb8', s=50, zorder=3)
+    axs[1].scatter(seismometer[0], seismometer[1], c='#e41a1c', s=50, zorder=3)
+
+    axs[1].text(xx,yy, str(round(d, 2))+' km', fontsize=12, fontweight='bold')
+
+    # Draw dashed lines connecting the rectangle on the existing map to the zoomed-in map
+    con = mpatch.ConnectionPatch(xyA=(max_x, min_y), xyB=(min_x, min_y), coordsA="data", coordsB="data", axesA=axs[0], axesB=axs[1], color="black", linestyle="--")
+    fig.add_artist(con)
+    con = mpatch.ConnectionPatch(xyA=(max_x, max_y), xyB=(min_x, max_y), coordsA="data", coordsB="data", axesA=axs[0], axesB=axs[1], color="black", linestyle="--")
+    fig.add_artist(con)
+    plt.tight_layout(pad=0.2, rect=[0, 0, 1, 1])
+
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/'+ str(flight_num) + '/' + str(station) + '/'
+    make_base_dir(BASE_DIR)
+    plt.savefig('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(station) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.png', bbox_inches='tight')
+    plt.close()
+
 
 ##############################################################################################################################################################################################################
 
@@ -15,6 +151,7 @@ def remove_median(Sxx):
         spec: The spectrogram data with the median removed
         MDF: The median removed from the spectrogram
     """
+
     a, b = Sxx.shape
 
     MDF = np.zeros((a,b))
