@@ -36,13 +36,24 @@ for li in file_in.readlines():
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
-    
-    if not os.path.exists(spec_dir): 
-        continue
-
+        
     if rerun_fig == False:
         output = open('output/inv_results/' + equip + 'data_atmosphere_full.csv', 'a')
     
+    if Path(spec_dir).exists():
+        coords = []
+        with open(spec_dir, 'r') as file:
+            for line in file:
+                pick_data = line.split(',')
+                if len(pick_data) == 4:
+                    start_time = float(pick_data[2])
+                else:
+                    print('No start time in file: ', spec_dir)
+                    start_time = tarrive
+                    continue
+    else:
+        continue
+
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
 
@@ -50,35 +61,20 @@ for li in file_in.readlines():
 
     #Must use the tarrive time to get the correct data
     ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
-    
-    spec_window = 120
-    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'   
-    if Path(file_name).exists():
-        if Path(file_name).is_dir():
-            os.remove(file_name)
-            continue
-        coords = []
-        with open(file_name, 'r') as file:
-            for line in file:
-                pick_data = line.split(',')
-                if len(pick_data) == 4:
-                    start_time = float(pick_data[2])
-                else:
-                    print('No start time in file: ', file_name)
-                    start_time = tarrive
-                    continue
 
     start_time = tarrive
     if equip == 'C185':
         start_time = start_time - 120
 
     data, fs, torg, title = load_waveform(sta, start_time)
+
     # Compute spectrogram
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
-    
+    print(len(times), len(frequencies), len(Sxx), Sxx.shape)
     if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
-        print('No data for this station: ', sta, ' at time: ', tarrive)
+        print(len(times), len(frequencies), len(Sxx))
         continue
+
     # Error here with division by zero ##fix this
     spec, MDF = remove_median(Sxx)
 
@@ -96,9 +92,10 @@ for li in file_in.readlines():
 
     coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=False) 
     coords_array = np.array(coords)
-
+    print(coords_array)
     if len(coords) == 0:
         continue
+
     # Convert the list of coordinates to a numpy array
     coords_array = np.array(coords)
 

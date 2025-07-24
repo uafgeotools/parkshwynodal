@@ -438,3 +438,22 @@ def remove_files_with_no_picks(base_dir='/home/irseppi/REPOSITORIES/parkshwynoda
 											for file_name in os.listdir(sta_dir_path):
 												file_path = os.path.join(sta_dir_path, file_name)
 												delete_empty_file(file_path)
+
+################################################################################################################
+
+def remove_dir_with_no_picks(base_dir='/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/'):
+	"""
+	Removes directories that do not contain any data picks from users.
+	Args:
+		base_dir (str): The base directory where the files are located. Default is '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/'.
+	"""
+	for dir_name in os.listdir(base_dir):
+		dir_path = os.path.join(base_dir, dir_name)
+		# Walk through the directory tree from the bottom up
+		for root, dirs, files in os.walk(dir_path, topdown=False):
+			# If the directory is empty (no files and no subdirectories), delete it
+			if not files and not dirs:
+				os.rmdir(root)
+				print(f"Deleted empty directory: {root}")
+
+################################################################################################################

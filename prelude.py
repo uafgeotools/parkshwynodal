@@ -1013,12 +1013,18 @@ def load_waveform(sta, start_time, spec_window=120):
 				fs = int(tr[0].stats.sampling_rate)
 				title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
 				torg = tr[0].times()
+				if len(data) == 0:
+					go_to_waveform2 = True
+				else:
+					return data, fs, torg, title
 			else:
-				go_to_waveform2 = True
+				return data, fs, torg, title
+		else:
+			return data, fs, torg, title
 	else: 
 		go_to_waveform2 = True
 
-	if go_to_waveform2 == True and Path(waveform2).exists():    
+	if go_to_waveform2 == True and Path(waveform2).exists():
 		tr = obspy.read(waveform2)
 		for trace in tr:
 			trace.trim(trace.stats.starttime + (float(h) * 3600) + (mins * 60) + secs - spec_window,
@@ -1032,12 +1038,21 @@ def load_waveform(sta, start_time, spec_window=120):
 			fs = int(tr[1].stats.sampling_rate)
 			title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
 			torg = tr[1].times()
-			if len(data) == 0 and len(tr) > 0:
-				data = tr[0][:]
-				fs = int(tr[0].stats.sampling_rate)
-				title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-				torg = tr[0].times()
-
-	return data, fs, torg, title
+			if len(data) == 0 and len(tr) > 2:
+				data = tr[2][:]
+				fs = int(tr[2].stats.sampling_rate)
+				title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'                        
+				torg = tr[2].times()
+				if len(data) == 0:
+					return None, None, None, None
+				else:
+					return data, fs, torg, title
+			else:
+				return data, fs, torg, title
+		else:
+			return data, fs, torg, title
+	else:
+		return None, None, None, None
+	
 
 #########################################################################################################################################################################################################
