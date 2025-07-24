@@ -12,7 +12,7 @@ from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, re
 
 nrl = NRL()
 
-rerun_fig = False #Flag rerun the figures without saving the inversion results = True
+rerun_fig = True #Flag rerun the figures without saving the inversion results = True
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
@@ -40,7 +40,7 @@ for li in file_in.readlines():
         continue
 
     if rerun_fig == False:
-        output = open('output/fixed_quasi/' + equip + 'data_atmosphere_full.csv', 'a')
+        output = open('output/inv_results/' + equip + 'data_atmosphere_full.csv', 'a')
     
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
