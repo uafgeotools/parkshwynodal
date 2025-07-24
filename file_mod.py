@@ -275,7 +275,7 @@ def comb_lines(filename):
 
 ############################################################################################################
 
-def order_rows_by_column(filename, col,split_symbol=','):
+def order_rows_by_column(filename, col,split_symbol=',',option=1):
 	"""
 	Function to take one column of a text file and order it in increasing order. 
 	Using that column, all rows will be rearranged in order.
@@ -284,33 +284,49 @@ def order_rows_by_column(filename, col,split_symbol=','):
 		filename (str): Path to the input file.
 		col (int): The column index to sort by (0-based index).
 		split_symbol (str): The symbol used to split the columns in the file. Default is ','.
+		option (int): Determines the sorting method.
+		1 - Sorts the values in the specified column and rearranges the lines based on the sorted values.
+		2 - Sorts the entire file based on the third column.
 	"""
 
-	with open(filename, 'r') as file:
-		lines = file.readlines()
 
-	# Extract the values from the specified column
-	values = []
-	for line in lines:
-		columns = line.split(split_symbol)
+	if option == 1:
+		with open(filename, 'r') as file:
+			lines = file.readlines()
 
-		values.append(columns[col].strip())
-	print(values)
-	# Sort the values based on the column
-	sorted_values = sorted(values)
-
-	# Rearrange the lines based on the sorted values
-	rearranged_lines = []
-	for value in sorted_values:
+		# Extract the values from the specified column
+		values = []
 		for line in lines:
-			if value in line:
-				rearranged_lines.append(line)
-				break
+			columns = line.split(split_symbol)
 
-	# Write the rearranged lines back to the file
-	with open(filename, 'w') as file:
-		file.writelines(rearranged_lines)
+			values.append(columns[col].strip())
+		print(values)
+		# Sort the values based on the column
+		sorted_values = sorted(values)
 
+		# Rearrange the lines based on the sorted values
+		rearranged_lines = []
+		for value in sorted_values:
+			for line in lines:
+				if value in line:
+					rearranged_lines.append(line)
+					break
+
+		# Write the rearranged lines back to the file
+		with open(filename, 'w') as file:
+			file.writelines(rearranged_lines)
+			
+	if option == 2: 
+		# Read the file
+		with open(filename, 'r') as file:
+			lines = file.readlines()
+
+		# Sort the lines based on the third column
+		sorted_lines = sorted(lines, key=lambda line: line.split(',')[3])
+
+		# Write the sorted data back to the file
+		with open('sorted_'+filename, 'w') as file:
+			file.writelines(sorted_lines)
 ############################################################################################################
 
 def check_matching_values(file1, col1, file2, col2):
