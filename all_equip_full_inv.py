@@ -9,6 +9,7 @@ from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
 from prelude import calc_ft, calc_time, speed_of_sound, calc_f0, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
 from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_1o, get_auto_picks_full
+import shutil
 
 nrl = NRL()
 
@@ -34,7 +35,7 @@ for li in file_in.readlines():
 
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
-    spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/output/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
+    spec_dir = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'
     
     if not os.path.exists(spec_dir): 
         continue
@@ -53,20 +54,20 @@ for li in file_in.readlines():
     spec_window = 120
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0'+str(date[5])+'-'+str(date[6:8])+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.csv'   
     if Path(file_name).exists():
-        coords = []
         if Path(file_name).is_dir():
+            os.remove(file_name)
             continue
+        coords = []
         with open(file_name, 'r') as file:
             for line in file:
                 pick_data = line.split(',')
                 if len(pick_data) == 4:
                     start_time = float(pick_data[2])
-                elif len(pick_data) == 3:
+                else:
                     print('No start time in file: ', file_name)
                     start_time = tarrive
                     continue
-                else:
-                    continue
+
     start_time = tarrive
     if equip == 'C185':
         start_time = start_time - 120
