@@ -501,7 +501,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 	Inverts the function f using the given initial parameters and data array.
 
 	Args:
-		m0 (numpy.ndarray): Initial parameters for the function, f[0] = f0, f[1] = v0, f[2] = l, f[3] = tprime0, f[4] = c.
+		mprior (numpy.ndarray): Initial parameters for the function, f[0] = f0, f[1] = v0, f[2] = l, f[3] = tprime0, f[4] = c.
 		prior_sigma (list): List of standard deviations for the prior parameters prior_sigma[0] = f0_sigma, prior_sigma[1] = v0_sigma, prior_sigma[2] = l_sigma, prior_sigma[3] = tprime0_sigma, prior_sigma[4] = c_sigma.
 		coords_array (numpy.ndarray): Data picks along overtone doppler curve.
 		num_iterations (int): Number of iterations to perform.
@@ -552,24 +552,27 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 	np.fill_diagonal(Cd0, sigma**2)
 	Cd = Cd0*(dw)
 	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
+
 	while n < num_iterations:
 		m = mnew
+		f0 = m[0]
+		v0 = m[1]
+		l = m[2]
+		tprime0 = m[3]
+		c = m[4]
+
 		fpred = []
-		G = np.zeros((dw,5)) #partial derivative matrix of f with respect to m
+		G = np.zeros((dw,5)) 
+
 		#partial derivative matrix of f with respect to m 
 		for i in range(0,dw):
-			f0 = m[0]
-			v0 = m[1]
-			l = m[2]
-			tprime0 = m[3]
-			c = m[4]
 			tprime = tobs[i]
+
 			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
 			
 			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
-
 			fpred.append(ft0p) 
 		Gm = G
 		
@@ -584,7 +587,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 
 		n += 1
 		print(mnew)
-	print(mnew)
+
 	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
 	Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
@@ -664,9 +667,15 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 	mnew = np.array(mprior)
 	Cd = Cd0*(len(fobs))
 	while qv < num_iterations:
-		G = np.zeros((0,w+4))
-		m = mnew
+		m = mnew   
+		v0 = mnew[0]
+		l = mnew[1]
+		tprime0 = mnew[2]
+		c = mnew[3]
+		f0_array = mnew[4:]
+
 		fpred = []
+		G = np.zeros((0,w+4))
 		cum = 0
 		for p in range(w):
 			new_row = np.zeros(w+4)
@@ -702,19 +711,13 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 		mu = 1
 		mnew = m + mu*dm
 
-        
-		v0 = mnew[0]
-		l = mnew[1]
-		tprime0 = mnew[2]
-		c = mnew[3]
-		f0_array = mnew[4:]
-
 		print(mnew)
 		qv += 1
 	
 	Cpost = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior))
 	Cpost0 = la.inv(Gm.T@la.inv(Cd0)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+	
 	return mnew, Cpost0, Cpost, f0_array, F_m
 
 ########################################################################################################################################################################################
