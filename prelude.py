@@ -1,4 +1,6 @@
 import os
+import obspy
+import json
 import numpy as np
 import numpy.linalg as la
 import pandas as pd
@@ -6,6 +8,8 @@ import math
 from pathlib import Path
 from pyproj import Proj
 from datetime import datetime, timezone
+
+utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
 ###############################################################
 
@@ -81,6 +85,59 @@ def dist_less(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km
 
 #######################################################################################################################
 
+def get_speed_of_sound(alt, closest_time, UTM_x_m, UTM_y_m):
+	"""
+	Calculate the speed of sound at a given altitude using atmospheric data.
+
+	Args:
+		alt (float): Altitude in meters.
+		closest_time (float): The time of the closest point on the flight path.
+		UTM_x_m (float): UTM x-coordinate in meters.
+		UTM_y_m (float): UTM y-coordinate in meters.
+
+	Returns:
+		float: The speed of sound in meters per second.
+		float: The temperature in degrees Celsius at the given altitude.
+	"""
+
+	# Convert UTM coordinates to latitude and longitude
+	lon, lat = utm_proj(UTM_x_m, UTM_y_m, inverse=True)
+
+	input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+
+	if Path(input_files).exists():
+		with open(input_files, 'r') as file:
+			data = json.load(file)
+
+		# Extract data
+		data_list = data['data']
+
+		# Find the "Z" parameter and extract the value at index
+		z_index = None
+		hold = np.inf
+		for item in data_list:
+			if item['parameter'] == 'Z':
+				for i in range(len(item['values'])):
+					if abs(float(item['values'][i]) - float(alt/1000)) < hold:
+						hold = abs(float(item['values'][i]) - float(alt/1000))
+						z_index = i
+
+		Tc = None
+		for item in data_list:
+			if item['parameter'] == 'T' and z_index is not None:
+				Tc = -273.15 + float(item['values'][z_index])
+
+		if Tc is not None:
+			c = speed_of_sound(Tc)
+		else:
+			c = 311  # Default speed of sound in m/s if no temperature data is available
+	else:
+		c = 311  # Default speed of sound in m/s if no data is available
+
+	return c, Tc
+
+#######################################################################################################################
+
 def time_check(closest_time, start_time, end_time, s_index):
 	"""
 	Check if the closest time is outside the start and end operating times for a given seismometer.
@@ -104,6 +161,30 @@ def time_check(closest_time, start_time, end_time, s_index):
 	if time_airplane < start_time_obj or time_airplane > end_time_obj:
 		v = True
 	return v
+
+#######################################################################################################################
+def get_sta_elevation(sta):
+	"""
+	Get the elevation of a seismic station.
+
+	Args:
+		sta (str): The station code.
+
+	Returns:
+		float: The elevation of the station in meters.
+	"""
+
+	elev = 0
+	seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
+	stations = seismo_data['Station']
+	elevations = seismo_data['Elevation']
+
+	for i in range(len(stations)):
+		if stations[i] == sta:
+			elev = elevations[i]
+			break
+
+	return elev
 
 ####################################################################################################################
 
@@ -868,5 +949,95 @@ def get_equip(date, flight_num):
 			equip = equip_list[i_e]
 			break
 	return equip
+
+#########################################################################################################################################################################################################
+
+def load_waveform(sta, start_time, spec_window=120):
+	"""
+	Load waveform data for a specific station and time window.
+
+	Args:
+		sta (str): Station code.
+		start_time (float): Start time in seconds since the epoch.
+		spec_window (int): Time window in seconds to trim the waveform data, default is 120 seconds.
+
+	Returns:
+		tuple: A tuple containing the waveform data, sampling frequency, time origin, and title
+	"""
+	
+	ht = datetime.fromtimestamp(start_time + spec_window, tz=timezone.utc)
+
+	h = ht.hour
+	mins = ht.minute
+	secs = ht.second
+	month = ht.month
+	day = ht.day
+
+	h_u = str(h + 1)
+	if h < 23:
+		day2 = str(day)
+		if h < 10:
+			h_u = '0' + str(h + 1)
+			h = '0' + str(h)
+		else:
+			h_u = str(h + 1)
+			h = str(h)
+	else:
+		h_u = '00'
+		day2 = str(day + 1)
+	if len(str(day)) == 1:
+		day = '0' + str(day)
+		day2 = day
+
+	go_to_waveform2 = False
+	waveform1 = "/scratch/naalexeev/NODAL/2019-0" + str(month) + "-" + str(day) + "T" + str(h) + ":00:00.000000Z.2019-0" + str(month) + "-" + str(day2) + "T" + str(h_u) + ":00:00.000000Z." + str(sta) + ".mseed"
+	waveform2 = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
+	
+	if Path(waveform1).exists():
+		tr = obspy.read(waveform1)
+		# Trim all traces in the Stream object
+		for trace in tr:
+			trace.trim(trace.stats.starttime + (mins * 60) + secs - spec_window,
+					   trace.stats.starttime + (mins * 60) + secs + spec_window)
+		data = tr[2][:]
+		fs = int(tr[2].stats.sampling_rate)
+		title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'
+		torg = tr[2].times()
+		if len(data) == 0:
+			data = tr[1][:]
+			fs = int(tr[1].stats.sampling_rate)
+			title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'
+			torg = tr[1].times()
+			if len(data) == 0:
+				data = tr[0][:]
+				fs = int(tr[0].stats.sampling_rate)
+				title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+				torg = tr[0].times()
+			else:
+				go_to_waveform2 = True
+	else: 
+		go_to_waveform2 = True
+
+	if go_to_waveform2 == True and Path(waveform2).exists():    
+		tr = obspy.read(waveform2)
+		for trace in tr:
+			trace.trim(trace.stats.starttime + (float(h) * 3600) + (mins * 60) + secs - spec_window,
+					   trace.stats.starttime + (float(h) * 3600) + (mins * 60) + secs + spec_window)
+		data = tr[0][:]
+		fs = int(tr[0].stats.sampling_rate)
+		title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+		torg = tr[0].times()
+		if len(data) == 0 and len(tr) > 1:
+			data = tr[1][:]
+			fs = int(tr[1].stats.sampling_rate)
+			title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
+			torg = tr[1].times()
+			if len(data) == 0 and len(tr) > 0:
+				data = tr[0][:]
+				fs = int(tr[0].stats.sampling_rate)
+				title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
+				torg = tr[0].times()
+
+	return data, fs, torg, title
 
 #########################################################################################################################################################################################################

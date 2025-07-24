@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatch
 from pathlib import Path
 from matplotlib.patches import Rectangle
-from prelude import make_base_dir, calc_ft
+from scipy.signal import find_peaks
+from prelude import make_base_dir, calc_ft, calc_f0, invert_f
 
 ################################################################################################################################################
 
@@ -643,3 +644,96 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         return tobs, fobs, []
 
 ###############################################################################################################################
+
+def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width):
+    
+    coord_inv = []
+
+    for t_f in range(len(times)):
+
+        upper = int(ft[t_f] + corridor_width)
+        lower = int(ft[t_f] - corridor_width)
+        if lower < 0:
+            lower = 0
+        elif lower >= 250:
+            lower = 200
+        else:
+            pass
+        if upper > 250:
+            upper = 250
+
+        tt = spec[lower:upper, t_f]
+        max_amplitude_index = np.argmax(tt)
+        
+        max_amplitude_frequency = frequencies[max_amplitude_index+lower]
+        coord_inv.append((times[t_f], max_amplitude_frequency))
+
+    coord_inv_array = np.array(coord_inv)
+
+    return coord_inv_array
+
+################################################################################################################################
+
+def get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip):
+
+    peaks_assos = []
+    fobs = []
+    tobs = []
+    f0_array = []
+    
+    for pp in range(len(peaks)):
+        tprime = freqpeak[pp]
+        ft0p = peaks[pp]
+        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        f0_array.append(f0)
+
+        maxfreq = []
+        coord_inv = []
+        ttt = []
+
+        f01 = f0 + corridor_width
+        f02 = f0  - corridor_width
+        upper = calc_ft(times,  tprime0, f01, v0, l, c)
+        lower = calc_ft(times,  tprime0, f02, v0, l, c)
+
+        for t_f in range(len(times)):
+
+            if lower[t_f] < 0 or lower[t_f] > 250 or upper[t_f] > 250 or np.isnan(upper[t_f]) or np.isnan(lower[t_f]):
+                continue
+
+            tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
+
+            #For Boeing Jets
+            if str(equip[0]) == 'B' and str(equip[0:1]) != 'BE':
+                max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
+            else:
+                max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+            if len(max_amplitude_index) == 0:
+                continue
+            maxa = np.argmax(tt[max_amplitude_index])
+            max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
+            maxfreq.append(max_amplitude_frequency)
+            coord_inv.append((times[t_f], max_amplitude_frequency))
+            ttt.append(times[t_f])
+
+
+        if len(coord_inv) > 0:
+            if f0 < 200:
+                coord_inv_array = np.array(coord_inv)
+                mtest = [f0,v0, l, tprime0,c]
+                mtest,_,_, F_m = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=4)
+                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
+            else:
+                ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
+
+            delf = np.array(ft) - np.array(maxfreq)
+
+            count = 0
+            for i in range(len(delf)):
+                if np.abs(delf[i]) <= (4):
+                    fobs.append(maxfreq[i])
+                    tobs.append(ttt[i])
+                    count += 1
+            peaks_assos.append(count)
+
+    return tobs, fobs, peaks_assos, f0_array
