@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import os
 from pyproj import Proj
 
-sta_f = open('/home/irseppi/REPOSITORIES/parkshwynodal/all_station_crossing_db_UTM.txt','r')
+sta_f = open('/home/irseppi/REPOSITORIES/parkshwynodal/node_crossings_db_UTM.txt','r')
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 for line in sta_f.readlines():

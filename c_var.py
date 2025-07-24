@@ -14,7 +14,6 @@ from scipy.signal import find_peaks, spectrogram
 from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum
 from obspy.clients.nrl import NRL
 
-
 nrl = NRL()
 
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
@@ -380,7 +379,7 @@ for li in file_in.readlines():
     tobs_hold = tobs
     if len(fobs) == 0:
         continue
-
+ 
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
 
     if len(tobs) == len(tobs_hold):
