@@ -989,7 +989,6 @@ def load_waveform(sta, start_time, spec_window=120):
 		day = '0' + str(day)
 		day2 = day
 
-	go_to_waveform2 = False
 	waveform1 = "/scratch/naalexeev/NODAL/2019-0" + str(month) + "-" + str(day) + "T" + str(h) + ":00:00.000000Z.2019-0" + str(month) + "-" + str(day2) + "T" + str(h_u) + ":00:00.000000Z." + str(sta) + ".mseed"
 	waveform2 = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
 	
@@ -998,7 +997,7 @@ def load_waveform(sta, start_time, spec_window=120):
 		# Trim all traces in the Stream object
 		for trace in tr:
 			trace.trim(trace.stats.starttime + (mins * 60) + secs - spec_window,
-					   trace.stats.starttime + (mins * 60) + secs + spec_window)
+					trace.stats.starttime + (mins * 60) + secs + spec_window)
 		data = tr[2][:]
 		fs = int(tr[2].stats.sampling_rate)
 		title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'
@@ -1013,46 +1012,19 @@ def load_waveform(sta, start_time, spec_window=120):
 				fs = int(tr[0].stats.sampling_rate)
 				title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
 				torg = tr[0].times()
-				if len(data) == 0:
-					go_to_waveform2 = True
-				else:
-					return data, fs, torg, title
-			else:
-				return data, fs, torg, title
-		else:
-			return data, fs, torg, title
-	else: 
-		go_to_waveform2 = True
-
-	if go_to_waveform2 == True and Path(waveform2).exists():
+		return data, fs, torg, title
+	elif Path(waveform2).exists():
 		tr = obspy.read(waveform2)
-		for trace in tr:
-			trace.trim(trace.stats.starttime + (float(h) * 3600) + (mins * 60) + secs - spec_window,
-					   trace.stats.starttime + (float(h) * 3600) + (mins * 60) + secs + spec_window)
+		tr[0].trim(tr[0].stats.starttime + (float(h) * 3600) + (mins * 60) + secs - spec_window,
+					tr[0].stats.starttime + (float(h) * 3600) + (mins * 60) + secs + spec_window)
 		data = tr[0][:]
 		fs = int(tr[0].stats.sampling_rate)
 		title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
 		torg = tr[0].times()
-		if len(data) == 0 and len(tr) > 1:
-			data = tr[1][:]
-			fs = int(tr[1].stats.sampling_rate)
-			title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
-			torg = tr[1].times()
-			if len(data) == 0 and len(tr) > 2:
-				data = tr[2][:]
-				fs = int(tr[2].stats.sampling_rate)
-				title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'                        
-				torg = tr[2].times()
-				if len(data) == 0:
-					return None, None, None, None
-				else:
-					return data, fs, torg, title
-			else:
-				return data, fs, torg, title
-		else:
-			return data, fs, torg, title
+		return data, fs, torg, title
 	else:
 		return None, None, None, None
+
 	
 
 #########################################################################################################################################################################################################

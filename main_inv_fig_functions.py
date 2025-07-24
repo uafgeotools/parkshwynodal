@@ -244,9 +244,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         NTRY = 1000
         for N in range(NTRY):
             ftry = []
-            for c_index  in range(3, len(Cpost)):
-                xmin = f0_array[c_index-3] - Cpost[c_index]
-                xmax = f0_array[c_index-3] + Cpost[c_index]
+            for c_index  in range(4, len(Cpost)):
+                xmin = f0_array[c_index-4] - Cpost[c_index]
+                xmax = f0_array[c_index-4] + Cpost[c_index]
                 xtry = xmin + (xmax-xmin)*np.random.rand()
                 ftry.append(xtry)
 
@@ -376,7 +376,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
 
 ##############################################################################################################################################################################################################
 
-def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, start_time, make_picks=True):
+def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, tarrive, make_picks=True, spec_window = 120):
     """
     Pick the points for the doppler shift.
 
@@ -403,22 +403,40 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
 
     if Path(file_name).exists():
         coords = []
-        if Path(file_name).is_dir():
-            return []
         with open(file_name, 'r') as file:
             for line in file:
                 pick_data = line.split(',')
-                try:
-                    coords.append((float(pick_data[0]), float(pick_data[1])))
-                except:
-                    continue
+                coords.append((float(pick_data[0]), float(pick_data[1])))
+            if len(pick_data) == 4:
+                start_time = float(pick_data[2])
+            else:
+                plt.figure()
+                plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
+                plt.scatter([coord[0] for coord in coords], [coord[1] for coord in coords], color='black', marker='x')
+                plt.show()
+                correct_time = input("No start time found in file. Do your picks line up with this signal?(y/n): ")
+                if correct_time == 'y': 
+                    start_time = tarrive - spec_window
+                    # Rewrite file with start_time as third column and move \n to next column
+                    with open(file_name, 'r') as file:
+                        lines = file.readlines()
+                    with open(file_name, 'w') as file:
+                        for line in lines:
+                            pick_data = line.strip().split(',')
+                            # Only keep first two columns, append start_time, then move \n to next column
+                            if len(pick_data) >= 2:
+                                file.write(f"{pick_data[0]},{pick_data[1]},{start_time},\n")
+                else:
+                    return [], None
         file.close()  
-        return coords
+        print(start_time)
+        return coords, start_time
     
     elif make_picks:
         BASE_DIR = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
         make_base_dir(BASE_DIR)
         pick_again = 'y'
+        start_time = tarrive - spec_window
         while pick_again == 'y':
             r1 = open(file_name, 'w')
             coords = []
@@ -436,9 +454,9 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
             plt.show(block=True)
             r1.close()
             pick_again = input("Do you want to repick your points? (y or n)")
-        return coords
+        return coords, start_time
     else:
-        return []
+        return [], None
 
 ##############################################################################################################################################################################################################
 
@@ -559,27 +577,21 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
 
         ftobs = []
         ffobs = []
-        if peaks_assos == False:
-            for j in range(len(tobs)):
+     
+        peak_ass = []
+        cum = 0
+        
+        for p in range(w):
+            count = 0
+            for j in range(cum,cum+peaks_assos[p]):
                 if tobs[j] >= start_time and tobs[j] <= end_time:
                     ftobs.append(tobs[j])
                     ffobs.append(fobs[j])
-            peaks_assos = np.nan
-        else:
-            peak_ass = []
-            cum = 0
-
-            for p in range(w):
-                count = 0
-                for j in range(cum,cum+peaks_assos[p]):
-                    if tobs[j] >= start_time and tobs[j] <= end_time:
-                        ftobs.append(tobs[j])
-                        ffobs.append(fobs[j])
-                        count += 1
-                cum = cum + peaks_assos[p]
-            
-                peak_ass.append(count)
-            peaks_assos = peak_ass
+                    count += 1
+            cum = cum + peaks_assos[p]
+        
+            peak_ass.append(count)
+        peaks_assos = peak_ass
         tobs = ftobs
         fobs = ffobs
 
@@ -645,7 +657,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
 
 ###############################################################################################################################
 
-def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width):
+def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, mprior, sigma_prior):
     """
     Get automatic picks for the first overtone.
 
@@ -677,11 +689,28 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width):
 
         tt = spec[lower:upper, t_f]
         max_amplitude_index = np.argmax(tt)
-        
+
         max_amplitude_frequency = frequencies[max_amplitude_index+lower]
         coord_inv.append((times[t_f], max_amplitude_frequency))
 
     coord_inv_array = np.array(coord_inv)
+
+    m,_,_,_ = invert_f(mprior,sigma_prior, coord_inv_array,num_iterations=5)
+    f0 = m[0]
+    v0 = m[1]
+    l = m[2]
+    tprime0 = m[3]
+    c = m[4]
+
+    ft = calc_ft(coord_inv_array[:, 0], tprime0, f0, v0, l, c)
+
+    delf = np.array(ft) - np.array(coord_inv_array[:, 1])
+    
+    new_coord_inv_array = []
+    for i in range(len(delf)):
+        if np.abs(delf[i]) <= 3:
+            new_coord_inv_array.append(coord_inv_array[i])
+    coord_inv_array = np.array(new_coord_inv_array)
 
     return coord_inv_array
 
@@ -758,7 +787,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
             if f0 < 200:
                 coord_inv_array = np.array(coord_inv)
                 mtest = [f0,v0, l, tprime0,c]
-                mtest,_,_, F_m = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=4)
+                mtest,_,_,_ = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=4)
                 ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
             else:
                 ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
