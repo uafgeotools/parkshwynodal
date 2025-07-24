@@ -381,7 +381,6 @@ for li in file_in.readlines():
     if len(fobs) == 0:
         continue
 
-
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
 
     if len(tobs) == len(tobs_hold):
@@ -408,7 +407,7 @@ for li in file_in.readlines():
     plt.scatter(tobs, fobs, color='red', label='Picks', s=10)
     plt.show()
     plt.close()
-    
+
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations=4, sigma=5)
     #except:
     #    print('Error in full inversion for station:', sta, 'flight:', flight_num, 'date:', date)
