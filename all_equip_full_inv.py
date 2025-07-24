@@ -164,8 +164,8 @@ for li in file_in.readlines():
     tobs_hold = tobs.copy()
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
-    if len(tobs) == len(tobs_hold):
-        continue
+    #if len(tobs) == len(tobs_hold):
+    #    continue
 
     v0 = speed_mps
     height_m = alt - elev
@@ -182,6 +182,7 @@ for li in file_in.readlines():
         ft0p = peaks[o]
         f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
         mprior.append(float(f0))
+    
     print("mprior:", mprior)
     plt.figure(figsize=(15, 10))
     plt.pcolormesh(times, frequencies, spec, vmin=vmin, vmax=vmax, shading='gouraud')
