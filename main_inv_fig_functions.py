@@ -646,7 +646,20 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
 ###############################################################################################################################
 
 def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width):
-    
+    """
+    Get automatic picks for the first overtone.
+
+    Args:
+        times (np.ndarray): Array of time values.
+        frequencies (np.ndarray): Array of frequency values.
+        spec (np.ndarray): Spectrogram data.
+        ft (np.ndarray): Frequency calculated from model parameters using `calc_ft`.
+        corridor_width (float): Width of the corridor for picking.
+
+    Returns:
+        np.ndarray: Array of auto picked coordinates.
+
+    """
     coord_inv = []
 
     for t_f in range(len(times)):
@@ -674,7 +687,31 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width):
 
 ################################################################################################################################
 
-def get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip):
+def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip):
+    """
+    Get automatic picks for all overtones.
+
+    Args:
+        peaks (list): List of peak frequencies.
+        time_peaks (list): List of times corresponding to the peaks.
+        times (np.ndarray): Array of time values from fft.
+        frequencies (np.ndarray): Array of frequency values from fft.
+        spec (np.ndarray): Spectrogram data from fft.
+        corridor_width (float): Width of the corridor for picking.
+        tprime0 (float): Model parameter for the arrival time.
+        v0 (float): Model parameter for the velocity.
+        l (float): Model parameter for the distance.
+        c (float): Model parameter for the speed of sound.
+        sigma_prior (float): Prior uncertainty for the model parameters.
+        vmax (float): Maximum amplitude value for peak detection.
+        equip (str): Equipment identifier.
+
+    Returns:
+        list: List of observed times.
+        list: List of observed frequencies.
+        list: List of counts of peaks associated with each overtone, for indexing.
+        list: List of fundamental frequencies calculated for each peak.
+    """
 
     peaks_assos = []
     fobs = []
@@ -682,7 +719,7 @@ def get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width
     f0_array = []
     
     for pp in range(len(peaks)):
-        tprime = freqpeak[pp]
+        tprime = time_peaks[pp]
         ft0p = peaks[pp]
         f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
         f0_array.append(f0)

@@ -10,7 +10,6 @@ from scipy.signal import spectrogram
 from prelude import calc_ft, calc_time, speed_of_sound, calc_f0, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
 from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_1o, get_auto_picks_full
 
-
 nrl = NRL()
 
 rerun_fig = False #Flag rerun the figures without saving the inversion results = True
@@ -154,17 +153,15 @@ for li in file_in.readlines():
 
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=False)
 
-    w = len(peaks)
- 
     corridor_width = (fs/2) / len(peaks) 
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 3
     tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
     if len(fobs) == 0:
         continue
-    
+
     tobs_hold = tobs.copy()
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=True)
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
     if len(tobs) == len(tobs_hold):
         continue
