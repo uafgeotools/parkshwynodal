@@ -168,7 +168,7 @@ def remove_median(Sxx):
 
 ############################################################################################################################################################################################################################
 
-def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
+def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
     """
     Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions and tprime0 initial guess compared to the final.
 
@@ -215,7 +215,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
     f0lab = []
-    #ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + str(np.round(tprime0,2))+' s')
+
     ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
@@ -297,7 +297,7 @@ def plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-    plt.show()
+    
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
 
@@ -344,33 +344,31 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
             continue
         if ft0p > 250:
             continue
-        try:
-            upper = int(ft0p + 10)
-            lower = int(ft0p - 10)
-            tt = spec[lower:upper, closest_index]
-            if upper > 250:
-                freqp = ft0p
-                ampp = np.interp(ft0p, frequencies, arrive_time)
-            elif lower < 0:
-                freqp = ft0p
-                ampp = np.interp(ft0p, frequencies, arrive_time)
-            else:
-                ampp = np.max(tt)
-                freqp = np.argmax(tt)+lower
-            plt.scatter(freqp, ampp, color='black', marker='x', s=100)
-            if isinstance(sta, int):
-                plt.text(freqp - 5, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
-            else:
-                plt.text(freqp - 1, ampp + 0.8, freqp, fontsize=17, fontweight='bold')  
-        except:
-            continue
+        
+        upper = int(ft0p + 10)
+        lower = int(ft0p - 10)
+        tt = spec[lower:upper, closest_index]
+        if upper > 250:
+            freqp = ft0p
+            ampp = np.interp(ft0p, frequencies, arrive_time)
+        elif lower < 0:
+            freqp = ft0p
+            ampp = np.interp(ft0p, frequencies, arrive_time)
+        else:
+            ampp = np.max(tt)
+            freqp = np.argmax(tt)+lower
+        plt.scatter(freqp, ampp, color='black', marker='x', s=100)
+        if isinstance(sta, int):
+            plt.text(freqp - 5, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
+        else:
+            plt.text(freqp - 1, ampp + 0.8, freqp, fontsize=17, fontweight='bold')  
+
     plt.xlim(0, int(fs/2))
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.ylim(0,vmax*1.1)
     plt.xlabel('Frequency (Hz)', fontsize=17)
     plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
-
 
     fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.png')
     plt.close()
