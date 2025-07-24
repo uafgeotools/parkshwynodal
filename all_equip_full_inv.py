@@ -23,8 +23,8 @@ for li in file_in.readlines():
     month = date[4:6]
     day = date[6:8]
     flight_num = text[1]
-    x =  float(text[2])  # Replace with your UTM x-coordinate
-    y = float(text[3])  # Replace with your UTM y-coordinate
+    x =  float(text[2])  # UTM x-coordinate, meters
+    y = float(text[3])  # UTM y-coordinate, meters
     dist_m = float(text[4])   # Distance in meters
     closest_time = float(text[5])
     alt = float(text[6]) 
@@ -74,6 +74,10 @@ for li in file_in.readlines():
     data, fs, torg, title = load_waveform(sta, start_time)
     # Compute spectrogram
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
+    
+    if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
+        print('No data for this station: ', sta, ' at time: ', tarrive)
+        continue
     # Error here with division by zero ##fix this
     spec, MDF = remove_median(Sxx)
 
@@ -91,11 +95,6 @@ for li in file_in.readlines():
 
     coords = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time,make_picks=False) 
     coords_array = np.array(coords)
-    print(sta,equip,date,flight_num)
-    plt.figure(figsize=(10, 6))
-    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-    plt.show()
-    plt.close()
 
     if len(coords) == 0:
         continue
@@ -156,7 +155,9 @@ for li in file_in.readlines():
     corridor_width = (fs/2) / len(peaks) 
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 3
+
     tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
+    
     if len(fobs) == 0:
         continue
 
