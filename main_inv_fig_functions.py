@@ -566,15 +566,13 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         set_time = []
         with open(output3, 'r') as file:
             for line in file:
-
                 pick_data = line.split(',')
                 set_time.append(float(pick_data[0]))
         file.close()  
         if len(set_time) == 0:
-            set_time = [0, 250]
-        start_time = set_time[0]
-        end_time = set_time[1]
-
+            return tobs, fobs, peaks_assos
+        s_time = set_time[0]
+        e_time = set_time[1]
         ftobs = []
         ffobs = []
      
@@ -584,7 +582,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         for p in range(w):
             count = 0
             for j in range(cum,cum+peaks_assos[p]):
-                if tobs[j] >= start_time and tobs[j] <= end_time:
+                if tobs[j] >= s_time and tobs[j] <= e_time:
                     ftobs.append(tobs[j])
                     ffobs.append(fobs[j])
                     count += 1
@@ -622,14 +620,14 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
             r3.close()
             pick_again = input("Do you want to repick you points? (y or n)")
         if len(set_time) == 0:
-            set_time = [0, 250]
-        start_time = set_time[0]
+            return tobs, fobs, peaks_assos
+        s_time = set_time[0]
         end_time = set_time[1]
         ftobs = []
         ffobs = []
         if peaks_assos == False:
             for j in range(len(tobs)):
-                if tobs[j] >= start_time and tobs[j] <= end_time:
+                if tobs[j] >= s_time and tobs[j] <= e_time:
                     ftobs.append(tobs[j])
                     ffobs.append(fobs[j])
             peaks_assos = np.nan
@@ -640,7 +638,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
             for p in range(w):
                 count = 0
                 for j in range(cum,cum+peaks_assos[p]):
-                    if tobs[j] >= start_time and tobs[j] <= end_time:
+                    if tobs[j] >= s_time and tobs[j] <= e_time:
                         ftobs.append(tobs[j])
                         ffobs.append(fobs[j])
                         count += 1
@@ -653,7 +651,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
 
         return tobs, fobs, peaks_assos
     else:
-        return tobs, fobs, []
+        return tobs, fobs, peaks_assos
 
 ###############################################################################################################################
 
