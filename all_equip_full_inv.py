@@ -78,6 +78,12 @@ for li in file_in.readlines():
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
 
+    mprior = []
+    mprior.append(v0)
+    mprior.append(l)
+    mprior.append(tprime0)
+    mprior.append(c)
+
     tf = np.arange(0, 240, 1)
 
     # Convert the list of coordinates to a numpy array
@@ -89,7 +95,7 @@ for li in file_in.readlines():
 
     sigma_f0 = 100
     sigma_v0 = 100
-    sigma_l = 1000
+    sigma_l = 10000
     sigma_tprime0 = 200
     sigma_c = 100
 
@@ -103,7 +109,7 @@ for li in file_in.readlines():
     
     ft = calc_ft(times, tprime0, f0, v0, l, c)
 
-    corridor_width = 20
+    corridor_width = 10
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 5      
 
@@ -128,36 +134,22 @@ for li in file_in.readlines():
     if len(fobs) == 0:
         continue
 
-    tobs_hold = tobs.copy()
-
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
-    #if len(tobs) == len(tobs_hold):
-    #    continue
-
-    v0 = speed_mps
-    height_m = alt - elev
-    l = np.sqrt(dist_m**2 + (height_m)**2)    
-    c = speed_of_sound(Tc)
-
-    mprior = []
-    mprior.append(v0)
-    mprior.append(l)
-    mprior.append(tprime0)
-    mprior.append(c)
     for o in range(len(peaks_assos)):
         tprime = freqpeak[o]
         ft0p = peaks[o]
         f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
         mprior.append(float(f0))
     
-    print("mprior:", mprior)
+    print(date, equip, flight_num, sta)
     plt.figure(figsize=(15, 10))
     plt.pcolormesh(times, frequencies, spec, vmin=vmin, vmax=vmax, shading='gouraud')
-    plt.scatter(tobs, fobs, color='red', label='Picks', s=10)
+    plt.scatter(tobs, fobs, color='red', marker='x')
     plt.show()
     plt.close()
 
+    print("mprior:", mprior)
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations=4, sigma=5)
 
     v0 = m[0]

@@ -429,7 +429,6 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
                 else:
                     return [], None
         file.close()  
-        print(start_time)
         return coords, start_time
     
     elif make_picks:
@@ -622,30 +621,23 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         if len(set_time) == 0:
             return tobs, fobs, peaks_assos
         s_time = set_time[0]
-        end_time = set_time[1]
+        e_time = set_time[1]
         ftobs = []
         ffobs = []
-        if peaks_assos == False:
-            for j in range(len(tobs)):
+
+        peak_ass = []
+        cum = 0
+        for p in range(w):
+            count = 0
+            for j in range(cum,cum+peaks_assos[p]):
                 if tobs[j] >= s_time and tobs[j] <= e_time:
                     ftobs.append(tobs[j])
                     ffobs.append(fobs[j])
-            peaks_assos = np.nan
-        else:
-            peak_ass = []
-            cum = 0
-
-            for p in range(w):
-                count = 0
-                for j in range(cum,cum+peaks_assos[p]):
-                    if tobs[j] >= s_time and tobs[j] <= e_time:
-                        ftobs.append(tobs[j])
-                        ffobs.append(fobs[j])
-                        count += 1
-                cum = cum + peaks_assos[p]
-            
-                peak_ass.append(count)
-            peaks_assos = peak_ass
+                    count += 1
+            cum = cum + peaks_assos[p]
+        
+            peak_ass.append(count)
+        peaks_assos = peak_ass
         tobs = ftobs
         fobs = ffobs
 
@@ -768,20 +760,22 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
             tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
 
             #For Boeing Jets
-            if str(equip[0]) == 'B' and str(equip[0:1]) != 'BE':
-                max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
-            else:
-                max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
-            if len(max_amplitude_index) == 0:
-                continue
-            maxa = np.argmax(tt[max_amplitude_index])
-            max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
+            #if str(equip[0]) == 'B' and str(equip[0:1]) != 'BE':
+            #    max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
+            #else:
+            #    max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+            #if len(max_amplitude_index) == 0:
+            #    continue
+            maxa = np.argmax(tt) #[max_amplitude_index])
+            #max_amplitude_index = np.array([maxa])
+            #max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
+            max_amplitude_frequency = frequencies[int(maxa)+int(np.round(lower[t_f],0))]
             maxfreq.append(max_amplitude_frequency)
             coord_inv.append((times[t_f], max_amplitude_frequency))
             ttt.append(times[t_f])
 
 
-        if len(coord_inv) > 0:
+        if len(ttt) > 0:
             if f0 < 200:
                 coord_inv_array = np.array(coord_inv)
                 mtest = [f0,v0, l, tprime0,c]
@@ -799,5 +793,6 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
                     tobs.append(ttt[i])
                     count += 1
             peaks_assos.append(count)
-
+        else:
+            peaks_assos.append(0)
     return tobs, fobs, peaks_assos, f0_array
