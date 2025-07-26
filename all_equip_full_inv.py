@@ -13,7 +13,7 @@ import shutil
 
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
-rerun_fig = True #Flag rerun the figures without saving the inversion results = True
+rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
@@ -33,9 +33,11 @@ for li in file_in.readlines():
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
     equip = text[10]
-
+    if equip != 'DH8A':
+        continue
+    
     if rerun_fig == False:
-        output = open('output/inv_results/' + equip + 'data_atmosphere_full.csv', 'a')
+        output = open('output/inv_results/f50_v_10_l_200_t_30_c_80_' + equip + 'data_atmosphere_full.csv', 'a')
 
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
@@ -124,14 +126,6 @@ for li in file_in.readlines():
 
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
-    plt.figure(figsize=(15, 10))
-    plt.pcolormesh(times, frequencies, spec, vmin=vmin, vmax=vmax, shading='gouraud')
-    plt.scatter(tobs, fobs, color='red', marker='x')
-    for f in f0_array:
-        ff = calc_ft(times,  mprior[2], f, mprior[0], mprior[1], c)
-        plt.plot(times, ff, color='black', linestyle='--', linewidth=1)
-    plt.show()
-    plt.close()
     print('mprior:', mprior)
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations=4, sigma=3)
 
@@ -149,7 +143,7 @@ for li in file_in.readlines():
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=True)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
     qnum = "__"
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
