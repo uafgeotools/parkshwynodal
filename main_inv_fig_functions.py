@@ -201,7 +201,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         str: The user assigned quality number.
     """
     # Plot settings and calculations
-    vmin = np.min(arrive_time) #tprime0
+    vmin = np.min(arrive_time) 
     vmax = np.max(arrive_time)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
@@ -211,11 +211,13 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
 
     ax1.margins(x=0)
     ax1.set_position([0.125, 0.6, 0.775, 0.3])  # Move ax1 plot upwards
-
+    ax1.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
+    ax1.axvline(x=tprime0, c = 'k', ls = '--',linewidth=0.5)
     # Plot spectrogram
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
     f0lab = []
+    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
 
     ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
     for pp in range(len(f0_array)):
@@ -265,7 +267,6 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
     else:
         ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
-    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
@@ -668,10 +669,11 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, mprior, sigm
 
         upper = int(ft[t_f] + corridor_width)
         lower = int(ft[t_f] - corridor_width)
+
         if lower < 0:
             lower = 0
         elif lower >= 250:
-            lower = 200
+            continue
         else:
             pass
         if upper > 250:
@@ -736,7 +738,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
     fobs = []
     tobs = []
     f0_array = []
-    
+  
     for pp in range(len(peaks)):
         tprime = time_peaks[pp]
         ft0p = peaks[pp]
@@ -747,43 +749,40 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         coord_inv = []
         ttt = []
 
-        f01 = f0 + corridor_width
-        f02 = f0  - corridor_width
-        upper = calc_ft(times,  tprime0, f01, v0, l, c)
-        lower = calc_ft(times,  tprime0, f02, v0, l, c)
+        ft = calc_ft(times,  tprime0, f0, v0, l, c)
 
         for t_f in range(len(times)):
 
-            if lower[t_f] < 0 or lower[t_f] > 250 or upper[t_f] > 250 or np.isnan(upper[t_f]) or np.isnan(lower[t_f]):
+            upper = int(ft[t_f] + corridor_width)
+            lower = int(ft[t_f] - corridor_width)
+
+            if lower < 0:
+                lower = 0
+            elif lower >= 250:
+                continue
+            else:
+                pass
+            if upper > 250:
+                upper = 250
+            
+            tt = spec[int(np.round(lower,0)):int(np.round(upper,0)), t_f]
+
+            max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
+            if len(max_amplitude_index) == 0:
                 continue
 
-            tt = spec[int(np.round(lower[t_f],0)):int(np.round(upper[t_f],0)), t_f]
+            maxa = np.argmax(tt[max_amplitude_index])
+            max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower,0))]
 
-            #For Boeing Jets
-            #if str(equip[0]) == 'B' and str(equip[0:1]) != 'BE':
-            #    max_amplitude_index,_ = find_peaks(tt, prominence = 5, wlen=5, height=vmax*0.5)
-            #else:
-            #    max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
-            #if len(max_amplitude_index) == 0:
-            #    continue
-            maxa = np.argmax(tt) #[max_amplitude_index])
-            #max_amplitude_index = np.array([maxa])
-            #max_amplitude_frequency = frequencies[int(max_amplitude_index[maxa])+int(np.round(lower[t_f],0))]
-            max_amplitude_frequency = frequencies[int(maxa)+int(np.round(lower[t_f],0))]
             maxfreq.append(max_amplitude_frequency)
             coord_inv.append((times[t_f], max_amplitude_frequency))
             ttt.append(times[t_f])
 
-
-        if len(ttt) > 0:
-            if f0 < 200:
-                coord_inv_array = np.array(coord_inv)
-                mtest = [f0,v0, l, tprime0,c]
-                mtest,_,_,_ = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=4)
-                ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
-            else:
-                ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
-
+        if len(ttt) > 0 and f0 <= 230:
+            coord_inv_array = np.array(coord_inv)
+            mtest = [f0,v0, l, tprime0,c]
+            mtest,_,_,_ = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=4)
+            ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
             delf = np.array(ft) - np.array(maxfreq)
 
             count = 0
@@ -793,6 +792,12 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
                     tobs.append(ttt[i])
                     count += 1
             peaks_assos.append(count)
+        elif f0 > 230:
+            for i in range(len(ttt)):
+                fobs.append(maxfreq[i])
+                tobs.append(ttt[i])
+            peaks_assos.append(len(maxfreq))
         else:
             peaks_assos.append(0)
+
     return tobs, fobs, peaks_assos, f0_array

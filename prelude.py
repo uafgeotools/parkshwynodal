@@ -666,6 +666,23 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 		dm = -la.inv(H) @ gamma
 		mnew = m + dm
 
+		# Check for unreasonable parameter values
+		unreasonable = (
+			mnew[0] <= 5 or mnew[0] > 375 or    # f0
+			mnew[1] <= 0 or mnew[1] > 350 or     # v0
+			mnew[1] >= mnew[4] or  # v0 must be less than c
+			mnew[2] < 0 or mnew[2] > 1e5 or      # l
+			mnew[3] < 10 or mnew[3] > 240 or      # tprime0
+			mnew[4] < 200 or mnew[4] > 400       # c
+		)
+		if unreasonable:
+			mnew = m
+			G = G_hold
+			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+			return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+		
+		G_hold = G.copy()
 		n += 1
 		print(mnew)
 
@@ -695,65 +712,57 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 		numpy.ndarray: The array of the fundamental frequency produced by the aircraft.
 	"""
 
-	v0 = mprior[0]
-	l = mprior[1]
-	tprime0 = mprior[2]
-	c = mprior[3]
-	f0_array = mprior[4:]
-	w = len(f0_array) #number of overtones
+	w = len(mprior[4:]) #number of overtones
 
 	qv = 0
 	cprior0 = np.zeros((w+4,w+4))
 
-	f0_prior = 20
-	if v0 > 100:
-		v0_prior = 10
-	else:
-		v0_prior = 5
-	if l > 5000:
-		l_prior = 1000
-	else:
-		l_prior = 500
-	tprime0_prior = 150
-	c_prior = 80
+	f0_sigma = 50
+	v0_sigma = 10
+	l_sigma = 500
+	tprime0_sigma = 200
+	c_sigma = 80
 
 	if off_diagonal:
-		cprior0[4:][2] =  -0.4*f0_prior*tprime0_prior
+		cprior0[4:][2] =  -0.4*f0_sigma*tprime0_sigma
 
-		cprior0[0][1] = -0.7*v0_prior*l_prior
-		cprior0[0][3] = 0.85*v0_prior*c_prior
-		
-		cprior0[1][0] = -0.7*v0_prior*l_prior
-		cprior0[1][3] = -0.7*l_prior*c_prior
+		cprior0[0][1] = -0.7*v0_sigma*l_sigma
+		cprior0[0][3] = 0.85*v0_sigma*c_sigma
 
-		cprior0[2][4:] =  -0.4*f0_prior*tprime0_prior
-		
-		cprior0[3][0] = 0.85*v0_prior*c_prior
-		cprior0[3][1] = -0.7*l_prior*c_prior  
+		cprior0[1][0] = -0.7*v0_sigma*l_sigma
+		cprior0[1][3] = -0.7*l_sigma*c_sigma
+
+		cprior0[2][4:] =  -0.4*f0_sigma*tprime0_sigma
+
+		cprior0[3][0] = 0.85*v0_sigma*c_sigma
+		cprior0[3][1] = -0.7*l_sigma*c_sigma
     
 	for row in range(len(cprior0)):
 		if row == 0:
-			cprior0[row][row] = v0_prior**2 
+			cprior0[row][row] = v0_sigma**2
 		elif row == 1:
-			cprior0[row][row] = l_prior**2 
+			cprior0[row][row] = l_sigma**2
 		elif row == 2:
-			cprior0[row][row] = tprime0_prior**2 
+			cprior0[row][row] = tprime0_sigma**2
 		elif row == 3:
-			cprior0[row][row] = c_prior**2 
+			cprior0[row][row] = c_sigma**2
 		else:
-			cprior0[row][row] = f0_prior**2
-	cprior = cprior0 * (w+3)
+			cprior0[row][row] = f0_sigma**2
+	cprior = cprior0 * (w+4)
+
 	Cd0 = np.zeros((len(fobs), len(fobs)), float)
 	np.fill_diagonal(Cd0, sigma**2)
-	mnew = np.array(mprior)
+
 	Cd = Cd0*(len(fobs))
+	mnew = np.array(mprior)
+
 	while qv < num_iterations:
-		m = mnew   
-		v0 = mnew[0]
-		l = mnew[1]
-		tprime0 = mnew[2]
-		c = mnew[3]
-		f0_array = mnew[4:]
+		m = mnew
+		v0 = m[0]
+		l = m[1]
+		tprime0 = m[2]
+		c = m[3]
+		f0_array = m[4:]
 
 		fpred = []
 		G = np.zeros((0,w+4))
@@ -774,7 +783,6 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 				new_row[2] = f_derivetprime0
 				new_row[3] = f_derivec
 				new_row[4+p] = f_derivef0
-						
 				G = np.vstack((G, new_row))
 						
 				fpred.append(ft0p)
@@ -782,24 +790,44 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 			cum = cum + peaks_assos[p]
 
 		Gm = G
+		
 		# steepest ascent vector (Eq. 6.307 or 6.312)
 		gamma = cprior @ Gm.T @ la.inv(Cd) @ (np.array(fpred) - fobs) + (np.array(m)  - np.array(mprior)) # steepest ascent vector
 		#===================================================
 		# QUASI-NEWTON ALGORITHM (Eq. 6.319, nu=1)
 		# approximate curvature
-		H = np.identity(len(mnew)) + cprior @ Gm.T @ Cd @ Gm
+		H = np.identity(len(mnew)) + cprior @ Gm.T @ la.inv(Cd) @ Gm
 		dm = -la.inv(H) @ gamma
-		mu = 1
-		mnew = m + mu*dm
+		mnew = m + dm
 
-		print(mnew)
+		# Check for unreasonable parameter values
+		unreasonable = (
+			[mn for mn in mnew[4:] if mn <= 5 or mn > 375] or   # f0
+		 	mnew[0] <= 0 or mnew[0] > 350 or     # v0
+		 	mnew[0] >= mnew[3] or  # v0 must be less than c
+		 	mnew[1] < 0 or mnew[1] > 1e5 or      # l
+		 	mnew[2] < 10 or mnew[2] > 240 or      # tprime0
+		 	mnew[3] < 200 or mnew[3] > 400       # c
+		 )
+
+		if unreasonable and qv > 0:
+			mnew = m
+			G = G_hold
+			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+			return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+
+
+		G_hold = G.copy()
+
 		qv += 1
-	
+		print(mnew)
+
 	Cpost = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior))
 	Cpost0 = la.inv(Gm.T@la.inv(Cd0)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	
-	return mnew, Cpost0, Cpost, f0_array, F_m
+
+	return mnew, Cpost0, Cpost, mnew[4:], F_m
 
 ########################################################################################################################################################################################
 

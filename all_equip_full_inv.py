@@ -72,7 +72,11 @@ for li in file_in.readlines():
 
     if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
         continue
+    # Convert the list of coordinates to a numpy array
+    coords_array = np.array(coords)
 
+    # Find the index of the point in coords_array with the closest frequency to f0
+    f0 = ((np.max(coords_array[:,1])+np.min(coords_array[:,1]))/2) - 20
     tprime0 = tarrive-start_time
     v0 = speed_mps
     height_m = alt - elev
@@ -86,71 +90,50 @@ for li in file_in.readlines():
 
     tf = np.arange(0, 240, 1)
 
-    # Convert the list of coordinates to a numpy array
-    coords_array = np.array(coords)
-
-    f0 = (np.max(coords_array[:,1])+np.min(coords_array[:,1]))/2
     m0 = [f0, v0, l, tprime0, c]
-    print('Initial guess: ', m0)
+    sigma_prior = [20, 1, 1, 200, 1]
+    m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=8)
+    tprime0 = m[3]
 
     sigma_f0 = 100
     sigma_v0 = 100
-    sigma_l = 10000
+    sigma_l = 1000
     sigma_tprime0 = 200
     sigma_c = 100
 
+    m0 = [f0, v0, l, tprime0, c]
     sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c]
-    m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=8)
-    f0 = m[0]
+    m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c], coords_array, num_iterations=8)
     v0 = m[1]
     l = m[2]
     tprime0 = m[3]
     c = m[4]
-    
-    ft = calc_ft(times, tprime0, f0, v0, l, c)
-
-    corridor_width = 10
-    if equip[0] == 'B' and equip[0:1] != 'BE':
-        corridor_width = 5      
-
-    coord_inv_array = get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, m0, sigma_prior)
-   
-    m,_,_,F_m = invert_f(m0, sigma_prior, coord_inv_array, num_iterations=5, sigma=5)
-        
-    f0 = m[0]
-    v0 = m[1]
-    l = m[2]
-    tprime0 = m[3]
-    c = m[4]
-
+    mprior[2] = tprime0
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=True)
 
-    corridor_width = (fs/2) / len(peaks) 
+    corridor_width = 8 
     if equip[0] == 'B' and equip[0:1] != 'BE':
-        corridor_width = 3
+        corridor_width = 5
 
     tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
     
     if len(fobs) == 0:
         continue
+    for o in range(len(f0_array)):
+        mprior.append(float(f0_array[o]))
 
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
-    for o in range(len(peaks_assos)):
-        tprime = freqpeak[o]
-        ft0p = peaks[o]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        mprior.append(float(f0))
-    
-    print(date, equip, flight_num, sta)
     plt.figure(figsize=(15, 10))
     plt.pcolormesh(times, frequencies, spec, vmin=vmin, vmax=vmax, shading='gouraud')
     plt.scatter(tobs, fobs, color='red', marker='x')
+    for f in f0_array:
+        ff = calc_ft(times,  mprior[2], f, mprior[0], mprior[1], c)
+        plt.plot(times, ff, color='black', linestyle='--', linewidth=1)
     plt.show()
     plt.close()
-
-    print("mprior:", mprior)
-    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations=4, sigma=5)
+    print('mprior:', mprior)
+    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations=4, sigma=3)
 
     v0 = m[0]
     l = m[1]
@@ -166,7 +149,7 @@ for li in file_in.readlines():
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=True)
     qnum = "__"
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
