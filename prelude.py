@@ -719,8 +719,8 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 
 	f0_sigma = 50
 	v0_sigma = 10
-	l_sigma = 500
-	tprime0_sigma = 200
+	l_sigma = 200
+	tprime0_sigma = 30
 	c_sigma = 80
 
 	if off_diagonal:
