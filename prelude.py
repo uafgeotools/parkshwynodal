@@ -675,15 +675,17 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 			mnew[3] < 10 or mnew[3] > 240 or      # tprime0
 			mnew[4] < 200 or mnew[4] > 400       # c
 		)
-		if unreasonable:
+		if unreasonable and n > 0:
 			mnew = m
 			G = G_hold
 			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
 			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 			return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-
-		G_hold = G.copy()
-		n += 1
+		elif unreasonable and qv == 0:
+			return mprior, cprior0, cprior, np.nan
+		else:
+			G_hold = G.copy()
+			n += 1
 		print(mnew)
 
 	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
@@ -816,9 +818,11 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
 			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 			return mnew, Cpost0, Cpost, f0_array, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-
-
-		G_hold = G.copy()
+		elif unreasonable and qv == 0:
+			return mprior, cprior0, cprior, mprior[4:], np.nan
+		else:
+			# Store the current G matrix for potential rollback
+			G_hold = G.copy()
 		f0_array = m[4:]
 		qv += 1
 		print(mnew)
