@@ -1,15 +1,9 @@
 import numpy as np
-import pandas as pd
-import obspy
-import os
-from pathlib import Path
-from matplotlib import pyplot as plt
 from datetime import datetime, timezone
 from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
-from prelude import calc_ft, calc_time, speed_of_sound, calc_f0, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
-from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_1o, get_auto_picks_full
-import shutil
+from prelude import calc_time, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
+from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
 
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
