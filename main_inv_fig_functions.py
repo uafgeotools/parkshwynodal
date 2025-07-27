@@ -159,12 +159,14 @@ def remove_median(Sxx):
 
     MDF = np.zeros((a,b))
     for row in range(len(Sxx)):
-        m = len(Sxx[row])
-        p = sorted(Sxx[row])
-        median = p[int(m/2)]
-        for col in range(m):
-            MDF[row][col] = median
-    spec = 10 * np.log10(Sxx) - (10 * np.log10(MDF))
+        median = np.median(Sxx[row])
+        MDF[row, :] = median
+
+    # Avoid log10(0) by replacing zeros with a small positive value
+    Sxx_safe = np.where(Sxx == 0, 1e-10, Sxx)
+    MDF_safe = np.where(MDF == 0, 1e-10, MDF)
+
+    spec = 10 * np.log10(Sxx_safe) - (10 * np.log10(MDF_safe))
     return spec, MDF
 
 ############################################################################################################################################################################################################################
