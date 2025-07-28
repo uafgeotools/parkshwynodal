@@ -119,8 +119,8 @@ for li in file_in.readlines():
 
     print('mprior:', mprior)
 
-    sigma_option = [[50, 10, 200, 30, 80],[50, 1, 1, 30, 160],[50, 100, 1000, 30, 1],[50, 50, 600, 30, 80]]
-
+    sigma_option = [[50, 10, 200, 30, 80],[50, 1, 1, 30, 160],[50, 100, 1000, 30, 1],[50, 50, 600, 30, 80],[50, 10, 200, 50, 60]]
+    
     for i in range(len(sigma_option)):
         sig = sigma_option[i]
         m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_option[i], num_iterations=4, sigma=3)
