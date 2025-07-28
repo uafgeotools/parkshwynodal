@@ -46,7 +46,7 @@ def fit_l1_line(x, y, bounds=None):
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
-file_names = ['50_100_1000_30_1_DH8A.txt','50_50_600_30_80_DH8A.txt','50_10_200_30_80_DH8A.txt','50_1_1_30_160_DH8A.txt']
+file_names = ['50_100_1000_30_1_DH8A.txt','50_50_600_30_80_DH8A.txt','30_10_200_30_60_DH8A.txt','50_1_1_30_160_DH8A.txt']
 
 fr_times = []
 fr_dists = []
@@ -184,16 +184,16 @@ for ii, ff in enumerate(file_names):
         maxe = max(error_c)
         #axs[ii,2].set_xlim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
         #axs[ii,2].set_ylim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
-    axs[ii,2].set_xlim(290, 330)
-    axs[ii,2].set_ylim(290, 330)
+    #axs[ii,2].set_xlim(290, 330)
+    #axs[ii,2].set_ylim(290, 330)
     axs[0,2].set_title("Sound Speed(m/s)", fontsize=10)
     axs[ii,2].set_xlabel('From Inversion', fontsize=8)
     axs[ii,2].set_ylabel('c(T), T from NCPAG2S', fontsize=8)
     axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,2].tick_params(axis='both', labelsize=8)
-    axs[ii,2].set_aspect('equal', adjustable='box')
+    #axs[ii,2].set_aspect('equal', adjustable='box')
     m, b = fit_l1_line(c_array, cc_array)
-    x = np.linspace(min(c_array), max(c_array), 100)
+    x = np.linspace(min(c_array), max(c_array)+100, 100)
     axs[ii,2].plot(x, m * x + b, color='k')
 
     scatter4 = axs[ii,3].scatter(inverse_times, fr_times, c='k', s=15, zorder=2)
@@ -219,7 +219,7 @@ for ii, ff in enumerate(file_names):
     if absolute_time:
         axs[ii,3].set_xscale('log')
         axs[ii,3].set_yscale('log')
-    axs[ii,3].set_aspect('equal', adjustable='box')
+    #axs[ii,3].set_aspect('equal', adjustable='box')
 
 plt.tight_layout()
 plt.show()
