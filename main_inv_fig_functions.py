@@ -214,7 +214,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax1.margins(x=0)
     ax1.set_position([0.125, 0.6, 0.775, 0.3])  # Move ax1 plot upwards
     ax1.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
-    ax1.axvline(x=tprime0, c = 'k', ls = '--',linewidth=0.5)
+    ax1.axvline(x=tprime0, c = '#377eb8', ls = '--',linewidth=0.5,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
     # Plot spectrogram
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
@@ -266,9 +266,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
     if med_df == "NaN":
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
