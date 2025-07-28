@@ -207,7 +207,6 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     vmax = np.max(arrive_time)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
-
     ax1.plot(torg, data, 'k', linewidth=0.5)
     ax1.set_title(title)
 
@@ -265,10 +264,27 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
             f_range.append(med)
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
-    if med_df == "NaN":
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = NaN \u00B1 NaN Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
+
+    if len(f0lab) > 10:
+        # Split f0lab into lines of 10 entries each
+        f0lab_lines = []
+        for i in range(0, len(f0lab), 10):
+            line = ', '.join(["%.2f" % f for f in f0lab[i:i+10]])
+            f0lab_lines.append(line)
+        f0lab_str = (',\n').join(f0lab_lines)
+        f0lab_str = '[' + f0lab_str + ']'
     else:
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ['+', '.join(["%.2f" % f for f in f0lab]) +'] \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+        f0lab_str = '[' + ', '.join(["%.2f" % f for f in f0lab]) + ']'
+
+    if isinstance(F_m, str):
+         if med_df == "NaN":
+             ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz,\n[' + F_m + ']', fontsize=fss)
+         else:
+            ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']', fontsize=fss)
+    elif med_df == "NaN":
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz,\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+    else:
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
@@ -283,6 +299,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax2.set_xlim(0, 240)
     ax2.set_ylim(0, int(fs/2))
 
+    ax1.tick_params(axis='both', which='major', labelsize=9)
+    ax2.tick_params(axis='both', which='major', labelsize=9)
+    ax3.tick_params(axis='both', which='major', labelsize=9)
     # Plot overlay
     spec2 = 10 * np.log10(MDF)
     middle_column2 = spec2[:, middle_index]
@@ -296,6 +315,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax4.set_xlim(vmax2*1.1, vmin2) 
     ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     ax4.grid(axis='y')
+    plt.show()
     if plot_show:
         plt.show()     
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
