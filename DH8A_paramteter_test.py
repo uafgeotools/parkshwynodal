@@ -7,7 +7,7 @@ from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, re
 
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
-rerun_fig = True #Flag rerun the figures without saving the inversion results = True
+rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
