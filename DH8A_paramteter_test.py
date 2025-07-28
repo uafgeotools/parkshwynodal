@@ -122,6 +122,7 @@ for li in file_in.readlines():
     sigma_option = [[50, 10, 200, 30, 80],[50, 1, 1, 30, 160],[50, 100, 1000, 30, 1],[50, 50, 600, 30, 80]]
 
     for i in range(len(sigma_option)):
+        sig = sigma_option[i]
         m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_option[i], num_iterations=4, sigma=3)
 
         v0 = m[0]
@@ -136,7 +137,7 @@ for li in file_in.readlines():
             if arrive_time[i] < 0:
                 arrive_time[i] = 0
 
-        BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+        BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/'+str(sig)+'/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
         make_base_dir(BASE_DIR)
         qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
         qnum = "__"
@@ -145,6 +146,6 @@ for li in file_in.readlines():
         plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
         
         if rerun_fig == False:
-            output = open('output/inv_results/f'+str(sigma_option[i][0])+'_v_'+str(sigma_option[i][1])+'_l_'+str(sigma_option[i][2])+'_t_'+str(sigma_option[i][3])+'_c_'+str(sigma_option[i][4])+'_' + equip + 'data_atmosphere_full.csv', 'a')
-            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+            output = open('output/inv_results/' + str(sig) + '_' + equip + 'data_atmosphere_full.csv', 'a')
+            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
             output.close()
