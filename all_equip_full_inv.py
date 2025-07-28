@@ -116,7 +116,7 @@ for li in file_in.readlines():
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
     print('mprior:', mprior)
-    sigma_prior = [50, 10, 200, 30, 80]
+    sigma_prior = [50, 10, 200, 50, 80] #[50, 10, 200, 30, 80]
 
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=4, sigma=3)
 
