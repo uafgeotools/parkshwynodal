@@ -695,7 +695,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 3, off_diagonal = False):
+def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations = 4, sigma = 3, off_diagonal = False):
 	"""
 	Performs inversion using all picked overtones. 
 
@@ -719,11 +719,11 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations = 4, sigma = 
 	qv = 0
 	cprior0 = np.zeros((w+4,w+4))
 
-	f0_sigma = 50
-	v0_sigma = 10
-	l_sigma = 200
-	tprime0_sigma = 30
-	c_sigma = 80
+	f0_sigma = sigma_prior[0]
+	v0_sigma = sigma_prior[1]
+	l_sigma = sigma_prior[2]
+	tprime0_sigma = sigma_prior[3]
+	c_sigma = sigma_prior[4]
 
 	if off_diagonal:
 		cprior0[4:][2] =  -0.4*f0_sigma*tprime0_sigma
