@@ -315,7 +315,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax4.set_xlim(vmax2*1.1, vmin2) 
     ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     ax4.grid(axis='y')
-    plt.show()
+
     if plot_show:
         plt.show()     
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
