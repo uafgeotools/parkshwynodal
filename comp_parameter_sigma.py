@@ -46,7 +46,7 @@ def fit_l1_line(x, y, bounds=None):
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
-file_names = ['50_100_1000_30_1.txt','50_50_600_30_80.txt','50_10_200_30_80.txt','50_1_1_30_160.txt']
+file_names = ['50_100_1000_30_1_DH8A.txt','50_50_600_30_80_DH8A.txt','50_10_200_30_80_DH8A.txt','50_1_1_30_160_DH8A.txt']
 
 fr_times = []
 fr_dists = []
@@ -146,7 +146,7 @@ for ii, ff in enumerate(file_names):
     axs[ii,0].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,0].set_aspect('equal')
     axs[ii,0].set_xlabel('Inversion Results', fontsize=8)
-    axs[ii,0].set_ylabel('Ground Truth', fontsize=8)
+    axs[ii,0].set_ylabel('flightradar24', fontsize=8)
     axs[ii,0].tick_params(axis='both', labelsize=8)
     m, b = fit_l1_line(inverse_speeds, fr_speeds)
     x = np.linspace(min(inverse_speeds), max(inverse_speeds), 100)
@@ -166,7 +166,7 @@ for ii, ff in enumerate(file_names):
     axs[ii,1].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,1].set_aspect('equal', adjustable='box')
     axs[ii,1].set_xlabel('Inversion Results', fontsize=8)
-    axs[ii,1].set_ylabel('Ground Truth', fontsize=8)
+    axs[ii,1].set_ylabel('flightradar24', fontsize=8)
     axs[ii,1].tick_params(axis='both', labelsize=8)
     m, b = fit_l1_line(inverse_dists, fr_dists)
     x = np.linspace(min(inverse_dists), max(inverse_dists), 100)
@@ -175,18 +175,20 @@ for ii, ff in enumerate(file_names):
 
     scatter3 = axs[ii,2].scatter(c_array, cc_array, c='k', s=15, zorder=2)
     max_min = c_array + cc_array
-    axs[ii,2].set_xlim(min(max_min) - 2, max(max_min) + 2)
-    axs[ii,2].set_ylim(min(max_min) - 2, max(max_min) + 2)
+    #axs[ii,2].set_xlim(min(max_min) - 2, max(max_min) + 2)
+    #axs[ii,2].set_ylim(min(max_min) - 2, max(max_min) + 2)
 
     if error_bar:
-        axs[ii,2].errorbar(c_array, cc_array, xerr=error_time, fmt='none', c='k', zorder=1)
+        axs[ii,2].errorbar(c_array, cc_array, xerr=error_c, fmt='none', c='k', zorder=1)
         max_min_c = c_array + cc_array 
         maxe = max(error_c)
-        axs[ii,2].set_xlim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
-        axs[ii,2].set_ylim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
-    axs[0,2].set_title("Speed of Sound (m/s)", fontsize=10)
+        #axs[ii,2].set_xlim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
+        #axs[ii,2].set_ylim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
+    axs[ii,2].set_xlim(290, 330)
+    axs[ii,2].set_ylim(290, 330)
+    axs[0,2].set_title("Sound Speed(m/s)", fontsize=10)
     axs[ii,2].set_xlabel('From Inversion', fontsize=8)
-    axs[ii,2].set_ylabel('From Modeling', fontsize=8)
+    axs[ii,2].set_ylabel('c(T), T from NCPAG2S', fontsize=8)
     axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,2].tick_params(axis='both', labelsize=8)
     axs[ii,2].set_aspect('equal', adjustable='box')
@@ -209,7 +211,7 @@ for ii, ff in enumerate(file_names):
     axs[ii,3].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[0,3].set_title("Time (s)", fontsize=10)
     axs[ii,3].set_xlabel('Inversion Results', fontsize=8)
-    axs[ii,3].set_ylabel('Flightradar24 + Modeling', fontsize=8)
+    axs[ii,3].set_ylabel("flightradar24 + c(T), T from NCPAG2S", fontsize=8)
     axs[ii,3].tick_params(axis='both', labelsize=8)
     m, b = fit_l1_line(inverse_times, fr_times)
     x = np.linspace(min(inverse_times), max(inverse_times), 100)
