@@ -27,11 +27,6 @@ for li in file_in.readlines():
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
     equip = text[10]
-    if equip != 'DH8A':
-        continue
-    
-    if rerun_fig == False:
-        output = open('output/inv_results/f50_v_10_l_200_t_30_c_80_' + equip + 'data_atmosphere_full.csv', 'a')
 
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
@@ -121,7 +116,9 @@ for li in file_in.readlines():
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
     print('mprior:', mprior)
-    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, num_iterations=4, sigma=3)
+    sigma_prior = [50, 10, 200, 30, 80]
+
+    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=4, sigma=3)
 
     v0 = m[0]
     l = m[1]
@@ -144,7 +141,8 @@ for li in file_in.readlines():
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
     if rerun_fig == False:
-        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
-
-    if rerun_fig == False:
+        output = open('output/inv_results/' + equip + 'data_atmosphere_full.csv', 'a')
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
         output.close()
+    else:
+        continue  # Skip saving results if rerun_fig is True
