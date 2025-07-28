@@ -29,10 +29,7 @@ for li in file_in.readlines():
     equip = text[10]
     if equip != 'DH8A':
         continue
-    if float(date) < 20190213:
-        continue
-    if float(date) > 20190215:
-        continue
+
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
 
