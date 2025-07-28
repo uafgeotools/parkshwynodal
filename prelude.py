@@ -682,7 +682,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 			return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 		elif unreasonable and n == 0:
-			return mprior, cprior0, cprior, np.nan
+			return mprior, cprior0, cprior, 'Forward Model'
 		else:
 			G_hold = G.copy()
 			n += 1
@@ -819,7 +819,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 			return mnew, Cpost0, Cpost, f0_array, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 		elif unreasonable and qv == 0:
-			return mprior, cprior0, cprior, mprior[4:], np.nan
+			return mprior, cprior0, cprior, mprior[4:], 'Forward Model'
 		else:
 			# Store the current G matrix for potential rollback
 			G_hold = G.copy()
