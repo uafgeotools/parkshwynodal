@@ -27,11 +27,11 @@ for line in file_in.readlines():
 	closest_time = float(text[5])
 	alt_m = float(text[6]) 
 	speed_mps = float(text[7])  # Speed in meters per second
-	head = float(text[8])
+	heading = (90 - float(text[8])) % 360
+
+
 	sta = str(text[9])
 	equip = text[10]
-	#if equip != "DH8A":
-	#	continue
 	day = str(date[6:8])
 	month = str(date[4:6])
 
@@ -56,7 +56,7 @@ for line in file_in.readlines():
 			break
 		else:
 			continue
-	spec_dir = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+	spec_dir = '/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
 			im = os.path.join(spec_dir, image)
@@ -106,7 +106,6 @@ for line in file_in.readlines():
 	else:
 		c = 311  # Default speed of sound in m/s if no data is available
 	diff = np.inf
-	diff = np.inf
 
 	flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
 	flight_data = pd.read_csv(flight_file, sep=",")
@@ -124,11 +123,11 @@ for line in file_in.readlines():
 	for t in range(len(timestamps)):
 		if abs(float(closest_time) - float(timestamps[t])) < diff:
 			diff = abs(float(closest_time) - float(timestamps[t]))
-			direction = np.arctan2(flight_utm_y_km[t+1] - flight_utm_y_km[t], flight_utm_x_km[t+1] - flight_utm_x_km[t])
-		else:
-			continue
-
-	deg = (90 -  np.degrees(direction)) % 360
+			if t < len(flight_utm_x_km) - 1:
+				direction = np.arctan2(flight_utm_y_km[t+1] - flight_utm_y_km[t], flight_utm_x_km[t+1] - flight_utm_x_km[t])
+				deg = (90 -  np.degrees(direction)) % 360
+			else:
+				deg = heading
 	dist = np.sqrt(dist_m**2 + (alt_m-sta_elv)**2)
 	temp = Tc
 	sound = c
@@ -137,7 +136,7 @@ for line in file_in.readlines():
 	font2 = ImageFont.truetype('input/Arial.ttf', 25)
 
 			
-	text1 = 'Altitude: '+str(round((alt_m-sta_elv),2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(head,2))+ '\N{DEGREE SIGN}'
+	text1 = 'Altitude: '+str(round((alt_m-sta_elv),2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(heading,2))+ '\N{DEGREE SIGN}'
 	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 	text3 = 'Callsign: ' +  str(call) + ' (' + str(equip) + ')'
 
@@ -153,9 +152,9 @@ for line in file_in.readlines():
 		print('No image for: ' + image_path)
 		continue
 	try:
-		spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+		spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 	except:
-		print('No spectrum image for: ' + '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+		print('No spectrum image for: ' + '/scratch/irseppi/nodal_data/plane_info/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 		continue
 
 	# Resize images
