@@ -41,7 +41,9 @@ for li in file_in.readlines():
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
         spec, MDF = remove_median(Sxx)
     except Exception as e:
-        print(Exception, e)
+        error_file = open('output/inv_results/error_log.txt', 'a')
+        error_file.write(f"Error loading waveform for {sta} on {date} at flight {flight_num}: {str(e)}\n")
+        error_file.close()
         continue
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
