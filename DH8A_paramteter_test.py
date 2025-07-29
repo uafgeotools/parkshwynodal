@@ -9,10 +9,10 @@ nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
 rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
-
+c_array = []
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
-
+c_avg = True
 for li in file_in.readlines():
     text = li.split(',')
     date = text[0]
@@ -26,12 +26,15 @@ for li in file_in.readlines():
     alt = float(text[6]) 
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
+    elev = get_sta_elevation(sta)
     equip = text[10]
     if equip != 'DH8A':
         continue
-
-    elev = get_sta_elevation(sta)
-    c, Tc = get_speed_of_sound(alt, closest_time, x, y)
+    if c_avg:
+        c = 310.72
+        Tc = -34.3
+    else:
+        c, Tc = get_speed_of_sound(alt, closest_time, x, y)
 
     tarrive = calc_time(closest_time,dist_m,alt,c) 
     ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
@@ -118,8 +121,10 @@ for li in file_in.readlines():
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
     print('mprior:', mprior)
-
-    sigma_option = [[50, 10, 200, 30, 80],[50, 1, 1, 30, 160],[50, 100, 1000, 30, 1],[50, 50, 600, 30, 80],[50, 10, 200, 50, 60]]
+    if c_avg:
+        sigma_option = [[50, 100, 1000, 30, 1]] 
+    else:
+        sigma_option = [[50, 10, 200, 30, 80],[50, 1, 1, 30, 160],[50, 100, 1000, 30, 1],[50, 50, 600, 30, 80],[50, 10, 200, 50, 60]]
     
     for i in range(len(sigma_option)):
         sig = sigma_option[i]
@@ -145,7 +150,11 @@ for li in file_in.readlines():
         make_base_dir(BASE_DIR)
         plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
         
-        if rerun_fig == False:
+        if rerun_fig == False and not c_avg:
             output = open('output/inv_results/' + str(sig) + '_' + equip + 'data_atmosphere_full.csv', 'a')
+            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
+            output.close()
+        elif rerun_fig == False and c_avg:
+            output = open('output/inv_results/FIXED_C_' + str(sig) + '_' + equip + 'data_atmosphere_full.csv', 'a')
             output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
             output.close()
