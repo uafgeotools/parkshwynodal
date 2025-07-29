@@ -591,7 +591,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
                 pick_data = line.split(',')
                 set_time.append(float(pick_data[0]))
         file.close()  
-        if len(set_time) == 0:
+        if len(set_time) <= 1:
             return tobs, fobs, peaks_assos
         s_time = set_time[0]
         e_time = set_time[1]
