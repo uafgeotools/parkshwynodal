@@ -104,21 +104,20 @@ for li in file_in.readlines():
     mprior[2] = tprime0
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=True)
 
-    corridor_width = 8 
-    if equip[0] == 'B' and equip[0:1] != 'BE':
-        corridor_width = 5
+    corridor_width = 8
 
     tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
     
     if len(fobs) == 0:
         continue
+
     for o in range(len(f0_array)):
         mprior.append(float(f0_array[o]))
 
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
 
     print('mprior:', mprior)
-    sigma_prior = [50, 10, 200, 50, 80] #[50, 10, 200, 30, 80]
+    sigma_prior = [50, 10, 200, 30, 80]
 
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=4, sigma=3)
 
@@ -143,7 +142,7 @@ for li in file_in.readlines():
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
     if rerun_fig == False:
-        output = open('output/inv_results/' + equip + 'data_atmosphere_full.csv', 'a')
+        output = open('output/inv_results/' + equip + '_full_inv_results.csv', 'a')
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
         output.close()
     else:
