@@ -81,6 +81,11 @@ for ii, ff in enumerate(file_names):
     axs[ii,0].set_xlabel('Inversion Results', fontsize=8)
     axs[ii,0].set_ylabel('flightradar24', fontsize=8)
     axs[ii,0].tick_params(axis='both', labelsize=8)
+    #plot text in the top left corner of the first subplot
+    squared_differences = (np.array(inverse_speeds) - np.array(fr_speeds)) ** 2
+    mean_squared_difference = np.mean(squared_differences)
+    rmsd = np.sqrt(mean_squared_difference)
+    axs[ii,0].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[ii,0].transAxes, fontsize=12, va='top', ha='left')
 
     scatter2 = axs[ii,1].scatter(inverse_dists, fr_dists, c='k', s=15, zorder=2)
     axs[ii,1].set_xlim(4500, 7500)
@@ -94,7 +99,10 @@ for ii, ff in enumerate(file_names):
     axs[ii,1].set_xlabel('Inversion Results', fontsize=8)
     axs[ii,1].set_ylabel('flightradar24', fontsize=8)
     axs[ii,1].tick_params(axis='both', labelsize=8)
-
+    squared_differences = (np.array(inverse_dists) - np.array(fr_dists)) ** 2
+    mean_squared_difference = np.mean(squared_differences)
+    rmsd = np.sqrt(mean_squared_difference)
+    axs[ii,1].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[ii,1].transAxes, fontsize=12, va='top', ha='left')
 
     scatter3 = axs[ii,2].scatter(c_array, cc_array, c='k', s=15, zorder=2)
     axs[ii,2].set_xlim(245, 340)
@@ -106,15 +114,32 @@ for ii, ff in enumerate(file_names):
     axs[ii,2].set_ylabel('c(T), T from NCPAG2S', fontsize=8)
     axs[ii,2].tick_params(axis='both', labelsize=8)
     axs[ii,2].set_aspect('equal', adjustable='box')
+    squared_differences = (np.array(c_array) - np.array(cc_array)) ** 2
+    mean_squared_difference = np.mean(squared_differences)
+    rmsd = np.sqrt(mean_squared_difference)
+
     if ii != 0:
         axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
+        axs[ii,2].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
     else:
         axs[ii,2].axvline(310.72, color='black', linestyle='--')
-
+        axs[ii,2].text(0.05, 0.85, 'RMSD = 0.00', transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
     if ii == 2:
         diff_speed = np.array(inverse_speeds) - np.array(fr_speeds)
         diff_dist = np.array(inverse_dists) - np.array(fr_dists)
         diff_c = np.array(c_array) - np.array(cc_array)
+    if ii == 0 or ii == 1:
+        axs[ii,0].text(0.05, 0.95, '\u03C3 = 100', transform=axs[ii,0].transAxes, fontsize=12, va='top', ha='left')
+        axs[ii,1].text(0.05, 0.95, '\u03C3 = 1000', transform=axs[ii,1].transAxes, fontsize=12, va='top', ha='left')
+        axs[ii,2].text(0.05, 0.95, '\u03C3 = 1', transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
+    elif ii == 2:
+        axs[ii,0].text(0.05, 0.95, '\u03C3 = 10', transform=axs[ii,0].transAxes, fontsize=12, va='top', ha='left')
+        axs[ii,1].text(0.05, 0.95, '\u03C3 = 200', transform=axs[ii,1].transAxes, fontsize=12, va='top', ha='left')
+        axs[ii,2].text(0.05, 0.95, '\u03C3 = 80', transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
+    elif ii == 3:
+        axs[ii,0].text(0.05, 0.95, '\u03C3 = 1', transform=axs[ii,0].transAxes, fontsize=12, va='top', ha='left')
+        axs[ii,1].text(0.05, 0.95, '\u03C3 = 1', transform=axs[ii,1].transAxes, fontsize=12, va='top', ha='left')
+        axs[ii,2].text(0.05, 0.95, '\u03C3 = 160', transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
 
 plt.tight_layout()
 plt.show()
