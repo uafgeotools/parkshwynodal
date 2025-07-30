@@ -1,48 +1,8 @@
 import numpy as np
 import pandas as pd
-import json
 import matplotlib.pyplot as plt
-from pyproj import Proj
 from prelude import *
-from scipy.optimize import minimize
 
-# Function to calculate L1 norm and produce best fit line for plot
-def fit_l1_line(x, y, bounds=None):
-    """
-    Fits a line to the given data points (x, y) using the L1 norm (minimizing absolute deviations).
-
-    Parameters:
-        x (list or np.array): Independent variable data points.
-        y (list or np.array): Dependent variable data points.
-        bounds (tuple, optional): A tuple (min_val, max_val) specifying the range of values to consider for both x and y.
-
-    Returns:
-        tuple: Slope (m) and intercept (b) of the best fit line.
-    """
-    # Apply bounds if provided
-    if bounds is not None:
-        min_val, max_val = bounds
-        x = np.array(x)  # Ensure x is a NumPy array
-        y = np.array(y)  # Ensure y is a NumPy array
-        mask = (x >= min_val) & (x <= max_val) & (y >= min_val) & (y <= max_val)
-        x = np.array(x)[mask]
-        y = np.array(y)[mask]
-
-    # Define the objective function for L1 norm
-    def L1(params):
-        m, b = params
-        x_array = np.array(x)  # Ensure x is a NumPy array
-        return np.sum(np.abs(y - (m * x_array + b)))
-
-    # Initial guess for slope and intercept
-    initial_guess = [0, 0]
-
-    # Minimize the L1 norm
-    result = minimize(L1, initial_guess)
-
-    # Extract the slope and intercept from the result
-    m, b = result.x
-    return m, b
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
@@ -53,7 +13,7 @@ fr_speeds = []
 cc_array = []
 error_bar = False
 
-fig, axs = plt.subplots(4, 3, figsize=(15, 15), sharey=False, layout='constrained')
+fig, axs = plt.subplots(4, 3, figsize=(10, 15), sharey=False, layout='constrained')
 for ii, ff in enumerate(file_names):
     file = open(ff,'r')
     inverse_dists = []
@@ -111,9 +71,6 @@ for ii, ff in enumerate(file_names):
             fr_speeds.append(float(text[7]))
 
     scatter1 = axs[ii,0].scatter(inverse_speeds, fr_speeds, c='k', s=15, zorder=2)
-    axs[ii,0].scatter(inverse_speeds[18], fr_speeds[18], c='red', s=15, zorder=2)
-    axs[ii,0].scatter(inverse_speeds[9], fr_speeds[9], c='red', s=15, zorder=2)
-    axs[ii,0].scatter(inverse_speeds[32], fr_speeds[32], c='b', s=15, zorder=2)
     axs[ii,0].set_xlim(90,160)
     axs[ii,0].set_ylim(90,160)
     axs[ii,0].set_xticks(np.arange(100, 160, 10))
@@ -124,14 +81,8 @@ for ii, ff in enumerate(file_names):
     axs[ii,0].set_xlabel('Inversion Results', fontsize=8)
     axs[ii,0].set_ylabel('flightradar24', fontsize=8)
     axs[ii,0].tick_params(axis='both', labelsize=8)
-    m, b = fit_l1_line(inverse_speeds, fr_speeds)
-    x = np.linspace(min(inverse_speeds), max(inverse_speeds), 100)
-    axs[ii,0].plot(x, m * x + b, color='k')
 
     scatter2 = axs[ii,1].scatter(inverse_dists, fr_dists, c='k', s=15, zorder=2)
-    axs[ii,1].scatter(inverse_dists[18], fr_dists[18], c='red', s=15, zorder=2)
-    axs[ii,1].scatter(inverse_dists[9], fr_dists[9], c='red', s=15, zorder=2)
-    axs[ii,1].scatter(inverse_dists[32], fr_dists[32], c='b', s=15, zorder=2)
     axs[ii,1].set_xlim(4500, 7500)
     axs[ii,1].set_ylim(4500, 7500)
     axs[ii,1].set_xticks(np.arange(5000, 7500, 500))
@@ -143,45 +94,32 @@ for ii, ff in enumerate(file_names):
     axs[ii,1].set_xlabel('Inversion Results', fontsize=8)
     axs[ii,1].set_ylabel('flightradar24', fontsize=8)
     axs[ii,1].tick_params(axis='both', labelsize=8)
-    m, b = fit_l1_line(inverse_dists, fr_dists)
-    x = np.linspace(min(inverse_dists), max(inverse_dists), 100)
-    axs[ii,1].plot(x, m * x + b, color='k')
+
 
     scatter3 = axs[ii,2].scatter(c_array, cc_array, c='k', s=15, zorder=2)
-    axs[ii,2].scatter(c_array[18], cc_array[18], c='red', s=15, zorder=2)
-    axs[ii,2].scatter(c_array[9], cc_array[9], c='red', s=15, zorder=2)
-    axs[ii,2].scatter(c_array[32], cc_array[32], c='b', s=15, zorder=2)
     axs[ii,2].set_xlim(245, 340)
     axs[ii,2].set_ylim(245, 340)
     axs[ii,2].set_xticks(np.arange(250, 340, 10))
     axs[ii,2].set_yticks(np.arange(250, 340, 10))
     axs[0,2].set_title("Sound Speed(m/s)", fontsize=10)
-    axs[ii,2].set_xlabel('From Inversion', fontsize=8)
+    axs[ii,2].set_xlabel('Inversion Results', fontsize=8)
     axs[ii,2].set_ylabel('c(T), T from NCPAG2S', fontsize=8)
     axs[ii,2].tick_params(axis='both', labelsize=8)
     axs[ii,2].set_aspect('equal', adjustable='box')
     if ii != 0:
         axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
-        m, b = fit_l1_line(c_array, cc_array)
-        x = np.linspace(min(c_array), max(c_array), 100)
-        axs[ii,2].plot(x, m * x + b, color='k')
     else:
         axs[ii,2].axvline(310.72, color='black', linestyle='--')
-    ioo = np.argmax(np.array(c_array))
-    print(np.argmax(np.array(fr_dists)))
-    print(ioo)
-    print(c_array[ioo])
-    print(inverse_speeds[ioo])
-    print(inverse_dists[ioo])
+
     if ii == 2:
         diff_speed = np.array(inverse_speeds) - np.array(fr_speeds)
         diff_dist = np.array(inverse_dists) - np.array(fr_dists)
         diff_c = np.array(c_array) - np.array(cc_array)
 
 plt.tight_layout()
-
 plt.show()
 plt.close()
+
 fig, axs = plt.subplots(1, 3, figsize=(15, 5), sharey=False, layout='constrained')
 axs[0].hist(diff_speed, bins=20, color='k', edgecolor='black', alpha=0.7)
 axs[1].hist(diff_dist, bins=20, color='k', edgecolor='black', alpha=0.7)
