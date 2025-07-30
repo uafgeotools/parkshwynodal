@@ -5,7 +5,7 @@ import numpy as np
 #flights = ['B190','BE20','C208','DH8A','AT73','SW4','PC12','DH3T','C441','B18T','B350','BE10']
 #flights = ['AS50','R44'] 
 #flights = ['PA31','DHC2','GA8','C180','C182','C206','C172','PA32','PA46','CH7B','PA30','C46','BE35','PA18','PA34'] #'C185'
-flights = ['DH8A']
+flights = ['B737']
 
 equip_overtone_dict = {}
 count_dict = {}
@@ -14,7 +14,7 @@ color_dict = {}
 y = 0
 for eq in  flights:
     # Define the directory where your files are located
-    file = 'output/with_c_quasi/' + eq + 'data_atmosphere_full.csv' #'output/Inversion_Results/'+eq+'data_atmosphere_full.txt'
+    file = eq + 'data_atmosphere_full.csv' #'output/Inversion_Results/'+eq+'data_atmosphere_full.txt'
     if eq not in equip_overtone_dict:
         equip_overtone_dict[eq] = []
         count_dict[eq] = []
@@ -27,10 +27,7 @@ for eq in  flights:
             data = []
             counts = []
             lines = line.split(',')
-            quality = lines[9]
-            if quality != '__':
-                continue
-            peaks = np.array(lines[7])
+            peaks = np.array(lines[9])
             peaks = str(peaks)  # Replace "string" with "str"
             peaks = np.array(peaks.split(' '))
             for peak in peaks:
@@ -61,7 +58,7 @@ for equip, peaks in equip_overtone_dict.items():
     x = np.array(peaks)
 
     color = color_dict[equip]
-    plt.hist(peaks, color=color, bins=61)
+    plt.hist(peaks, color=color, bins=100)
 plt.legend(equip_overtone_dict.keys(), loc='upper right', fontsize='small')
 plt.xticks(np.arange(0, 305, 5))
 plt.xlim(0,305)
