@@ -46,18 +46,16 @@ def fit_l1_line(x, y, bounds=None):
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
-file_names = ['50_100_1000_30_1_DH8A.txt','50_50_600_30_80_DH8A.txt','30_10_200_30_60_DH8A.txt','50_1_1_30_160_DH8A.txt']
+file_names = ['FIXED_C_50_100_1000_30_1_DH8A.txt','50_100_1000_30_1_DH8A.txt','50_10_200_30_80_DH8A.txt','50_1_1_30_160_DH8A.txt']
 
-fr_times = []
 fr_dists = []
 fr_speeds = []
 cc_array = []
 error_bar = False
-absolute_time = False
-fig, axs = plt.subplots(4, 4, figsize=(15, 15), sharey=False, layout='constrained')
+
+fig, axs = plt.subplots(4, 3, figsize=(15, 15), sharey=False, layout='constrained')
 for ii, ff in enumerate(file_names):
     file = open(ff,'r')
-    inverse_times = []
     inverse_dists = []
     inverse_speeds = []
     flight_nums = []
@@ -70,10 +68,6 @@ for ii, ff in enumerate(file_names):
         error_c = []
     for line in file.readlines():
         lines = line.split(',')
-        if absolute_time:
-            inverse_times.append(float(lines[7]))
-        else:
-            inverse_times.append(float(lines[6]))
         inverse_dists.append(abs(float(lines[5])))
         inverse_speeds.append(abs(float(lines[4])))
         comp_times.append(float(lines[3])) 
@@ -89,7 +83,6 @@ for ii, ff in enumerate(file_names):
 
             error_vel.append(float(error[0]))
             error_dist.append(float(error[1]))
-            error_time.append(float(error[2]))
             error_c.append(float(error[3]))
 
     if ii == 0:
@@ -112,36 +105,19 @@ for ii, ff in enumerate(file_names):
             closest_time = float(text[5])
             if (closest_time not in comp_times):
                 continue
-            index = comp_times.index(closest_time)
             cc,_ = get_speed_of_sound(alt, closest_time, x, y)
             cc_array.append(cc)
             fr_dists.append(abs(np.sqrt(float(text[4])**2 + (float(text[6])-elev)**2)))
             fr_speeds.append(float(text[7]))
-            if absolute_time:
-                fr_times.append(closest_time + (np.sqrt(float(text[4])**2 + (float(text[6])-elev)**2)/cc) - 1.55e9)
-            else:
-                tarrive = calc_time(closest_time,dist_m,alt,cc)
-                file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/DH8A_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_id) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_id) + '.csv'
-
-                if Path(file_name).exists():
-                    coords = []
-                    with open(file_name, 'r') as file:
-                        for line in file:
-                            pick_data = line.split(',')
-                            start_time = float(pick_data[2])
-                            break
-                fr_times.append(tarrive - start_time)
 
     scatter1 = axs[ii,0].scatter(inverse_speeds, fr_speeds, c='k', s=15, zorder=2)
-    max_min = inverse_speeds + fr_speeds
-    axs[ii,0].set_xlim(min(max_min) - 2, max(max_min) + 2)
-    axs[ii,0].set_ylim(min(max_min) - 2, max(max_min) + 2)
-    if error_bar:
-        axs[ii,0].errorbar(inverse_speeds, fr_speeds, xerr=error_vel, fmt='none', c='k', zorder=1)
-        max_min_s = inverse_speeds + fr_speeds 
-        maxe = max(error_vel)
-        axs[ii,0].set_xlim(min(max_min_s) - maxe - 5, max(max_min_s) + maxe + 5)
-        axs[ii,0].set_ylim(min(max_min_s) - maxe - 5, max(max_min_s) + maxe + 5)
+    axs[ii,0].scatter(inverse_speeds[18], fr_speeds[18], c='red', s=15, zorder=2)
+    axs[ii,0].scatter(inverse_speeds[9], fr_speeds[9], c='red', s=15, zorder=2)
+    axs[ii,0].scatter(inverse_speeds[32], fr_speeds[32], c='b', s=15, zorder=2)
+    axs[ii,0].set_xlim(90,160)
+    axs[ii,0].set_ylim(90,160)
+    axs[ii,0].set_xticks(np.arange(100, 160, 10))
+    axs[ii,0].set_yticks(np.arange(100, 160, 10))
     axs[0,0].set_title("Velocity (m/s)", fontsize=10)
     axs[ii,0].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,0].set_aspect('equal')
@@ -153,15 +129,14 @@ for ii, ff in enumerate(file_names):
     axs[ii,0].plot(x, m * x + b, color='k')
 
     scatter2 = axs[ii,1].scatter(inverse_dists, fr_dists, c='k', s=15, zorder=2)
-    max_min = inverse_dists + fr_dists
-    axs[ii,1].set_xlim(min(max_min) - 100, max(max_min) + 100)
-    axs[ii,1].set_ylim(min(max_min) - 100, max(max_min) + 100)
-    if error_bar:
-        axs[ii,1].errorbar(inverse_dists, fr_dists, xerr=error_dist, fmt='none', c='k', zorder=1)
-        max_min_d = inverse_dists + fr_dists 
-        maxe = max(error_dist)
-        axs[ii,1].set_xlim(min(max_min_d) - maxe - 100, max(max_min_d) + maxe + 100)
-        axs[ii,1].set_ylim(min(max_min_d) - maxe - 100, max(max_min_d) + maxe + 100)
+    axs[ii,1].scatter(inverse_dists[18], fr_dists[18], c='red', s=15, zorder=2)
+    axs[ii,1].scatter(inverse_dists[9], fr_dists[9], c='red', s=15, zorder=2)
+    axs[ii,1].scatter(inverse_dists[32], fr_dists[32], c='b', s=15, zorder=2)
+    axs[ii,1].set_xlim(4500, 7500)
+    axs[ii,1].set_ylim(4500, 7500)
+    axs[ii,1].set_xticks(np.arange(5000, 7500, 500))
+    axs[ii,1].set_yticks(np.arange(5000, 7500, 500))
+    axs[ii,1].tick_params(axis='both', labelsize=8)
     axs[0,1].set_title("Distance (m)", fontsize=10)
     axs[ii,1].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,1].set_aspect('equal', adjustable='box')
@@ -172,54 +147,43 @@ for ii, ff in enumerate(file_names):
     x = np.linspace(min(inverse_dists), max(inverse_dists), 100)
     axs[ii,1].plot(x, m * x + b, color='k')
 
-
     scatter3 = axs[ii,2].scatter(c_array, cc_array, c='k', s=15, zorder=2)
-    max_min = c_array + cc_array
-    #axs[ii,2].set_xlim(min(max_min) - 2, max(max_min) + 2)
-    #axs[ii,2].set_ylim(min(max_min) - 2, max(max_min) + 2)
-
-    if error_bar:
-        axs[ii,2].errorbar(c_array, cc_array, xerr=error_c, fmt='none', c='k', zorder=1)
-        max_min_c = c_array + cc_array 
-        maxe = max(error_c)
-        #axs[ii,2].set_xlim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
-        #axs[ii,2].set_ylim(min(max_min_c) - maxe - 5, max(max_min_c) + maxe + 5)
-    #axs[ii,2].set_xlim(290, 330)
-    #axs[ii,2].set_ylim(290, 330)
+    axs[ii,2].scatter(c_array[18], cc_array[18], c='red', s=15, zorder=2)
+    axs[ii,2].scatter(c_array[9], cc_array[9], c='red', s=15, zorder=2)
+    axs[ii,2].scatter(c_array[32], cc_array[32], c='b', s=15, zorder=2)
+    axs[ii,2].set_xlim(245, 340)
+    axs[ii,2].set_ylim(245, 340)
+    axs[ii,2].set_xticks(np.arange(250, 340, 10))
+    axs[ii,2].set_yticks(np.arange(250, 340, 10))
     axs[0,2].set_title("Sound Speed(m/s)", fontsize=10)
     axs[ii,2].set_xlabel('From Inversion', fontsize=8)
     axs[ii,2].set_ylabel('c(T), T from NCPAG2S', fontsize=8)
-    axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
     axs[ii,2].tick_params(axis='both', labelsize=8)
-    #axs[ii,2].set_aspect('equal', adjustable='box')
-    m, b = fit_l1_line(c_array, cc_array)
-    x = np.linspace(min(c_array), max(c_array)+100, 100)
-    axs[ii,2].plot(x, m * x + b, color='k')
-
-    scatter4 = axs[ii,3].scatter(inverse_times, fr_times, c='k', s=15, zorder=2)
-    max_min = inverse_times + fr_times
-    if not absolute_time:
-        axs[ii,3].set_xlim(min(max_min)-2, max(max_min)+2)
-        axs[ii,3].set_ylim(min(max_min)-2, max(max_min)+2)
-    if error_bar:
-        axs[ii,3].errorbar(inverse_times, fr_times, xerr=error_time, fmt='none', c='k', zorder=1)
-        max_min_t = inverse_times + fr_times 
-        maxe = max(error_time)
-        axs[ii,3].set_xlim(min(max_min_t) - maxe - 20, max(max_min_t) + maxe + 20)
-        axs[ii,3].set_ylim(min(max_min_t) - maxe - 20, max(max_min_t) + maxe + 20)
-
-    axs[ii,3].axline((0, 0), slope=1, color='black', linestyle='--')
-    axs[0,3].set_title("Time (s)", fontsize=10)
-    axs[ii,3].set_xlabel('Inversion Results', fontsize=8)
-    axs[ii,3].set_ylabel("flightradar24 + c(T), T from NCPAG2S", fontsize=8)
-    axs[ii,3].tick_params(axis='both', labelsize=8)
-    m, b = fit_l1_line(inverse_times, fr_times)
-    x = np.linspace(min(inverse_times), max(inverse_times), 100)
-    axs[ii,3].plot(x, m * x + b, color='k')
-    if absolute_time:
-        axs[ii,3].set_xscale('log')
-        axs[ii,3].set_yscale('log')
-    #axs[ii,3].set_aspect('equal', adjustable='box')
+    axs[ii,2].set_aspect('equal', adjustable='box')
+    if ii != 0:
+        axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
+        m, b = fit_l1_line(c_array, cc_array)
+        x = np.linspace(min(c_array), max(c_array), 100)
+        axs[ii,2].plot(x, m * x + b, color='k')
+    else:
+        axs[ii,2].axvline(310.72, color='black', linestyle='--')
+    ioo = np.argmax(np.array(c_array))
+    print(np.argmax(np.array(fr_dists)))
+    print(ioo)
+    print(c_array[ioo])
+    print(inverse_speeds[ioo])
+    print(inverse_dists[ioo])
+    if ii == 2:
+        diff_speed = np.array(inverse_speeds) - np.array(fr_speeds)
+        diff_dist = np.array(inverse_dists) - np.array(fr_dists)
+        diff_c = np.array(c_array) - np.array(cc_array)
 
 plt.tight_layout()
+
+plt.show()
+plt.close()
+fig, axs = plt.subplots(1, 3, figsize=(15, 5), sharey=False, layout='constrained')
+axs[0].hist(diff_speed, bins=20, color='k', edgecolor='black', alpha=0.7)
+axs[1].hist(diff_dist, bins=20, color='k', edgecolor='black', alpha=0.7)
+axs[2].hist(diff_c, bins=20, color='k', edgecolor='black', alpha=0.7)
 plt.show()
