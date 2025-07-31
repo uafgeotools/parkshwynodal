@@ -86,7 +86,8 @@ for ii, ff in enumerate(file_names):
     mean_squared_difference = np.mean(squared_differences)
     rmsd = np.sqrt(mean_squared_difference)
     axs[ii,0].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[ii,0].transAxes, fontsize=12, va='top', ha='left')
-
+    if ii == 2:
+        rms_speed = rmsd
     scatter2 = axs[ii,1].scatter(inverse_dists, fr_dists, c='k', s=15, zorder=2)
     axs[ii,1].set_xlim(4500, 7500)
     axs[ii,1].set_ylim(4500, 7500)
@@ -102,6 +103,8 @@ for ii, ff in enumerate(file_names):
     squared_differences = (np.array(inverse_dists) - np.array(fr_dists)) ** 2
     mean_squared_difference = np.mean(squared_differences)
     rmsd = np.sqrt(mean_squared_difference)
+    if ii == 2:
+        rms_dist = rmsd
     axs[ii,1].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[ii,1].transAxes, fontsize=12, va='top', ha='left')
 
     scatter3 = axs[ii,2].scatter(c_array, cc_array, c='k', s=15, zorder=2)
@@ -117,7 +120,8 @@ for ii, ff in enumerate(file_names):
     squared_differences = (np.array(c_array) - np.array(cc_array)) ** 2
     mean_squared_difference = np.mean(squared_differences)
     rmsd = np.sqrt(mean_squared_difference)
-
+    if ii == 2:
+        rms_c = rmsd
     if ii != 0:
         axs[ii,2].axline((0, 0), slope=1, color='black', linestyle='--')
         axs[ii,2].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
@@ -146,7 +150,36 @@ plt.show()
 plt.close()
 
 fig, axs = plt.subplots(1, 3, figsize=(15, 5), sharey=False, layout='constrained')
-axs[0].hist(diff_speed, bins=20, color='k', edgecolor='black', alpha=0.7)
-axs[1].hist(diff_dist, bins=20, color='k', edgecolor='black', alpha=0.7)
-axs[2].hist(diff_c, bins=20, color='k', edgecolor='black', alpha=0.7)
+bin = int((np.max(diff_speed) - np.min(diff_speed)) * 3)
+axs[0].hist(diff_speed, bins=bin, color='k', edgecolor='black', alpha=0.5)
+axs[0].set_ylabel(str(len(diff_speed)-1) + '/' + str(len(diff_speed)) + ' samples')
+axs[0].axvline(np.mean(diff_speed) - rms_speed, color='red', linestyle='--')
+axs[0].axvline(np.mean(diff_speed) + rms_speed, color='red', linestyle='--')
+axs[0].axvline(np.mean(diff_speed), color='red', linestyle='--', linewidth=2)
+axs[0].set_xlim(-1.5, 2.5)
+axs[0].set_ylim(0,8.5)
+axs[0].set_yticks(np.arange(1, 9, 1))
+axs[0].set_xticks(np.arange(-1, 3, 1))
+axs[0].set_xlabel('velocity difference, m/s (inversion - flightradar24)')
+bin = int((np.max(diff_dist) - np.min(diff_dist)) / 3)
+axs[1].hist(diff_dist, bins=bin, color='k', edgecolor='black', alpha=0.5)
+axs[1].set_ylabel(str(len(diff_dist)) + '/' + str(len(diff_dist)) + ' samples')
+axs[1].axvline(np.mean(diff_dist) - rms_dist, color='red', linestyle='--')
+axs[1].axvline(np.mean(diff_dist) + rms_dist, color='red', linestyle='--')
+axs[1].axvline(np.mean(diff_dist), color='red', linestyle='--', linewidth=2)
+axs[1].set_ylim(0,8.5)
+axs[1].set_yticks(np.arange(1, 9, 1))
+axs[1].set_xlabel('distance difference, m (inversion - flightradar24)')
+
+bin = int((np.max(diff_c) - np.min(diff_c)) / 3)
+axs[2].hist(diff_c, bins=bin, color='k', edgecolor='black', alpha=0.5)
+axs[2].set_ylabel(str(len(diff_c)-1) + '/' + str(len(diff_c)) + ' samples')
+axs[2].axvline(np.mean(diff_c) - rms_c, color='red', linestyle='--')
+axs[2].axvline(np.mean(diff_c) + rms_c, color='red', linestyle='--')
+axs[2].axvline(np.mean(diff_c), color='red', linestyle='--', linewidth=2)
+axs[2].set_xlim(-12, 22)
+axs[2].set_ylim(0,8.5)
+axs[2].set_yticks(np.arange(1, 9, 1))
+axs[2].set_xlabel('sound speed difference, m/s (inversion - c(T), T from NCPAG2)')
+
 plt.show()
