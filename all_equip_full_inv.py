@@ -61,7 +61,7 @@ for li in file_in.readlines():
     vmin = 0  
     vmax = np.max(middle_column) 
 
-    coords, start_time = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, tarrive, make_picks=False) 
+    coords, start_time = doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, tarrive, make_picks=mk_picks) 
     coords_array = np.array(coords)
     if start_time is None or len(coords_array) == 0:
         continue
@@ -113,7 +113,7 @@ for li in file_in.readlines():
     tprime0 = m[3]
     c = m[4]
     mprior[2] = tprime0
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=True)
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=mk_picks)
 
     corridor_width = 8
 
@@ -125,7 +125,7 @@ for li in file_in.readlines():
     for o in range(len(f0_array)):
         mprior.append(float(f0_array[o]))
 
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=True)
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=mk_picks)
 
     print('mprior:', mprior)
     sigma_prior = [50, 10, 200, 30, 80]
