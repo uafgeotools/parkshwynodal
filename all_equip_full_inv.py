@@ -17,8 +17,6 @@ file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db
 for li in file_in.readlines():
     text = li.split(',')
     date = text[0]
-    if int(date) < 20190323:
-        continue
     month = int(date[4:6])
     day = date[6:8]
     flight_num = text[1]
