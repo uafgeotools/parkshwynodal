@@ -17,6 +17,8 @@ file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db
 for li in file_in.readlines():
     text = li.split(',')
     date = text[0]
+    if int(date) < 20190323:
+        continue
     month = int(date[4:6])
     day = date[6:8]
     flight_num = text[1]
@@ -30,7 +32,7 @@ for li in file_in.readlines():
     equip = text[10]
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
-    
+
     if mk_picks == False:
         file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
         if not os.path.exists(file_name):
