@@ -364,14 +364,14 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             region=prof_region,
         )
 
-        #fig.image(imagefile="N125KT.png",
-        #position="g65/1217+w2.7c+jCM",
-        #box=False,
-        #region=prof_region,
-        #projection=proj,
-        #perspective=[199,90]
-        #)
+        fig.image(imagefile="N125KT.png",
+        position="g65/1217+w2.7c+jCM",
+        box=False,
+        region=prof_region,
+        projection=proj,
+        perspective=[199,90]
+        )
 
-#fig.savefig("flight_path_10512184.png", dpi=300)
+fig.savefig("flight_path_10512184.png", dpi=300)
 fig.show(verbose="i") 
 
