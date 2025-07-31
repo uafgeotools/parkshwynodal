@@ -19,7 +19,6 @@ for li in file_in.readlines():
     date = text[0]
     month = int(date[4:6])
     day = date[6:8]
-    print(day)
     flight_num = text[1]
     x =  float(text[2])  # UTM x-coordinate, meters
     y = float(text[3])  # UTM y-coordinate, meters
