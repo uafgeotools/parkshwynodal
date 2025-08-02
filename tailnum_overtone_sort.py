@@ -18,7 +18,8 @@ count = 0
 for line in file.readlines():
     lines = line.split(',')
     flight_num = lines[1]
-
+    if lines[11] == '00':
+        continue
     peaks = np.array(lines[9])
     peaks = str(peaks)
     peaks = np.char.replace(peaks, '[', '')
@@ -59,7 +60,7 @@ for line in file.readlines():
     peaks_dict[tail_num].extend(ppp)
     all_med[tail_num].extend([np.nanmedian(f1)])
 
-fig,ax1 = plt.subplots(1, 1, sharex=False, figsize=(50,20))     
+fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
 ax2 = fig.add_axes([0.83, 0.11, 0.1, 0.77], sharey=ax1)
@@ -81,9 +82,9 @@ for tail_num, peaks in peaks_dict.items():
     ax2.hist(med, bins=270, color=color, histtype='step', zorder = 15)  
 
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
-ax1.set_xlabel('Frequency', fontsize=16)
-ax2.set_xlabel('Median '+'\u0394'+'F', fontsize=16)
-ax1.legend(loc='upper left',fontsize = 'x-large')
+ax1.set_xlabel('Frequency (Hz)', fontsize=16)
+ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=16)
+#ax1.legend(loc='upper left',fontsize = 'x-large')
 ax1.set_xlim(10, 298)
 ax1.set_xticks(range(10, 280, 10)) 
 ax1.set_yticks(range(0, 90, 10))
@@ -103,4 +104,5 @@ for g in range(0,14):
 ax2.axvline(x=del_f_t1, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_2, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+fig.savefig("overtone_tail_num_diff.png", dpi=300)
 plt.show()

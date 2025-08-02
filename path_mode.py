@@ -81,6 +81,7 @@ flight_alt[flight_num].extend(alt)
 for line in file.readlines():
     lines = line.split(',')
     f_num = int(lines[1])
+    
     if int(f_num) != int(flight_num):
         continue
     nodes = int(lines[2])
@@ -124,7 +125,8 @@ for line in file.readlines():
         peak_old = float(peak)
     if len(f1) < 1:
         continue
-
+    if str(lines[11]) == '00':
+        continue
     all_med[flight_num].extend([np.nanmedian(f1)])
     points_lat[flight_num].extend([closest_lat])
     points_lon[flight_num].extend([closest_lon])
