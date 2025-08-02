@@ -80,6 +80,9 @@ flight_alt[flight_num].extend(alt)
 
 for line in file.readlines():
     lines = line.split(',')
+    f_num = int(lines[1])
+    if int(f_num) != int(flight_num):
+        continue
     nodes = int(lines[2])
     # Find find the data for the example station
     for s in range(len(seismo_data)):
