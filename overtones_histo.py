@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-flights = ['PA31','DHC2','GA8','C180','C182','C206','C172','PA32','PA46','CH7B','PA30','C185','AS50','R44','B190','BE20','C208','DH8A','AT73','SW4','PC12','DH3T','C441','B18T','BE10','B763','B737', 'B738', 'B739', 'B77W', 'B789', 'B763','B733','CRJ2'] #PA34
+flights = ['PA31','DHC2','GA8','C180','C182','C206','C172','PA32','PA46','CH7B','PA30','C185','AS50','R44','B190','BE20','C208','DH8A','AT73','SW4','PC12','DH3T','C441','B18T','BE10','B763','B737', 'B738', 'B739', 'B763','B733']
 
 equip_overtone_dict = {}
 
@@ -19,12 +19,13 @@ for eq in flights:
                 continue
             peaks = np.array(lines[9])
             peaks = str(peaks)  # Replace "string" with "str"
+            # remove[ and ] from the string
+            peaks = peaks.replace('[', '').replace(']', '')
             peaks = np.array(peaks.split(' '))
             for peak in peaks:
-                try:
-                    peak = float(peak)
-                except:
+                if peak == '':
                     continue
+                peak = float(peak)
             
                 data.append(peak)
         equip_overtone_dict[eq].extend(data)
@@ -34,10 +35,13 @@ for eq in flights:
 fig, ax = plt.subplots(len(equip_overtone_dict.keys()), 1, figsize=(5, 30), sharex=True)
 
 for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
-    bins = np.arange(min(peaks), max(peaks) + 2, 2)
+    bins = np.arange(min(peaks), max(peaks) + 3, 3)
     ax[i].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
     ax[i].text(0.01, 0.95, equip, transform=ax[i].transAxes, fontsize=10, va='top', ha='left', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+    counts, _ = np.histogram(peaks, bins=bins)
+    ax[i].set_yticks([counts.max()])
 plt.subplots_adjust(hspace=0)  # Remove vertical space between subplots
+plt.xlim(5,300)
 fig.savefig('histogram.png', dpi=300, bbox_inches='tight')
 plt.show()
 
