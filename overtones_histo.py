@@ -32,15 +32,15 @@ for eq in flights:
 
 
 print(len(equip_overtone_dict.keys()), "equipments found")
-fig, ax = plt.subplots(int(len(equip_overtone_dict.keys())/2), 2, figsize=(10, 25), sharex=True)
+fig, ax = plt.subplots(int(len(equip_overtone_dict.keys())/3), 3, figsize=(20, 25), sharex=True)
 
 for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
     bins = np.arange(min(peaks), max(peaks) + 3, 3)
-    ax[i//2, i%2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-    ax[i//2, i%2].text(0.01, 0.95, equip, transform=ax[i//2, i%2].transAxes, fontsize=10, va='top', ha='left', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+    ax[i//3, i%3].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
+    ax[i//3, i%3].text(0.01, 0.95, equip, transform=ax[i//3, i%3].transAxes, fontsize=10, va='top', ha='left', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
     counts, _ = np.histogram(peaks, bins=bins)
-    ax[i//2, i%2].set_yticks([counts.max()])
-plt.subplots_adjust(hspace=0)  # Remove vertical space between subplots
+    ax[i//3, i%3].set_yticks([counts.max()])
+plt.subplots_adjust(hspace=0, wspace=0.1)  # Small vertical and horizontal space between subplots
 plt.xlim(5,300)
 fig.savefig('histogram.png', dpi=300, bbox_inches='tight')
 plt.show()
