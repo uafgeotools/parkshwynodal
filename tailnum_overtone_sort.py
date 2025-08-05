@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib.patheffects as patheffects
 
-file = open('C185_full_inv_results.txt', 'r')
+file = open('output/inv_results/C185_full_inv_results.txt', 'r')
 
 file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
 tail_nums = file2['TAIL_NUM']
@@ -63,12 +64,13 @@ for line in file.readlines():
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
-ax2 = fig.add_axes([0.83, 0.11, 0.1, 0.77], sharey=ax1)
+ax2 = fig.add_axes([0.87, 0.053, 0.125, 0.9245], sharey=ax1)
 
 pos = 1
 tail_num_hold = 0
-color_dict[10572742] = [1.0, 0.5, 0.0]  # Orange color in RGB
-color_dict[10512184] = [0.0, 0.5, 1.0]  # Blue color in RGB
+color_dict[10512184] = [1.0, 0.5, 0.0]  # Orange color in RGB 
+color_dict[10572742] = [0.0, 0.5, 1.0]  # Blue color in RGB
+
 
 for tail_num, peaks in peaks_dict.items():
     color = color_dict[tail_num]
@@ -82,9 +84,8 @@ for tail_num, peaks in peaks_dict.items():
     ax2.hist(med, bins=270, color=color, histtype='step', zorder = 15)  
 
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
-ax1.set_xlabel('Frequency (Hz)', fontsize=16)
-ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=16)
-#ax1.legend(loc='upper left',fontsize = 'x-large')
+ax1.set_xlabel('Frequency (Hz)', fontsize=20)
+ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=20)
 ax1.set_xlim(10, 298)
 ax1.set_xticks(range(10, 280, 10)) 
 ax1.set_yticks(range(0, 90, 10))
@@ -97,12 +98,34 @@ ax1.set_ylim(0, 80)
 del_f_t1 = 19.62
 del_f_t2_1 = 19.17
 del_f_t2_2 = 20.56
+x_label = []
 for g in range(0,14):
-    ax1.axvline(x= (1 + g) * del_f_t1, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
-    ax1.axvline(x= (1 + g) * del_f_t2_1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
-    ax1.axvline(x= (1 + g) * del_f_t2_2, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
-ax2.axvline(x=del_f_t1, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
-ax2.axvline(x=del_f_t2_1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
-ax2.axvline(x=del_f_t2_2, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+    ax1.axvline(x= (1 + g) * del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+    x_label.append((1 + g) * del_f_t1)
+    ax1.axvline(x= (1 + g) * del_f_t2_1, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
+    ax1.axvline(x= (1 + g) * del_f_t2_2, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
+ax1.set_xticks(x_label)
+ax1.set_yticks([0,40,80])
+for label in ax1.get_yticklabels():
+    #label.set_fontweight('bold')
+    label.set_fontsize(20)
+ax1.set_xlim(5,320)
+ax2.set_xticks([19.62])
+
+# Change tick color, outline in black, make them bold, and increase font size
+for label in ax1.get_xticklabels():
+    label.set_color([0.0, 0.5, 1.0])
+    #label.set_fontweight('bold')
+    label.set_fontsize(20)
+
+for label in ax2.get_xticklabels():
+    label.set_color([0.0, 0.5, 1.0])
+    #label.set_fontweight('bold')
+    label.set_fontsize(20)
+
+ax2.axvline(x=del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+ax2.axvline(x=del_f_t2_1, color =   [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
+ax2.axvline(x=del_f_t2_2, color =  [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 fig.savefig("overtone_tail_num_diff.png", dpi=300)
+plt.tight_layout(pad=2.5, w_pad=0.5, h_pad=1.5)
 plt.show()
