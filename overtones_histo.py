@@ -27,7 +27,7 @@ for text in file_in.readlines():
             break
 file_in.close()
 if main_text == True:
-    jet = ['B737', 'B738', 'B739', 'B77W']
+    jet = ['B737', 'B738', 'B739']
     Turboprop = ['DH8A','B190','BE20','C208','PC12','DH3T']
     piston = ['C185','C182','C206','DHC2','GA8','PA31']
     Heli = ['R44']
@@ -35,7 +35,7 @@ else:
     # Move to suplumentary material
     piston = ['CH7B', 'PA30', 'PA32', 'C172','C180']
     Turboprop = ['B18T','C441','AT73','SW4']
-    jet = ['B733', 'B763', 'B772', 'B788', 'B789']
+    jet = ['B733', 'B763', 'B772', 'B77W', 'B788', 'B789']
     Heli = []
 equip_overtone_dict = {}
 equip_count_dict = {}
@@ -90,8 +90,12 @@ if main_text == True:
 
     for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
         equip_count = equip_count_dict[equip]
-        label_count = 'Crossings: ' + str(equip_count[1]) + '/' + str(equip_count[0])
-        label_tail = 'Tailnumbers: '+ str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
+        if i ==  len(jet) + len(Turboprop):
+            label_count = 'crossings: ' + str(equip_count[1]) + '/' + str(equip_count[0])
+            label_tail = 'tail numbers: '+ str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
+        else:
+            label_count = str(equip_count[1]) + '/' + str(equip_count[0])
+            label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
             if i == 0:
                 ax[i, 2].set_title('Jet Aircrafts', fontsize=14, fontweight='bold')
@@ -106,7 +110,7 @@ if main_text == True:
             axes_with_data.add((i, 2))
         elif equip in Turboprop:
             idx = i - len(jet)
-            if i == 9:
+            if i == 8:
                 ax[0, 1].set_title('Turboprop Aircrafts', fontsize=14, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
@@ -121,26 +125,29 @@ if main_text == True:
             idx = i - len(jet) - len(Turboprop)
             if i == len(jet) + len(Turboprop):
                 ax[idx, 0].set_title('Piston Aircrafts', fontsize=14, fontweight='bold')
+                ax[idx, 0].text(0.99, 0.65, 'f\u2080 count: ' + str(len(peaks)), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
+            else:
+                ax[idx, 0].text(0.99, 0.65, len(peaks), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 0].text(0.99, 0.95, equip, transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right')
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
-            ax[idx, 0].text(0.99, 0.65, len(peaks), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
+            
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 0].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 0))
         elif equip in Heli:
-            ax[-1, 2].set_title('Helicopter (Piston)', fontsize=14, fontweight='bold')
+            ax[-2, 2].set_title('Helicopter (Piston)', fontsize=14, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
-            ax[-1, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[-1, 2].text(0.99, 0.95, equip, transform=ax[-1, 2].transAxes, fontsize=10, va='top', ha='right')
-            ax[-1, 2].text(0.99, 0.85, label_count, transform=ax[-1, 2].transAxes, fontsize=9, va='top', ha='right')
-            ax[-1, 2].text(0.99, 0.75, label_tail, transform=ax[-1, 2].transAxes, fontsize=9, va='top', ha='right')
-            ax[-1, 2].text(0.99, 0.65, len(peaks), transform=ax[-1, 2].transAxes, fontsize=9, va='top', ha='right')
+            ax[-2, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
+            ax[-2, 2].text(0.99, 0.95, equip, transform=ax[-2, 2].transAxes, fontsize=10, va='top', ha='right')
+            ax[-2, 2].text(0.99, 0.85, label_count, transform=ax[-2, 2].transAxes, fontsize=9, va='top', ha='right')
+            ax[-2, 2].text(0.99, 0.75, label_tail, transform=ax[-2, 2].transAxes, fontsize=9, va='top', ha='right')
+            ax[-2, 2].text(0.99, 0.65, len(peaks), transform=ax[-2, 2].transAxes, fontsize=9, va='top', ha='right')
             counts, _ = np.histogram(peaks, bins=bins)
-            ax[-1, 2].set_yticks([0,counts.max()])
-            axes_with_data.add((5, 2))  
+            ax[-2, 2].set_yticks([0,counts.max()])
+            axes_with_data.add((4, 2))  
 
 
     # Remove outline for axes with no data
@@ -157,7 +164,7 @@ if main_text == True:
                 ax[row, col].tick_params(axis='x', which='both', length=0, labelbottom=False)
 
     # Set x-ticks for specific axes and ensure they are visible
-    for (row, col) in [(5,1), (5,0), (3,2), (5,2)]:
+    for (row, col) in [(5,1), (5,0), (2,2), (4,2)]:
         ax[row, col].set_xticks(np.arange(0, 300, 25))
         ax[row, col].tick_params(axis='x', which='both', length = 3, labelbottom=True)
 
@@ -168,14 +175,13 @@ if main_text == True:
     fig.savefig('histogram.png', dpi=300, bbox_inches='tight')
     plt.show()
 if main_text == False:
-    fig, ax = plt.subplots(5, 3, figsize=(17, 25), sharex=True)
+    fig, ax = plt.subplots(6, 3, figsize=(17, 25), sharex=True)
 
     # Track which axes have data
     axes_with_data = set()
 
     for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
         equip_count = equip_count_dict[equip]
-
         label_count = str(equip_count[1]) + '/' + str(equip_count[0])
         label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
@@ -223,17 +229,6 @@ if main_text == False:
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 0].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 0))
-        elif equip in Heli:
-            ax[-1, 2].set_title('Helicopter (Piston)', fontsize=14, fontweight='bold')
-            bins = np.arange(min(peaks), max(peaks) + 3, 3)
-            ax[-1, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[-1, 2].text(0.99, 0.95, equip, transform=ax[-1, 2].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            ax[-1, 2].text(0.99, 0.85, label_count, transform=ax[-1, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            ax[-1, 2].text(0.99, 0.75, label_tail, transform=ax[-1, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            ax[-1, 2].text(0.99, 0.65, str(len(peaks)), transform=ax[-1, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            counts, _ = np.histogram(peaks, bins=bins)
-            ax[-1, 2].set_yticks([0,counts.max()])
-            axes_with_data.add((5, 2))  
 
 
     # Remove outline for axes with no data
@@ -258,7 +253,7 @@ if main_text == False:
             else:
                 ax[row, col].grid(False)  # Disable grid for empty axes
     # Set x-ticks for specific axes and ensure they are visible
-    for (row, col) in [(3,1), (4,0), (4,2)]:
+    for (row, col) in [(3,1), (4,0), (5,2)]:
         ax[row, col].set_xticks(np.arange(0, 300, 25))
         ax[row, col].tick_params(axis='x', which='both', length = 3, labelbottom=True)
         ax[row, col].set_xlabel('Frequency (Hz)', fontsize=12)

@@ -8,8 +8,8 @@ from scipy.signal import spectrogram
 from main_inv_fig_functions import  remove_median
 
 generate_samples = False
-c = speed_of_sound(-33)
-
+c = speed_of_sound(-33.7)
+print(c)
 start_time = 1550158642.26246    
 ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
 h = ht.hour
@@ -194,7 +194,7 @@ ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
 plt.show()
 plt.close()
-make_final_plot = False
+make_final_plot = True
 if make_final_plot:
 	covm = np.sqrt(np.diag(covm_norm))
 	fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
