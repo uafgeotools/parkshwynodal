@@ -64,7 +64,7 @@ for line in file.readlines():
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
-ax2 = fig.add_axes([0.87, 0.053, 0.125, 0.9245], sharey=ax1)
+ax2 = fig.add_axes([0.87, 0.053, 0.125, 0.93], sharey=ax1)
 
 pos = 1
 tail_num_hold = 0
@@ -77,7 +77,7 @@ for tail_num, peaks in peaks_dict.items():
     med = all_med[tail_num]
     if str(tail_num) != '10572742' and str(tail_num) != '10512184':
         continue
-
+    print(color, len(peaks), tail_num)
     ax1.hist(peaks, bins=270, color=color, alpha=0.8, label=tail_num, zorder = 10)  
     ax2.hist(med, bins=270, color=color, alpha=0.8, zorder = 10)  
     ax1.hist(peaks, bins=270, color=color, histtype='step',zorder = 15)  
@@ -93,7 +93,7 @@ ax1.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
 ax2.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
 ax2.set_xticks(np.arange(18.5, 22, 1))
 ax2.set_xlim(18, 22)
-ax1.set_ylim(0, 80)
+ax1.set_ylim(0, 82)
 
 del_f_t1 = 19.62
 del_f_t2_1 = 19.17
@@ -104,22 +104,44 @@ for g in range(0,14):
     x_label.append((1 + g) * del_f_t1)
     ax1.axvline(x= (1 + g) * del_f_t2_1, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
     ax1.axvline(x= (1 + g) * del_f_t2_2, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
-ax1.set_xticks(x_label)
+# Add labels inside the plot at the top for each overtone position
+for x in x_label:
+    ax1.text(
+        x,
+        ax1.get_ylim()[1] - 1,
+        f"{x:.1f}",
+        color=[0.0, 0.5, 1.0],
+        fontsize=18,
+        ha='center',
+        va='top',
+        rotation=0,
+        path_effects=[patheffects.withStroke(linewidth=2, foreground='white')],
+        bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2')
+    )
 ax1.set_yticks([0,40,80])
 for label in ax1.get_yticklabels():
     #label.set_fontweight('bold')
     label.set_fontsize(20)
 ax1.set_xlim(5,320)
-ax2.set_xticks([19.62])
-
+med_label = 19.62
+ax2.text(
+    med_label,
+    ax2.get_ylim()[1] - 1,  # Place at the very top
+    f"{med_label:.2f}",
+    color=[0.0, 0.5, 1.0],
+    fontsize=18,
+    ha='center',
+    va='top',
+    zorder=100,  # Ensure it's on top of other plot elements
+    rotation=0,
+    path_effects=[patheffects.withStroke(linewidth=2, foreground='white')],
+    bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2')
+)
 # Change tick color, outline in black, make them bold, and increase font size
 for label in ax1.get_xticklabels():
-    label.set_color([0.0, 0.5, 1.0])
-    #label.set_fontweight('bold')
     label.set_fontsize(20)
 
 for label in ax2.get_xticklabels():
-    label.set_color([0.0, 0.5, 1.0])
     #label.set_fontweight('bold')
     label.set_fontsize(20)
 
