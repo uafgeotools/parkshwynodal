@@ -86,7 +86,6 @@ for tail_num, peaks in peaks_dict.items():
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
 ax1.set_xlabel('Frequency (Hz)', fontsize=20)
 ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=20)
-ax1.set_xlim(10, 298)
 ax1.set_xticks(range(10, 280, 10)) 
 ax1.set_yticks(range(0, 90, 10))
 ax1.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
@@ -122,7 +121,7 @@ ax1.set_yticks([0,40,80])
 for label in ax1.get_yticklabels():
     #label.set_fontweight('bold')
     label.set_fontsize(20)
-ax1.set_xlim(5,320)
+ax1.set_xlim(5,310)
 med_label = 19.62
 ax2.text(
     med_label,

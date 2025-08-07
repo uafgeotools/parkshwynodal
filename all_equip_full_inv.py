@@ -8,7 +8,7 @@ from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, re
 
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
-rerun_fig = False #Flag rerun the figures without saving the inversion results = True
+rerun_fig = True #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
@@ -30,14 +30,13 @@ for li in file_in.readlines():
     equip = text[10]
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
-
     if mk_picks == False:
         file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
         if not os.path.exists(file_name):
             continue
-    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
-    if os.path.exists(DIR):
-        continue
+    #DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    #if os.path.exists(DIR):
+    #    continue
 
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
@@ -146,7 +145,7 @@ for li in file_in.readlines():
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, np.sqrt(np.diag(covm0)), flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
     qnum = "__"
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
