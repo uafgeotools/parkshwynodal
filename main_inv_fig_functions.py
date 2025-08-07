@@ -171,7 +171,7 @@ def remove_median(Sxx):
 
 ############################################################################################################################################################################################################################
 
-def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
+def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost, Cpost0, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
     """
     Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions and tprime0 initial guess compared to the final.
 
@@ -247,9 +247,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         NTRY = 1000
         for N in range(NTRY):
             ftry = []
-            for c_index  in range(4, len(Cpost)):
-                xmin = f0_array[c_index-4] - Cpost[c_index]
-                xmax = f0_array[c_index-4] + Cpost[c_index]
+            for c_index  in range(4, len(Cpost0)):
+                xmin = f0_array[c_index-4] - Cpost0[c_index]
+                xmax = f0_array[c_index-4] + Cpost0[c_index]
                 xtry = xmin + (xmax-xmin)*np.random.rand()
                 ftry.append(xtry)
 
