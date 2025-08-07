@@ -13,7 +13,7 @@ flight = file2['FLIGHT_NUM']
 color_dict = {}
 peaks_dict = {}
 all_med = {}
-
+flight_num_hold = {}
 count = 0
 # Iterate over each line in the file
 for line in file.readlines():
@@ -55,11 +55,14 @@ for line in file.readlines():
                 color_dict[tail_num] = []
                 peaks_dict[tail_num] = []
                 all_med[tail_num] = []
+                flight_num_hold[tail_num] = []
                 break
         else:
             continue
     peaks_dict[tail_num].extend(ppp)
     all_med[tail_num].extend([np.nanmedian(f1)])
+    if flight_num not in flight_num_hold[tail_num]:
+        flight_num_hold[tail_num].append(flight_num)
 
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
@@ -78,6 +81,7 @@ for tail_num, peaks in peaks_dict.items():
     if str(tail_num) != '10572742' and str(tail_num) != '10512184':
         continue
     print(color, len(peaks), tail_num)
+    print(len(flight_num_hold[tail_num]), tail_num)
     ax1.hist(peaks, bins=270, color=color, alpha=0.8, label=tail_num, zorder = 10)  
     ax2.hist(med, bins=270, color=color, alpha=0.8, zorder = 10)  
     ax1.hist(peaks, bins=270, color=color, histtype='step',zorder = 15)  
