@@ -198,8 +198,9 @@ if main_text == False:
             ax[i, 2].set_yticks([0,counts.max()])
             axes_with_data.add((i, 2))
         elif equip in Turboprop:
+            print(i, equip)
             idx = i - len(jet)
-            if i == 5:
+            if i == len(jet):
                 ax[0, 1].set_title('Turboprop Aircrafts', fontsize=14, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
