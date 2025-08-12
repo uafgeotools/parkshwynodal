@@ -9,7 +9,6 @@ from main_inv_fig_functions import  remove_median
 
 generate_samples = False
 c = speed_of_sound(-33.7)
-print(c)
 start_time = 1550158642.26246    
 ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
 h = ht.hour
@@ -127,9 +126,18 @@ ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
 ax[3].set_title("(d) data extracted from model corridor (updated prior model \u00B1 10)")
 
-prior_sigma = [5,10,1000,5,30] #prior sigma values for f0, v0, l, tprime0, c
+prior_sigma = [5,10,600,5,30] #prior sigma values for f0, v0, l, tprime0, c
 m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
 
+f0 = m[0]
+v0 = m[1]
+l = m[2]
+tprime0 = m[3]
+c = m[4]
+print(l)
+l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope
+print(l)
+m[2] = l
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
 delf = np.array(ft) - np.array(peaks)
@@ -143,8 +151,8 @@ coord_inv_array = np.array(new_coord_inv_array)
 ax[3].scatter(coord_inv_array[:, 0], coord_inv_array[:, 1], c='black', marker='x', s=20)
 ax[3].set_ylabel('Frequency (Hz)')
 
-prior_sigma = [5,10,1000,5,30] #prior sigma values for f0, v0, l, tprime0, c
-m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=5)
+prior_sigma = [5,10,500,30,80] #prior sigma values for f0, v0, l, tprime0, c
+m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=3)
 
 f0 = m[0]
 v0 = m[1]
@@ -196,7 +204,7 @@ plt.show()
 plt.close()
 make_final_plot = True
 if make_final_plot:
-	covm = np.sqrt(np.diag(covm_norm))
+	covm = np.sqrt(np.diag(covm0))
 	fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
 	ax1.plot(torg, data, 'k', linewidth=0.5)

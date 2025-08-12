@@ -211,15 +211,12 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax1.set_title(title)
 
     ax1.margins(x=0)
-    ax1.set_position([0.125, 0.6, 0.775, 0.3])  # Move ax1 plot upwards
-    ax1.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
-    ax1.axvline(x=tprime0, c = '#377eb8', ls = '--',linewidth=0.5,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
+    ax1.set_position([0.125, 0.6, 0.775, 0.3]) 
     # Plot spectrogram
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
     f0lab = []
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
-
     ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
@@ -278,13 +275,13 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
 
     if isinstance(F_m, str):
          if med_df == "NaN":
-             ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz,\n[' + F_m + ']', fontsize=fss)
+             ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz,\n[' + F_m + ']', fontsize=fss)
          else:
-            ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']', fontsize=fss)
+            ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']', fontsize=fss)
     elif med_df == "NaN":
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz,\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz,\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
+        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' [FH/VT]', fontsize=fss)
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
@@ -315,7 +312,6 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax4.set_xlim(vmax2*1.1, vmin2) 
     ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     ax4.grid(axis='y')
-
     if plot_show:
         plt.show()     
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
@@ -709,7 +705,7 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, mprior, sigm
 
     coord_inv_array = np.array(coord_inv)
 
-    m,_,_,_ = invert_f(mprior,sigma_prior, coord_inv_array,num_iterations=5)
+    m,_,_,_ = invert_f(mprior,sigma_prior, coord_inv_array,num_iterations=2)
     f0 = m[0]
     v0 = m[1]
     l = m[2]
@@ -803,7 +799,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         if len(ttt) > 0 and f0 <= 230:
             coord_inv_array = np.array(coord_inv)
             mtest = [f0,v0, l, tprime0,c]
-            mtest,_,_,_ = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=4)
+            mtest,_,_,_ = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=2)
             ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
             delf = np.array(ft) - np.array(maxfreq)
 

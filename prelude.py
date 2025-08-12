@@ -717,7 +717,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 	w = len(mprior[4:]) #number of overtones
 
 	qv = 0
-	cprior0 = np.zeros((w+4,w+4))
+	cprior0 = np.zeros((len(mprior),len(mprior)))
 
 	f0_sigma = sigma_prior[0]
 	v0_sigma = sigma_prior[1]
@@ -750,7 +750,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 			cprior0[row][row] = c_sigma**2
 		else:
 			cprior0[row][row] = f0_sigma**2
-	cprior = cprior0 * (w+4)
+	cprior = cprior0 * (len(mprior))
 
 	Cd0 = np.zeros((len(fobs), len(fobs)), float)
 	np.fill_diagonal(Cd0, sigma**2)

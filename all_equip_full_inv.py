@@ -5,6 +5,7 @@ from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
 from prelude import calc_time, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
 from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
+jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
 
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
@@ -94,6 +95,7 @@ for li in file_in.readlines():
     tf = np.arange(0, 240, 1)
 
     m0 = [f0, v0, l, tprime0, c]
+    print('m0:', m0)
     sigma_prior = [20, 1, 1, 200, 1]
     m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=8)
     tprime0 = m[3]
@@ -112,6 +114,7 @@ for li in file_in.readlines():
     tprime0 = m[3]
     c = m[4]
     mprior[2] = tprime0
+    mprior[3] = c
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=mk_picks)
 
     corridor_width = 8
@@ -126,17 +129,20 @@ for li in file_in.readlines():
 
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=mk_picks)
 
+    if equip in jet:
+        sigma_prior = [10, 10, 200, 10, 80]
+    else:
+        sigma_prior = [5, 10, 200, 30, 80]#[3, 2, 20, 2, 5] #[5, 5, 10, 5, 10]
     print('mprior:', mprior)
-    sigma_prior = [50, 10, 200, 30, 80]
-
-    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=4, sigma=3)
+    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=4, sigma=3, off_diagonal=False)
 
     v0 = m[0]
     l = m[1]
     tprime0 = m[2]
     c = m[3]
     covm = np.sqrt(np.diag(covm))
-
+    print(covm)
+    print(np.sqrt(np.diag(covm0)))
     closest_index = np.argmin(np.abs(tprime0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
