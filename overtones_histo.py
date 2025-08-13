@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-main_text = False
+main_text = True
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 col_equip = []
 flight_nums = []
@@ -39,6 +39,7 @@ else:
     Heli = []
 equip_overtone_dict = {}
 equip_count_dict = {}
+equip_diff_dict = {}
 tail_ums_inverted = {}
 for eq in jet + Turboprop + piston + Heli:
     count1 = 0
@@ -57,6 +58,7 @@ for eq in jet + Turboprop + piston + Heli:
     with open(file, 'r') as f:
         # Read the data from the file and append it to the list
         data = []
+        fdiff = []
         for line in f.readlines():
             lines = line.split(',')
             flight_n = lines[1]
@@ -72,16 +74,26 @@ for eq in jet + Turboprop + piston + Heli:
             peaks = str(peaks) 
             peaks = peaks.replace('[', '').replace(']', '')
             peaks = np.array(peaks.split(' '))
+            peak_old = 0
             for peak in peaks:
                 if peak == '':
                     continue
                 peak = float(peak)
-            
+                if len(peaks) == 0 or peak == peaks[0]:
+                    peak_old = float(peak)
+                    continue
+
+                diff = float(peak) - float(peak_old)
+
+                fdiff.append(diff)
+                peak_old = float(peak)
                 data.append(peak)
             if tail_n not in tail_ums_inverted[eq]:
                 tail_ums_inverted[eq].append([tail_n])
         equip_overtone_dict[eq].extend(data)
         equip_count_dict[eq].extend([count1, count2])
+    med = np.median(fdiff)
+    equip_diff_dict[eq] = med
 if main_text == True:
     fig, ax = plt.subplots(6, 3, figsize=(20, 25), sharex=True)
 
@@ -90,6 +102,7 @@ if main_text == True:
 
     for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
         equip_count = equip_count_dict[equip]
+        med = equip_diff_dict[equip]
         if i ==  len(jet) + len(Turboprop):
             label_count = 'crossings: ' + str(equip_count[1]) + '/' + str(equip_count[0])
             label_tail = 'tail numbers: '+ str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
@@ -105,6 +118,8 @@ if main_text == True:
             ax[i, 2].text(0.99, 0.85, label_count, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right')
             ax[i, 2].text(0.99, 0.75, label_tail, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right')
             ax[i, 2].text(0.99, 0.65, len(peaks), transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right')
+            for g in range(0,20):
+                ax[i, 2].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[i, 2].set_yticks([0,counts.max()])
             axes_with_data.add((i, 2))
@@ -118,6 +133,8 @@ if main_text == True:
             ax[idx, 1].text(0.99, 0.85, label_count, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 1].text(0.99, 0.75, label_tail, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 1].text(0.99, 0.65, len(peaks), transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right')
+            for g in range(0,20):
+                ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 1].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 1))
@@ -133,7 +150,8 @@ if main_text == True:
             ax[idx, 0].text(0.99, 0.95, equip, transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right')
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
-            
+            for g in range(0,20):
+                ax[idx, 0].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 0].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 0))
@@ -145,6 +163,8 @@ if main_text == True:
             ax[-2, 2].text(0.99, 0.85, label_count, transform=ax[-2, 2].transAxes, fontsize=9, va='top', ha='right')
             ax[-2, 2].text(0.99, 0.75, label_tail, transform=ax[-2, 2].transAxes, fontsize=9, va='top', ha='right')
             ax[-2, 2].text(0.99, 0.65, len(peaks), transform=ax[-2, 2].transAxes, fontsize=9, va='top', ha='right')
+            for g in range(0,20):
+                ax[-2, 2].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[-2, 2].set_yticks([0,counts.max()])
             axes_with_data.add((4, 2))  
@@ -198,7 +218,6 @@ if main_text == False:
             ax[i, 2].set_yticks([0,counts.max()])
             axes_with_data.add((i, 2))
         elif equip in Turboprop:
-            print(i, equip)
             idx = i - len(jet)
             if i == len(jet):
                 ax[0, 1].set_title('Turboprop Aircrafts', fontsize=14, fontweight='bold')
@@ -249,7 +268,7 @@ if main_text == False:
     for row in range(ax.shape[0]):
         for col in range(ax.shape[1]):
             if (row, col) in axes_with_data:
-                ax[row, col].grid(axis='x',color='gray', linestyle='--', alpha=0.5)
+                #ax[row, col].grid(axis='x',color='gray', linestyle='--', alpha=0.5)
                 ax[row, col].set_facecolor('none')  # Remove plot background
             else:
                 ax[row, col].grid(False)  # Disable grid for empty axes
