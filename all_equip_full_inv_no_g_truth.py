@@ -187,7 +187,7 @@ for li in file_in.readlines():
     tprime0 = m[2]
     c = m[3]
     covm = np.sqrt(np.diag(covm))
-
+    covm0 = np.sqrt(np.diag(covm0))
     closest_index = np.argmin(np.abs(tprime0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
@@ -205,7 +205,7 @@ for li in file_in.readlines():
 
     if rerun_fig == False:
         output = open('output/inv_results_no_g_truth/' + equip + '_full_inv_results.csv', 'a')
-        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
         output.close()
     else:
         continue  # Skip saving results if rerun_fig is True

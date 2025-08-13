@@ -131,8 +131,10 @@ def get_speed_of_sound(alt, closest_time, UTM_x_m, UTM_y_m):
 			c = speed_of_sound(Tc)
 		else:
 			c = 311  # Default speed of sound in m/s if no temperature data is available
+			Tc = -33.7
 	else:
 		c = 311  # Default speed of sound in m/s if no data is available
+		Tc = -33.7
 
 	return c, Tc
 
