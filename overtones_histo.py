@@ -93,6 +93,16 @@ for eq in jet + Turboprop + piston + Heli:
         equip_overtone_dict[eq].extend(data)
         equip_count_dict[eq].extend([count1, count2])
     med = np.median(fdiff)
+    if eq == 'C182':
+        med = med/2
+    elif eq == 'DH8A':
+        med = med/4
+    elif eq == 'BE20':
+        med = med/2
+    elif eq == 'C208':
+        med = med/3
+    elif eq == 'B739' or eq == 'B738' or eq == 'B737':
+        med = 70
     equip_diff_dict[eq] = med
 if main_text == True:
     fig, ax = plt.subplots(6, 3, figsize=(20, 25), sharex=True)
@@ -118,7 +128,7 @@ if main_text == True:
             ax[i, 2].text(0.99, 0.85, label_count, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right')
             ax[i, 2].text(0.99, 0.75, label_tail, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right')
             ax[i, 2].text(0.99, 0.65, len(peaks), transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right')
-            for g in range(0,20):
+            for g in range(0,50):
                 ax[i, 2].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[i, 2].set_yticks([0,counts.max()])
@@ -133,7 +143,7 @@ if main_text == True:
             ax[idx, 1].text(0.99, 0.85, label_count, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 1].text(0.99, 0.75, label_tail, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 1].text(0.99, 0.65, len(peaks), transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right')
-            for g in range(0,20):
+            for g in range(0,50):
                 ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 1].set_yticks([0,counts.max()])
@@ -150,7 +160,7 @@ if main_text == True:
             ax[idx, 0].text(0.99, 0.95, equip, transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right')
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
-            for g in range(0,20):
+            for g in range(0,50):
                 ax[idx, 0].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 0].set_yticks([0,counts.max()])
