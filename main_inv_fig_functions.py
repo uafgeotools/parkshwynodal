@@ -171,7 +171,7 @@ def remove_median(Sxx):
 
 ############################################################################################################################################################################################################################
 
-def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost, Cpost0, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
+def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost0, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True):
     """
     Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions and tprime0 initial guess compared to the final.
 

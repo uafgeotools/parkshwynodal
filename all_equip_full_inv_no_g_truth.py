@@ -179,15 +179,15 @@ for li in file_in.readlines():
         sigma_prior = [100, 300, 50000, 100, 100]
 
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-    print(np.sqrt(np.diag(covm0)))
-    print(np.sqrt(np.diag(covm)))
 
     v0 = m[0]
     l = m[1]
     tprime0 = m[2]
     c = m[3]
+
     covm = np.sqrt(np.diag(covm))
     covm0 = np.sqrt(np.diag(covm0))
+
     closest_index = np.argmin(np.abs(tprime0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
@@ -197,7 +197,7 @@ for li in file_in.readlines():
     print(speed_gt, distance_gt)
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, np.sqrt(np.diag(covm0)), flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False)
     qnum = "__"
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
