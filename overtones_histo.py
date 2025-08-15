@@ -94,17 +94,41 @@ for eq in jet + Turboprop + piston + Heli:
         equip_count_dict[eq].extend([count1, count2])
     med = np.median(fdiff)
     if eq == 'C182':
-        med = 16
+        med = 18
+    elif eq == 'C185':
+        med = 19.5
     elif eq == 'DH8A':
-        med = 10
+        med = 15
     elif eq == 'BE20':
-        med = med/2
+        med = 27.5
+        #med = 25.5
     elif eq == 'C208':
         med = 29
     elif eq == 'CH7B':
         med = 15
-    elif eq == 'B739' or eq == 'B738' or eq == 'B737':
-        med = 70
+    elif eq == 'B190':
+        med = 24.5
+    elif eq == 'PC12':
+        med = 28
+    elif eq == 'DH3T':
+        med = 13
+        med = 26
+    elif eq == 'C206':
+        med = 19
+    elif eq == 'DHC2':
+        med = 17.5
+    elif eq == 'GA8':
+        med = 20
+    elif eq == 'PA31':
+        med = 18.5
+    elif eq == 'R44':
+        med = 13.35
+    elif eq == 'B739':
+        med = 35.5
+    elif eq == 'B738':
+        med = 73
+    elif eq == 'B737':
+        med = 68
     equip_diff_dict[eq] = med
 if main_text == True:
     fig, ax = plt.subplots(6, 3, figsize=(20, 25), sharex=True)

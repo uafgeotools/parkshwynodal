@@ -12,7 +12,7 @@ piston = ['CH7B', 'PA30', 'PA32', 'C172','C180']
 Turboprop = ['B18T','C441','AT73','SW4']
 jet = ['B733', 'B763', 'B772', 'B77W', 'B788', 'B789']
 
-eq = 'DH8A'
+eq = 'R44'
 
 # Define the directory where your files are located
 file = 'output/inv_results_old/' + eq + '_full_inv_results.csv' 
@@ -49,20 +49,42 @@ with open(file, 'r') as f:
 med = np.median(fdiff)
 if eq == 'C182':
     med = 18
+elif eq == 'C185':
+    med = 19.5
 elif eq == 'DH8A':
     med = 15
-    med = 81
 elif eq == 'BE20':
-    med = med/2
+    med = 27.5
+    #med = 25.5
 elif eq == 'C208':
     med = 29
 elif eq == 'CH7B':
     med = 15
-elif eq == 'B739' or eq == 'B738' or eq == 'B737':
-    med = 70
-
+elif eq == 'B190':
+    med = 24.5
+elif eq == 'PC12':
+    med = 28
+elif eq == 'DH3T':
+    med = 13
+    med = 26
+elif eq == 'C206':
+    med = 19
+elif eq == 'DHC2':
+    med = 17.5
+elif eq == 'GA8':
+    med = 20
+elif eq == 'PA31':
+    med = 18.5
+elif eq == 'R44':
+    med = 13.35
+elif eq == 'B739':
+    med = 35.5
+elif eq == 'B738':
+    med = 73
+elif eq == 'B737':
+    med = 68
 plt.figure(figsize=(10, 5))
-bins = np.arange(min(data), max(data) + 1, 1)
+bins = np.arange(min(data), max(data) + 3, 3)
 plt.hist(data, color='k', bins=bins, alpha=0.5, edgecolor='black')
 plt.text(0.99, 0.95, eq, transform=plt.gca().transAxes, fontsize=10, va='top', ha='right')
 plt.xlim(0,275)
