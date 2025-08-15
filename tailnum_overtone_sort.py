@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.patheffects as patheffects
 
-file = open('output/inv_results/C185_full_inv_results.txt', 'r')
+file = open('output/inv_results_old/C185_full_inv_results.txt', 'r')
 
 file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
 tail_nums = file2['TAIL_NUM']
@@ -14,7 +14,11 @@ color_dict = {}
 peaks_dict = {}
 all_med = {}
 flight_num_hold = {}
-count = 0
+error_dict = {}
+sort_1 = []
+sort_2 = []
+count_id1 = 0
+count_id2 = 0
 # Iterate over each line in the file
 for line in file.readlines():
     lines = line.split(',')
@@ -28,11 +32,13 @@ for line in file.readlines():
     peaks = str(peaks)
     peaks = np.array(peaks.split(' '))
 
+    error_strs = [e for e in lines[10].strip('[]').split(' ') if e.strip() != '']
+    Cpost0 = np.array(error_strs[3:], dtype=float)
 
     ppp = []
     f1 = []
     peak_old = 0
-    for peak in peaks:
+    for tt, peak in enumerate(peaks):
         if np.abs(float(peak) - float(peak_old))< 10:
             continue
         ppp.append(float(peak))
@@ -42,10 +48,32 @@ for line in file.readlines():
             continue
 
         diff = float(peak) - float(peak_old)
-        #if diff > 21 or diff < 18:
-        #    continue
         f1.append(diff)
         peak_old = float(peak)
+    #Generate random samples of f0 values withing their sigma from the covariance matrix 
+    #Calculate the median of the differences and MAD to obtain error
+    f_range = []
+
+    NTRY = 1000
+    for N in range(NTRY):
+        ftry = []
+        for c_index  in range(4, len(Cpost0)):
+            xmin = ppp[c_index-4] - (Cpost0[c_index]/len(error_strs))
+            xmax = ppp[c_index-4] + (Cpost0[c_index]/len(error_strs))
+            xtry = xmin + (xmax-xmin)*np.random.rand()
+            ftry.append(xtry)
+
+        ftry = np.sort(ftry)
+        f_hold = []
+        for g in range(len(ftry)):
+            if g == 0:
+                continue
+            diff = ftry[g] - ftry[g - 1]
+            f_hold.append(diff)
+        med = np.nanmedian(f_hold)
+        f_range.append(med)
+    med_df = np.nanmedian(f_range)
+    mad_df = np.nanmedian(np.abs(f_range - med_df))
 
     for lp in range(len(flight)):
         if int(flight_num) == int(flight[lp]):
@@ -56,14 +84,26 @@ for line in file.readlines():
                 peaks_dict[tail_num] = []
                 all_med[tail_num] = []
                 flight_num_hold[tail_num] = []
+                error_dict[tail_num] = []
                 break
         else:
             continue
+    if tail_num == '10572742':
+        count_id1 += 1
+    elif tail_num == '10512184':
+        count_id2 += 1
+        
     peaks_dict[tail_num].extend(ppp)
     all_med[tail_num].extend([np.nanmedian(f1)])
+    error_dict[tail_num].extend([mad_df])
     if flight_num not in flight_num_hold[tail_num]:
         flight_num_hold[tail_num].append(flight_num)
-
+    if str(tail_num) == '10512184' and med_df < 20:
+        sort_1.append(mad_df)
+    elif str(tail_num) == '10512184' and med_df > 20:
+        sort_2.append(mad_df)
+print('Count for 10572742:', count_id1)
+print('Count for 10512184:', count_id2)
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
@@ -76,12 +116,17 @@ color_dict[10572742] = [0.0, 0.5, 1.0]  # Blue color in RGB
 
 
 for tail_num, peaks in peaks_dict.items():
+    error_med = np.nanmedian(error_dict[tail_num])
+    if str(tail_num) == '10512184':
+        print(sort_1, sort_2)
+        sort_1 = np.nanmedian(np.array(sort_1))
+        sort_2 = np.nanmedian(np.array(sort_2))
+        print(f'Tail Number: {tail_num}, Median Error: {error_med}, Sort 1: {sort_1}, Sort 2: {sort_2}')
+    print(f'Tail Number: {tail_num}, Median Error: {error_med}')
     color = color_dict[tail_num]
     med = all_med[tail_num]
     if str(tail_num) != '10572742' and str(tail_num) != '10512184':
         continue
-    print(color, len(peaks), tail_num)
-    print(len(flight_num_hold[tail_num]), tail_num)
     ax1.hist(peaks, bins=270, color=color, alpha=0.8, label=tail_num, zorder = 10)  
     ax2.hist(med, bins=270, color=color, alpha=0.8, zorder = 10)  
     ax1.hist(peaks, bins=270, color=color, histtype='step',zorder = 15)  
@@ -147,7 +192,7 @@ for label in ax1.get_xticklabels():
 for label in ax2.get_xticklabels():
     #label.set_fontweight('bold')
     label.set_fontsize(20)
-
+print(del_f_t1, del_f_t2_1, del_f_t2_2)
 ax2.axvline(x=del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_1, color =   [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_2, color =  [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
