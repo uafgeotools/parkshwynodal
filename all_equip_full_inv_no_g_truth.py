@@ -1,11 +1,9 @@
 import numpy as np
 import os
-from datetime import datetime, timezone
-from matplotlib import pyplot as plt
 from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
-from prelude import calc_time, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform, calc_ft
-from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
+from prelude import make_base_dir, invert_f, full_inversion, get_sta_elevation, load_waveform
+from main_inv_fig_functions import time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
 jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
 
 nrl = NRL()
@@ -34,10 +32,12 @@ for li in file_in.readlines():
     elev = get_sta_elevation(sta)
     height_m = alt - elev
     distance_gt = np.sqrt(dist_m**2 + (height_m)**2) 
-    
+
     folder_spec = equip + '_spec_ngt'
     folder_spectrum = equip + '_spectrum_ngt'
-
+    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    if os.path.exists(DIR):
+        continue
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
     if not os.path.exists(file_name):
         continue
@@ -199,7 +199,7 @@ for li in file_in.readlines():
     make_base_dir(BASE_DIR)
     qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False)
     qnum = "__"
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
 
