@@ -637,7 +637,17 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 	mnew = mprior.copy() #mprior is the initial guess for the parameters, mnew is the updated guess
 
 	while n < num_iterations:
-		m = mnew
+		if np.any(np.isnan(mnew)) and n == 0:
+			# Handle the case where mnew contains NaN values
+			return mprior, cprior0, cprior, 'Forward Model'
+		elif np.any(np.isnan(mnew)):
+			mnew = m
+			G = G_hold
+			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+			return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+		else:
+			m = mnew
 		f0 = m[0]
 		v0 = m[1]
 		l = m[2]
@@ -761,7 +771,17 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 	mnew = np.array(mprior)
 
 	while qv < num_iterations:
-		m = mnew
+		if np.any(np.isnan(mnew)) and qv == 0:
+			# Handle the case where mnew contains NaN values
+			return mprior, cprior0, cprior, mprior[4:], 'Forward Model'
+		elif np.any(np.isnan(mnew)):
+			mnew = m
+			G = G_hold
+			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+			return mnew, Cpost0, Cpost, f0_array, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+		else:
+			m = mnew
 		v0 = m[0]
 		l = m[1]
 		tprime0 = m[2]

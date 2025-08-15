@@ -53,7 +53,7 @@ for eq in jet + Turboprop + piston + Heli:
         if equip == eq:
             count1 += 1
     # Define the directory where your files are located
-    file = 'output/inv_results/' + eq + '_full_inv_results.csv' 
+    file = 'output/inv_results_old/' + eq + '_full_inv_results.csv' 
 
     with open(file, 'r') as f:
         # Read the data from the file and append it to the list
@@ -94,13 +94,15 @@ for eq in jet + Turboprop + piston + Heli:
         equip_count_dict[eq].extend([count1, count2])
     med = np.median(fdiff)
     if eq == 'C182':
-        med = med/2
+        med = 16
     elif eq == 'DH8A':
-        med = med/4
+        med = 10
     elif eq == 'BE20':
         med = med/2
     elif eq == 'C208':
-        med = med/3
+        med = 29
+    elif eq == 'CH7B':
+        med = 15
     elif eq == 'B739' or eq == 'B738' or eq == 'B737':
         med = 70
     equip_diff_dict[eq] = med
@@ -222,7 +224,8 @@ if main_text == False:
             ax[i, 2].text(0.99, 0.95, equip, transform=ax[i, 2].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[i, 2].text(0.99, 0.85, label_count, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[i, 2].text(0.99, 0.75, label_tail, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-
+            for g in range(0,50):
+                ax[i, 2].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             ax[i, 2].text(0.99, 0.65, str(len(peaks)), transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             counts, _ = np.histogram(peaks, bins=bins)
             ax[i, 2].set_yticks([0,counts.max()])
@@ -237,6 +240,8 @@ if main_text == False:
             ax[idx, 1].text(0.99, 0.85, label_count, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.75, label_tail, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.65, str(len(peaks)), transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+            for g in range(0,50):
+                ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 1].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 1))
@@ -255,7 +260,8 @@ if main_text == False:
             ax[idx, 0].text(0.99, 0.95, equip, transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-
+            for g in range(0,50):
+                ax[idx, 0].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 0].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 0))
