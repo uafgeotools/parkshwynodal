@@ -33,8 +33,8 @@ for li in file_in.readlines():
     height_m = alt - elev
     distance_gt = np.sqrt(dist_m**2 + (height_m)**2) 
 
-    folder_spec = equip + '_spec_ngt'
-    folder_spectrum = equip + '_spectrum_ngt'
+    folder_spec = equip + '_spec_c'
+    folder_spectrum = equip + '_spectrum_c'
     DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     if os.path.exists(DIR):
         continue
@@ -84,16 +84,16 @@ for li in file_in.readlines():
     l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope 
     m0 = [f0, v0, l, tprime0, c]
 
-    folder_spec = equip + '_spec_c'
-    folder_spectrum = equip + '_spectrum_c'
+
 
     data, fs, torg, title = load_waveform(sta, start_time)
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
+    if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
+        continue
     spec, MDF = remove_median(Sxx)
     print('Initial model:', m0)
 
-    if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
-        continue
+
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
     vmin = 0  
@@ -106,17 +106,6 @@ for li in file_in.readlines():
     m0[0] = m[0]
     m0[3] = m[3]
 
-    # plt.figure()
-    # ft = calc_ft(times, m0[3], m0[0], m0[1], m0[2], m0[4])
-    # plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-    # plt.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
-    # plt.scatter(coords_array[:, 0], coords_array[:, 1] , c='black', marker='x', s=100, linewidths=3)
-    # plt.axhline(fa)
-    # plt.axhline(fr)
-    # plt.scatter(coords_array[closest_index, 0], coords_array[closest_index, 1], c='r', marker='x', s=100, linewidths=3)
-    # plt.scatter(coords_array[second_index, 0], coords_array[second_index, 1], c='r', marker='x', s=100, linewidths=3)
-    # plt.show()
-    # plt.close()
 
     tf = np.arange(0, 240, 1)
 
