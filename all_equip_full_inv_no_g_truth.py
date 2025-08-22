@@ -148,9 +148,11 @@ for li in file_in.readlines():
         corridor_width = 10
     else:
         corridor_width = 5
+    try:
+        tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
+    except:
+        continue
 
-    tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
-    
     if len(fobs) == 0:
         continue
 
@@ -166,9 +168,10 @@ for li in file_in.readlines():
         #sigma_prior = [10, 125, 7000, 30, 100]
     if equip in jet:
         sigma_prior = [100, 300, 50000, 100, 100]
-
+    #try:
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-
+    #except:
+    #    continue
     v0 = m[0]
     l = m[1]
     tprime0 = m[2]

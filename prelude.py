@@ -476,7 +476,8 @@ def S(dnew, dobs, ndata, m, mprior, cprior, tsigma):
 
 	sigma_obs = tsigma * np.ones((ndata))  # standard deviations
 	cobs0 = np.diag(np.square(sigma_obs))  # diagonal covariance matrix
-
+	m = np.array(m)
+	mprior = np.array(mprior)
 	Cdfac = ndata
 	dnew = np.array(dnew)
 	dobs = np.array(dobs)
@@ -693,7 +694,15 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
 			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 			return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+		#elif np.nan in mnew and n > 0:
+		#	mnew = m
+		#	G = G_hold
+		#	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+		#	Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+		#	return mnew, Cpost0, Cpost, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 		elif unreasonable and n == 0:
+			return mprior, cprior0, cprior, 'Forward Model'
+		elif np.nan in mnew:
 			return mprior, cprior0, cprior, 'Forward Model'
 		else:
 			G_hold = G.copy()
@@ -840,7 +849,15 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 			Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
 			Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 			return mnew, Cpost0, Cpost, f0_array, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+		#elif np.nan in mnew and qv > 0:
+		#	mnew = m
+		#	G = G_hold
+		#	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
+		#	Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
+		#	return mnew, Cpost0, Cpost, f0_array, S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
 		elif unreasonable and qv == 0:
+			return mprior, cprior0, cprior, mprior[4:], 'Forward Model'
+		elif np.nan in mnew:
 			return mprior, cprior0, cprior, mprior[4:], 'Forward Model'
 		else:
 			# Store the current G matrix for potential rollback
@@ -967,7 +984,7 @@ def load_flight_file(flight_file, filename):
 	flight_data = pd.read_csv(flight_file, sep=",") 
 	flight_latitudes = flight_data['latitude']
 	flight_longitudes = flight_data['longitude']
-	timestamp = flight_data['timestamp']  
+	timestamp = flight_data['snapshot_id']  
 	alt = flight_data['altitude']
 	speed = flight_data['speed']
 	head = flight_data['heading']
