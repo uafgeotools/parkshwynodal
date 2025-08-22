@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from prelude import *
+import glob
 
 approach_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', sep=",")
 flight_id = approach_data.iloc[:, 1]
@@ -13,8 +14,8 @@ sta_loc = approach_data.iloc[:, 9]
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
-file_name = 'output/inv_results_no_g_truth/C185_full_inv_results.txt'
-
+file_list = glob.glob('output/inv_results_no_g_truth/*.txt')
+print(file_list)
 error_bar = False
 fr_dists = []
 fr_speeds = []
@@ -27,38 +28,38 @@ if error_bar:
     error_dist = []
 
 fig, axs = plt.subplots(2, 2, figsize=(10, 10), sharey=False)
+for file_name in file_list:
+    with open(file_name, 'r') as file:
+        for line in file.readlines():
+            lines = line.split(',')
+            comp_time = lines[3]
+            flight_num = lines[1]
+            sta = lines[2]
+            if lines[13] == "Forward Model":
+                continue
+            ins = stations[stations == sta].index[0]
+            elev = float(elevations[ins])
+            closest_index = None
+            for ii, ss in enumerate(sta_loc):
+                if float(ss) == float(sta) and int(flight_id[ii]) == int(flight_num):
 
-with open(file_name, 'r') as file:
-    for line in file.readlines():
-        lines = line.split(',')
-        comp_time = lines[3]
-        flight_num = lines[1]
-        sta = lines[2]
-        if lines[13] == "Forward Model":
-            continue
-        ins = stations[stations == sta].index[0]
-        elev = float(elevations[ins])
-        closest_index = None
-        for ii, ss in enumerate(sta_loc):
-            if float(ss) == float(sta) and int(flight_id[ii]) == int(flight_num):
+                    closest_index = ii
+                    fr_dists.append(abs(np.sqrt(float(dist_m[closest_index])**2 + (float(alt[closest_index])-elev)**2)))
+                    fr_speeds.append(float(speeds[closest_index]))
 
-                closest_index = ii
-                fr_dists.append(abs(np.sqrt(float(dist_m[closest_index])**2 + (float(alt[closest_index])-elev)**2)))
-                fr_speeds.append(float(speeds[closest_index]))
+                    inverse_dists.append(abs(float(lines[5])))
+                    inverse_speeds.append(abs(float(lines[4])))
 
-                inverse_dists.append(abs(float(lines[5])))
-                inverse_speeds.append(abs(float(lines[4])))
+                    if error_bar:
+                        error_strs = [e for e in lines[10].strip('[]').split(' ') if e.strip() != '']
+                        error = np.array(error_strs) 
 
-                if error_bar:
-                    error_strs = [e for e in lines[10].strip('[]').split(' ') if e.strip() != '']
-                    error = np.array(error_strs) 
-
-                    error_vel.append(float(error[0]) / (len(error) + 4))
-                    error_dist.append(float(error[1]) / (len(error) + 4))
-                break
-        if closest_index is None:
-            print(f"Closest time not found for flight {flight_num} at station {sta}")
-            continue
+                        error_vel.append(float(error[0]) / (len(error) + 4))
+                        error_dist.append(float(error[1]) / (len(error) + 4))
+                    break
+            if closest_index is None:
+                print(f"Closest time not found for flight {flight_num} at station {sta}")
+                continue
 inverse_dists = np.array(inverse_dists)
 inverse_speeds = np.array(inverse_speeds)
 fr_dists = np.array(fr_dists)
