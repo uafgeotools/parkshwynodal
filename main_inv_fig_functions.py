@@ -318,7 +318,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     else:
         qnum = '__'
     
-    fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
+    fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.pdf')
     plt.close()
 
     return qnum
@@ -390,7 +390,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
     plt.xlabel('Frequency (Hz)', fontsize=17)
     plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
 
-    fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.png')
+    fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.pdf')
     plt.close()
 
 ##############################################################################################################################################################################################################
