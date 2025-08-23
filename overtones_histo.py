@@ -113,7 +113,7 @@ for eq in jet + Turboprop + piston + Heli:
         blade_count = '2/3'
     elif eq == 'GA8':
         med = 20
-        line_count = 14
+        line_count = 13
         blade_count = '2/3'
     elif eq == 'PA31':
         med = 18.5
@@ -137,7 +137,7 @@ for eq in jet + Turboprop + piston + Heli:
         blade_count = '3/4/5'
     elif eq == 'PC12':
         med = 28
-        line_count = 10
+        line_count = 8
         blade_count = '4/5/7'
     elif eq == 'DH3T':
         med = 26
@@ -216,7 +216,7 @@ if main_text == True:
             if i == len(jet) + len(Turboprop):
                 ax[idx, 0].set_title('Piston Aircrafts', fontsize=14, fontweight='bold')
                 ax[idx, 0].text(0.99, 0.65, 'f\u2080 count: ' + str(len(peaks)), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
-                ax[idx, 0].text(0.99, 0.55, '\u0394f\u2080: ' + str(med), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
+                ax[idx, 0].text(0.99, 0.55, '\u0394f\u2080: ' + str(med) + ' Hz', transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             else:
                 ax[idx, 0].text(0.99, 0.65, len(peaks), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
                 ax[idx, 0].text(0.99, 0.55, med, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
