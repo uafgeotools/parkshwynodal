@@ -216,14 +216,16 @@ if main_text == True:
             if i == len(jet) + len(Turboprop):
                 ax[idx, 0].set_title('Piston Aircrafts', fontsize=14, fontweight='bold')
                 ax[idx, 0].text(0.99, 0.65, 'f\u2080 count: ' + str(len(peaks)), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
+                ax[idx, 0].text(0.99, 0.55, '\u0394f\u2080: ' + str(med), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             else:
                 ax[idx, 0].text(0.99, 0.65, len(peaks), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
+                ax[idx, 0].text(0.99, 0.55, med, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 0].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[idx, 0].text(0.99, 0.55, med, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+            
             for g in range(0, line_count):
                 ax[idx, 0].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             counts, _ = np.histogram(peaks, bins=bins)
