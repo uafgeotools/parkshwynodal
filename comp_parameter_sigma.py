@@ -146,6 +146,7 @@ for ii, ff in enumerate(file_names):
         axs[ii,2].text(0.05, 0.95, '\u03C3 = 160', transform=axs[ii,2].transAxes, fontsize=12, va='top', ha='left')
 
 plt.tight_layout()
+fig.savefig("compare_sigma.pdf", dpi=500)
 plt.show()
 plt.close()
 
@@ -184,5 +185,5 @@ axs[2].set_ylim(0,8.5)
 axs[2].set_title('Median Sound Speed Difference (m/s): {:.2f} ± {:.2f}'.format(np.median(diff_c), rms_c), fontsize=14)
 axs[2].set_yticks(np.arange(1, 9, 1))
 axs[2].set_xlabel('inversion - c(T), T from NCPAG2')
-
+fig.savefig("sigma_comp_histo.pdf", dpi=500)
 plt.show()
