@@ -107,7 +107,7 @@ print('Count for 10512184:', count_id2)
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
-ax2 = fig.add_axes([0.87, 0.053, 0.125, 0.93], sharey=ax1)
+ax2 = fig.add_axes([0.87, 0.065, 0.125, 0.918], sharey=ax1)
 
 pos = 1
 tail_num_hold = 0
@@ -133,13 +133,21 @@ for tail_num, peaks in peaks_dict.items():
     ax2.hist(med, bins=270, color=color, histtype='step', zorder = 15)  
 
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
-ax1.set_xlabel('Frequency (Hz)', fontsize=20)
-ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=20)
-ax1.set_xticks(range(10, 280, 10)) 
-ax1.set_yticks(range(0, 90, 10))
-ax1.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
-ax2.tick_params(axis='both', labelsize=14)  # Increase font size for tick labels
-ax2.set_xticks(np.arange(18.5, 22, 1))
+ax1.set_xlabel('Frequency (Hz)', fontsize=30)
+ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=30)
+ax1.set_xticks(range(10, 270, 10))
+ax1.set_xticklabels(
+    [str(x) if x % 20 == 0 else '' for x in range(10, 270, 10)],
+    fontsize=30
+)
+ax1.set_yticks(range(0, 90, 20))
+ax1.tick_params(axis='both', labelsize=30)  # Increase font size for tick labels
+ax2.tick_params(axis='both', labelsize=30)  # Increase font size for tick labels
+ax2.set_xticks(np.arange(18.5, 22, 0.5))
+ax2.set_xticklabels(
+    [str(int(x)) if x % 1 == 0 else '' for x in np.arange(18.5, 22, 0.5)],
+    fontsize=30
+)
 ax2.set_xlim(18, 22)
 ax1.set_ylim(0, 82)
 
@@ -149,7 +157,8 @@ del_f_t2_2 = 20.56
 x_label = []
 for g in range(0,14):
     ax1.axvline(x= (1 + g) * del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
-    x_label.append((1 + g) * del_f_t1)
+    if g != 13:
+        x_label.append((1 + g) * del_f_t1)
     ax1.axvline(x= (1 + g) * del_f_t2_1, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
     ax1.axvline(x= (1 + g) * del_f_t2_2, color = [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 # Add labels inside the plot at the top for each overtone position
@@ -159,17 +168,16 @@ for x in x_label:
         ax1.get_ylim()[1] - 1,
         f"{x:.1f}",
         color=[0.0, 0.5, 1.0],
-        fontsize=18,
+        fontsize=30,
         ha='center',
         va='top',
         rotation=0,
         path_effects=[patheffects.withStroke(linewidth=2, foreground='white')],
         bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2')
     )
-ax1.set_yticks([0,40,80])
+
 for label in ax1.get_yticklabels():
-    #label.set_fontweight('bold')
-    label.set_fontsize(20)
+    label.set_fontsize(30)
 ax1.set_xlim(5,310)
 med_label = 19.62
 ax2.text(
@@ -177,7 +185,7 @@ ax2.text(
     ax2.get_ylim()[1] - 1,  # Place at the very top
     f"{med_label:.2f}",
     color=[0.0, 0.5, 1.0],
-    fontsize=18,
+    fontsize=30,
     ha='center',
     va='top',
     zorder=100,  # Ensure it's on top of other plot elements
@@ -187,15 +195,14 @@ ax2.text(
 )
 # Change tick color, outline in black, make them bold, and increase font size
 for label in ax1.get_xticklabels():
-    label.set_fontsize(20)
+    label.set_fontsize(30)
 
 for label in ax2.get_xticklabels():
-    #label.set_fontweight('bold')
-    label.set_fontsize(20)
+    label.set_fontsize(30)
 print(del_f_t1, del_f_t2_1, del_f_t2_2)
 ax2.axvline(x=del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_1, color =   [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_2, color =  [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
-fig.savefig("overtone_tail_num_diff.png", dpi=300)
+fig.savefig("overtone_tail_num_diff.pdf", dpi=500)
 plt.tight_layout(pad=2.5, w_pad=0.5, h_pad=1.5)
 plt.show()

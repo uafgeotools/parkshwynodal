@@ -4,20 +4,20 @@ from PIL import Image, ImageDraw, ImageFont
 import glob
 import numpy as np
 import json
-from pyproj import Proj
+from pyproj import Proj, Geod
 from pathlib import Path
 from prelude import speed_of_sound, add_wind_vector, make_base_dir
 from pdf2image import convert_from_path
 
-def load_pdf_as_image(pdf_path, page=0):
+def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	# Convert first page of PDF to PIL Image if it's a PDF, otherwise open as image
 	if str(pdf_path).lower().endswith('.pdf'):
-		images = convert_from_path(pdf_path)
+		images = convert_from_path(pdf_path, dpi=dpi)
 		return images[page]
 	else:
-		return Image.open(pdf_path)
+		print("Not a PDF file for conversion:", pdf_path)
 
-
+paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
@@ -25,7 +25,7 @@ station_elevations = seismo_data['Elevation']
 stations = seismo_data['Station']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
-
+geod = Geod(ellps='WGS84')
 file_in = open('input/node_crossings_db_UTM.txt', 'r')
 
 for line in file_in.readlines():
@@ -40,12 +40,14 @@ for line in file_in.readlines():
 	speed_mps = float(text[7])  # Speed in meters per second
 	heading = (90 - float(text[8])) % 360
 
-
 	sta = str(text[9])
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
 
+	file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
+	if file_check not in paper_figures:
+		continue
 	index = None
 	for i, station in enumerate(stations):
 		if str(station) == str(sta):
@@ -143,30 +145,24 @@ for line in file_in.readlines():
 	temp = Tc
 	sound = c
 	
-	mnum = "FH/VT"
-	font2 = ImageFont.truetype('input/Arial.ttf', 25)
+	mnum = "FH/VT"	
 
-			
-	text1 = 'Altitude: '+str(round((alt_m-sta_elv),2))+' m\nDistance: '+str(round(dist,2))+' m\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}' + '\nHeading: '+str(round(heading,2))+ '\N{DEGREE SIGN}'
+	_, backazimuth, _ = geod.inv(lon, lat, seismo_longitudes[index], seismo_latitudes[index])
+
+	text1 = 'Altitude: '+str(round((alt_m-sta_elv),2))+' m\nDistance: '+str(round(dist,2))+' m\n               at '+str(round(backazimuth,2))+ '\N{DEGREE SIGN}\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}'
 	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 	text3 = 'Callsign: ' +  str(call) + ' (' + str(equip) + ')'
 
-	font2 = ImageFont.truetype('input/Arial.ttf', 25)
+	font2 = ImageFont.truetype('input/Arial.ttf', (25/96)*600)  # Adjust size for 600 DPI
 
 
 	# Get the path of the image file using a wildcard
 	#try:
-	image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.png')[0]
+	image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
 	spectrogram = load_pdf_as_image(im)
 	map_img = load_pdf_as_image(image_path)
 	spec_img = load_pdf_as_image('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
 
-	#except:
-	#	continue
-
-	# Resize images
-	google_slide_width = 1280  # Width of a Google Slide in pixels
-	google_slide_height = 720  # Height of a Google Slide in pixels
 
 	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
 	if os.path.isfile(path):
@@ -174,41 +170,54 @@ for line in file_in.readlines():
 	else:
 		plane_img = Image.open('hold.png')
 		
-	scale = 70/1280
-	plane = plane_img.resize((int(google_slide_width * 0.26), int(google_slide_height * 0.26)))
-	spec = spec_img.resize((int(google_slide_width * 0.31), int(google_slide_height * 0.35)))  
-	maps = map_img.resize((int(google_slide_width *  0.28), int(google_slide_width *0.28* map_img.height / map_img.width)))
-	spectrogram = spectrogram.resize((int(google_slide_width * 0.75), int(google_slide_height)))
+	# Resize images
+	google_slide_width = 1280  # Width of a Google Slide in pixels
+	google_slide_height = 720  # Height of a Google Slide in pixels
 
-	# Create blank canvas
-	canvas = Image.new('RGB', (google_slide_width, google_slide_height), 'white')
+	# For example, for an 8x5 inch PDF at 600 DPI:
+	canvas_width = 8000  # 1280/96 * 600
+	canvas_height = 4500 # 720/96 * 600
 
-	# Paste images onto canvas
-	canvas.paste(spec, (google_slide_width - spec.width+ int(spec.width/12), google_slide_height - spec.height))
-	canvas.paste(maps, (google_slide_width - int(maps.width*1.05), int(plane.height)))
-	canvas.paste(plane, (google_slide_width - plane.width, 0))
-	canvas.paste(spectrogram, (-40, 0))
+	canvas = Image.new('RGB', (canvas_width, canvas_height), 'white')
+
+	# Resize images to fit the new canvas, keeping their quality
+	plane = plane_img.resize((int(canvas_width * 0.26), int(canvas_height * 0.26)), Image.LANCZOS)
+	spec = spec_img.resize((int(canvas_width * 0.31), int(canvas_height * 0.35)), Image.LANCZOS)
+	maps = map_img.resize((int(canvas_width *  0.28), int(canvas_width *0.28* map_img.height / map_img.width)), Image.LANCZOS)
+	spectrogram = spectrogram.resize((int(canvas_width * 0.75), int(canvas_height)), Image.LANCZOS)
+
+
+	# Paste images onto canvas (positions and sizes adjusted for 600 DPI)
+	canvas.paste(spec, (canvas_width - spec.width + int(spec.width / 12), canvas_height - spec.height))
+	canvas.paste(maps, (canvas_width - int(maps.width * 1.05), int(plane.height)))
+	canvas.paste(plane, (canvas_width - plane.width, 0))
+	canvas.paste(spectrogram, (-int(40 / 96 * 600), 0))  # -40 px at 96 DPI scaled to 600 DPI
 	# Draw text from files
 	draw = ImageDraw.Draw(canvas)
-	font = ImageFont.truetype('input/Arial.ttf', 14) 
+	font = ImageFont.truetype('input/Arial.ttf', (15/96)*600)  # Adjust size for 600 DPI
 
-	# Label each image
-	draw.text((15, 35), '(a)', fill='black', font=font2)
-	draw.text((15, 350), '(b)', fill='black', font=font2)
-	draw.text((google_slide_width - int(plane.width*1.18), 7), '(c)', fill='black', font=font2)
-	draw.text((google_slide_width - int(plane.width*1.18), int(plane.height) + int(plane.height*0.05)), '(d)', fill='black', font=font2)
-	draw.text((google_slide_width - int(plane.width*1.14), google_slide_height - spec.height + 20), '(e)', fill='black', font=font2)
+	# Label each image (adjust positions and font sizes for 600 DPI)
+	label_font_size = int((25/96)*600)
+	label_font = ImageFont.truetype('input/Arial.ttf', label_font_size)
 
-	draw.text((google_slide_width - 305, 405), text1, fill='black', font=font)			
-	draw.text((google_slide_width - 155, 405), text2,fill='black', font=font)
-	bbox = draw.textbbox((google_slide_width - plane.width, 0), text3, font=font)
+	# Example y-offsets for labels, scaled for DPI
+	draw.text((int(15/96*600), int(35/96*600)), '(a)', fill='black', font=label_font)
+	draw.text((int(15/96*600), int(350/96*600)), '(b)', fill='black', font=label_font)
+	draw.text((canvas_width - int(plane.width*1.18), int(7/96*600)), '(c)', fill='black', font=label_font)
+	draw.text((canvas_width - int(plane.width*1.18), int(plane.height) + int(plane.height*0.05)), '(d)', fill='black', font=label_font)
+	draw.text((canvas_width - int(plane.width*1.14), canvas_height - spec.height + int(20/96*600)), '(e)', fill='black', font=label_font)
+
+	# Adjust text box positions for DPI
+	draw.text((canvas_width - int(305/96*600), int(412/96*600)), text1, fill='black', font=font)			
+	draw.text((canvas_width - int(155/96*600), int(412/96*600)), text2, fill='black', font=font)
+	bbox = draw.textbbox((canvas_width - plane.width, 0), text3, font=font)
 	draw.rectangle(bbox, fill="white")
-	draw.text((google_slide_width - plane.width, 0), text3, fill='black', font=font)
+	draw.text((canvas_width - plane.width, 0), text3, fill='black', font=font)
 
 	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf/'
 	make_base_dir(BASE_DIR)
-	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.png'
+	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
-	# Save as PDF instead of PNG
-	canvas.save(name.replace('.png', '.pdf'), "PDF", resolution=100.0)
+	# Save as PDF 
+	canvas.save(name, "PDF", resolution=600.0)
 file_in.close()

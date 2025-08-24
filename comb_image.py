@@ -59,6 +59,8 @@ for line in file_in.readlines():
 	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
+			if not image.endswith('.png'):
+				continue
 			im = os.path.join(spec_dir, image)
 			split_array = np.array(image.split('_'))
 			plot_time = split_array[0]
@@ -143,14 +145,23 @@ for line in file_in.readlines():
 	font2 = ImageFont.truetype('input/Arial.ttf', 25)
 	# Open images
 	spectrogram = Image.open(im)
-
+	# Resize images
+	google_slide_width = 1280  # Width of a Google Slide in pixels
+	google_slide_height = 720  # Height of a Google Slide in pixels
 	# Get the path of the image file using a wildcard
-	try:
-		image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*')[0]
-		map_img = Image.open(image_path)
-	except:
-		print('No image for: ' + image_path)
-		continue
+	#try:
+	image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.png')[0]
+	map_img = Image.open(image_path)
+	# Only downscale if the image is larger than the target size, otherwise keep original
+	target_width = int(google_slide_width * 0.28)
+	#if map_img.width > target_width:
+	target_height = int(target_width * map_img.height / map_img.width)
+	maps = map_img.resize((target_width, target_height), Image.LANCZOS)
+		#else:
+		#	maps = map_img.copy()
+	#except:
+	#	print('No image for: ' + image_path)
+	#	continue
 	try:
 		spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 	except:
@@ -164,13 +175,15 @@ for line in file_in.readlines():
 	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
 	if os.path.isfile(path):
 		plane_img = Image.open(path)
+		# 'maps' is now set above, so this line is no longer needed
+		# maps = map_img.resize((int(google_slide_width *  0.28), int(google_slide_width *0.28* map_img.height / map_img.width)))
 	else:
 		plane_img = Image.open('hold.png')
 		
 	scale = 70/1280
 	plane = plane_img.resize((int(google_slide_width * 0.26), int(google_slide_height * 0.26)))
 	spec = spec_img.resize((int(google_slide_width * 0.31), int(google_slide_height * 0.35)))  
-	maps = map_img.resize((int(google_slide_width *  0.28), int(google_slide_width *0.28* map_img.height / map_img.width)))
+	#maps = map_img.resize((int(google_slide_width *  0.28), int(google_slide_width *0.28* map_img.height / map_img.width)))
 	spectrogram = spectrogram.resize((int(google_slide_width * 0.75), int(google_slide_height)))
 
 	# Create blank canvas
@@ -200,9 +213,9 @@ for line in file_in.readlines():
 
 	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database/'
 	make_base_dir(BASE_DIR)
-	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.png'
+	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
 	# Save combined image
-	canvas.save(name)
+	canvas.save(name, 'PDF', resolution=600.0)
 
 file_in.close()
