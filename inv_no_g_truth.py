@@ -46,7 +46,7 @@ if generate_samples:
 else:
 	fig_num = 5
 # Create a subplot for the visualization
-fig, ax = plt.subplots(fig_num,1,figsize=(8, 14),sharex=False)
+fig, ax = plt.subplots(fig_num,1,figsize=(8/1.4, 14/1.4),sharex=False)
 cax = ax[0].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[0].axhline(y=188.29218829218826, color='black', linestyle='--', linewidth=1)
 ax[0].axhline(y=93.7170937170937, color='black', linestyle='--', linewidth=1)
@@ -68,7 +68,7 @@ ax[0].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x',
 ax[0].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
 ax[0].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[0].set_ylabel('Frequency (Hz)')
-ax[0].set_title("(a) data picks with steps to get prior model")
+ax[0].set_title("(a) data picks with steps to get prior model", fontsize='small')
 
 cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 
@@ -90,14 +90,14 @@ ax[1].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x',
 ax[1].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
 ax[1].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[1].set_ylabel('Frequency (Hz)')
-ax[1].set_title("(b) initial prior model")
+ax[1].set_title("(b) initial prior model", fontsize='small')
 m, covm,_, F_m = invert_f(m0, prior_sigma, coords_array, num_iterations=5)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
 cax = ax[2].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[2].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[2].set_ylabel('Frequency (Hz)')
-ax[2].set_title("(c) inverted model => updated prior model")
+ax[2].set_title("(c) inverted model => updated prior model", fontsize='small')
 peaks = []
 coord_inv = []
 upper_array = []
@@ -124,7 +124,7 @@ coord_inv_array = np.array(coord_inv)
 cax = ax[3].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
-ax[3].set_title("(d) data extracted from model corridor (updated prior model \u00B1 10)")
+ax[3].set_title("(d) data extracted from model corridor (updated prior model \u00B1 10)", fontsize='small')
 
 prior_sigma = [5,10,600,5,30] #prior sigma values for f0, v0, l, tprime0, c
 m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
@@ -164,7 +164,7 @@ ft = calc_ft(times, tprime0, f0, v0, l, c)
 cax = ax[4].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[4].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[4].set_ylabel('Frequency (Hz)')
-ax[4].set_title("(e) posterior model")
+ax[4].set_title("(e) posterior model", fontsize='small')
 
 if generate_samples:
 	nx,ny = covm0.shape
@@ -190,7 +190,7 @@ if generate_samples:
 	ft = calc_ft(times, tprime0, f0, v0, l, c)
 	ax[5].plot(times, ft+std_samples, color='red', linewidth=0.5)
 	ax[5].plot(times, ft-std_samples, color='red', linewidth=0.5)
-	ax[5].set_title("(f) standard deviation of posterior model samples")
+	ax[5].set_title("(f) standard deviation of posterior model samples", fontsize='small')
 
 #make all axis tick labels smaller
 for i in range(fig_num):
@@ -200,6 +200,7 @@ for i in range(fig_num):
 plt.subplots_adjust(hspace=0.3)
 ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
+fig.savefig("inversion_steps.png", dpi=600)
 plt.show()
 plt.close()
 make_final_plot = True
