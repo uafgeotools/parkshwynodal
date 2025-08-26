@@ -1,0 +1,4 @@
+Error loading waveform for 1300 on 20190301 at flight 531203471: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1302 on 20190301 at flight 531203471: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1300 on 20190301 at flight 531203471: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1302 on 20190301 at flight 531203471: not enough values to unpack (expected 2, got 1)
