@@ -3,6 +3,7 @@ import os
 jets = True
 with open('input/node_crossings_db_UTM.txt', 'r') as infile:
 	infile_lines = infile.readlines()
+
 Equipment = ['DH8A', 'B190','BE20','PC12','DH3T','C208','AT73','SW4','C441','B18T','B350','BE10','AS50','R44','C185','PA31','DHC2','GA8','C180','C182','C206','C172','PA32','PA46','CH7B','PA30','C46','BE35','PA18','PA34']
 Equipment_jets = ['B737','B738','B739','B77W','B772','B789','B788','B733','B763','A359','B77L','B744','E75S','B732','A332','B748']
 
@@ -190,7 +191,7 @@ if jets:
 	final_table = open('paper_table_jets.txt', 'w')
 	# Write the header row
 	final_table.write('Equipment,Manufacturer,Model,Engine Type,Engine Count,Wake Turbulence Category,Total Flights,Inverted Flights,Total Crossings,Inverted Crossings,Total Tail Numbers,Inverted Tail Numbers,Total Nodes,Inverted Nodes\n')
-	for eq in Equipment:
+	for eq in Equipment_jets:
 
 		final_table.write(eq +',' + str(man_dict[eq]) + ',' + str(type_name[eq]) + ',' + str(engine_type_dict[eq]) + ',' + str(engine_counts[eq]) + ',' + str(wake_turbs[eq]) + ',' + str(len(flight_nums[eq])) + ',' + str(len(flight_nums_inverted[eq])) + ',' + str(crossings[eq]) + ',' + str(crossings_inverted[eq]) + ',' + str(len(tail_numbers[eq])) + ',' + str(len(tail_numbers_inverted[eq])) + ',' + str(len(nodes_count[eq])) +  ',' + str(len(node_inverted[eq])) + '\n')
 
