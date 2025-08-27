@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-main_text = True
+main_text = False
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 col_equip = []
 flight_nums = []
@@ -55,7 +55,7 @@ for eq in jet + Turboprop + piston + Heli:
         if equip == eq:
             count1 += 1
     # Define the directory where your files are located
-    file = 'output/inv_results_old/' + eq + '_full_inv_results.csv' 
+    file = 'output/inv_results/' + eq + '_full_inv_results.csv' 
 
     with open(file, 'r') as f:
         # Read the data from the file and append it to the list
@@ -95,73 +95,139 @@ for eq in jet + Turboprop + piston + Heli:
         equip_overtone_dict[eq].extend(data)
         equip_count_dict[eq].extend([count1, count2])
     med = np.median(fdiff)
-    if eq == 'C185':
-        med = 19.5
-        line_count = 13
-        blade_count = '2/3'
-    elif eq == 'C182':
-        med = 36
-        line_count = 7
-        blade_count = '2/3'
-    elif eq == 'C206':
-        med = 18.7
-        line_count = 14
-        blade_count = '2/3/5'
-    elif eq == 'DHC2':
-        med = 17.5
-        line_count = 15
-        blade_count = '2/3'
-    elif eq == 'GA8':
-        med = 20
-        line_count = 13
-        blade_count = '2/3'
-    elif eq == 'PA31':
-        med = 18.5
-        line_count = 15
-        blade_count = '2/3/4'
-    elif eq == 'DH8A':
-        med = 60 
-        line_count = 16
-        blade_count = '4'
-    elif eq == 'B190':
-        med = 24.5
-        line_count = 8
-        blade_count = '4/5'
-    elif eq == 'BE20':
-        med = 27.5
-        line_count = 8
-        blade_count = '3/4/5'
-    elif eq == 'C208':
-        med = 85 #29
-        line_count = 9
-        blade_count = '3/4/5'
-    elif eq == 'PC12':
-        med = 28
-        line_count = 8
-        blade_count = '4/5/7'
-    elif eq == 'DH3T':
-        med = 26
-        line_count = 9
-        blade_count = '4'
-    elif eq == 'R44':
-        med = 13.35
-        line_count = 20
-        blade_count = '2'
-    elif eq == 'B739':
-        med = 35.5
-        line_count = 8
-        blade_count = '24'
-    elif eq == 'B738':
-        med = 73
-        line_count = 3
-        blade_count = '24'
-    elif eq == 'B737':
-        med = 68
-        line_count = 3
-        blade_count = '18/24'
-    equip_diff_dict[eq] = med
-    line_count_dict[eq] = line_count
-    bc_dict[eq] = blade_count
+    if main_text == True:
+        if eq == 'C185':
+            med = 19.5
+            line_count = 13
+            blade_count = '2/3'
+        elif eq == 'C182':
+            med = 36
+            line_count = 7
+            blade_count = '2/3'
+        elif eq == 'C206':
+            med = 18.7
+            line_count = 14
+            blade_count = '2/3/5'
+        elif eq == 'DHC2':
+            med = 17.5
+            line_count = 15
+            blade_count = '2/3'
+        elif eq == 'GA8':
+            med = 20
+            line_count = 13
+            blade_count = '2/3'
+        elif eq == 'PA31':
+            med = 18.5
+            line_count = 15
+            blade_count = '2/3/4'
+        elif eq == 'DH8A':
+            med = 60 
+            line_count = 16
+            blade_count = '4'
+        elif eq == 'B190':
+            med = 24.5
+            line_count = 8
+            blade_count = '4/5'
+        elif eq == 'BE20':
+            med = 27.5
+            line_count = 8
+            blade_count = '3/4/5'
+        elif eq == 'C208':
+            med = 85 #29
+            line_count = 9
+            blade_count = '3/4/5'
+        elif eq == 'PC12':
+            med = 28
+            line_count = 8
+            blade_count = '4/5/7'
+        elif eq == 'DH3T':
+            med = 26
+            line_count = 9
+            blade_count = '4'
+        elif eq == 'R44':
+            med = 13.35
+            line_count = 20
+            blade_count = '2'
+        elif eq == 'B739':
+            med = 35.5
+            line_count = 8
+            blade_count = '24'
+        elif eq == 'B738':
+            med = 73
+            line_count = 3
+            blade_count = '24'
+        elif eq == 'B737':
+            med = 68
+            line_count = 3
+            blade_count = '18/24'
+        line_count_dict[eq] = line_count
+        bc_dict[eq] = blade_count
+        equip_diff_dict[eq] = med
+    if main_text == False:
+        if eq == 'CH7B':
+            med = 19.5
+            line_count = 13
+            blade_count = '2'
+        elif eq == 'PA30':
+            med = 20.3
+            line_count = 13
+            blade_count = '2/3'
+        elif eq == 'PA32':
+            med = 20
+            line_count = 14
+            blade_count = '2/3'
+        elif eq == 'C172':
+            med = 19.5
+            line_count = 13
+            blade_count = '2/3'
+        elif eq == 'C180':
+            med = 20
+            line_count = 12
+            blade_count = '2/3'
+        elif eq == 'B18T':
+            med = 32.7
+            line_count = 15
+            blade_count = '3'
+        elif eq == 'C441':
+            med = 31.8
+            line_count = 8
+            blade_count = '3/4/5'
+        elif eq == 'AT73':
+            med = 68
+            line_count = 15
+            blade_count = '6'
+        elif eq == 'SW4':
+            med = 25.7
+            line_count = 10
+            blade_count = '3/4/5'
+        elif eq == 'B733':
+            med = 76
+            line_count = 3
+            blade_count = '18/24/36'
+        elif eq == 'B763':
+            med = 35
+            line_count = 3
+            blade_count = '33/38'
+        elif eq == 'B772':
+            med = 30
+            line_count = 9
+            blade_count = '22/26'
+        elif eq == 'B77W':
+            med = 13.35
+            line_count = 20
+            blade_count = '22'
+        elif eq == 'B788':
+            med = 35.5
+            line_count = 8
+            blade_count = '18'
+        elif eq == 'B789':
+            med = 35
+            line_count = 3
+            blade_count = '18/22'
+
+        line_count_dict[eq] = line_count
+        bc_dict[eq] = blade_count
+        equip_diff_dict[eq] = med
 if main_text == True:
     fig, ax = plt.subplots(6, 3, figsize=(20, 25), sharex=True)
 
@@ -209,11 +275,12 @@ if main_text == True:
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
             )
             for g in range(0,line_count):
+            
                 ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
                 if equip == 'DH8A':
-                   ax[idx, 1].axvline(x= (1 + g) * 15, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)
+                    ax[idx, 1].axvline(x= (1 + g) * 15, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)
                 elif equip == 'C208':
-                   ax[idx, 1].axvline(x= (1 + g) * 28.333, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)
+                    ax[idx, 1].axvline(x= (1 + g) * 28.333, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)    
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 1].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 1))
@@ -225,7 +292,6 @@ if main_text == True:
                 ax[idx, 0].text(0.99, 0.55, '\u0394f\u2080: ' + str(round(med,1)) + ' Hz', transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
             else:
                 ax[idx, 0].text(0.99, 0.65, len(peaks), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right')
-                #ax[idx, 0].text(0.99, 0.55, round(med,1), transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
                 # Show one decimal if med is not an integer, else show ".0"
                 med_display = f"{med:.1f}" if float(med).is_integer() else str(round(med, 1))
                 ax[idx, 0].text(
@@ -279,13 +345,14 @@ if main_text == True:
         ax[row, col].set_xticks(np.arange(0, 300, 25))
         ax[row, col].tick_params(axis='x', which='both', length = 3, labelbottom=True)
 
-    #plt.subplots_adjust(hspace=0, wspace=0.1)  # Small vertical and horizontal space between subplots
     plt.xlim(5, 300)
     plt.tight_layout(pad=2, w_pad=0.5, h_pad=0)
 
     fig.savefig('histogram.png', dpi=300, bbox_inches='tight')
     plt.show()
+
 if main_text == False:
+
     fig, ax = plt.subplots(6, 3, figsize=(17, 25), sharex=True)
 
     # Track which axes have data
@@ -293,6 +360,9 @@ if main_text == False:
 
     for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
         equip_count = equip_count_dict[equip]
+        med = equip_diff_dict[equip]
+        line_count = line_count_dict[equip]
+        blade_count = bc_dict[equip]
         label_count = str(equip_count[1]) + '/' + str(equip_count[0])
         label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
@@ -300,11 +370,9 @@ if main_text == False:
                 ax[i, 2].set_title('Jet Aircrafts', fontsize=14, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[i, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[i, 2].text(0.99, 0.95, equip, transform=ax[i, 2].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+            ax[i, 2].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[i, 2].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[i, 2].text(0.99, 0.85, label_count, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[i, 2].text(0.99, 0.75, label_tail, transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            for g in range(0,50):
-                ax[i, 2].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             ax[i, 2].text(0.99, 0.65, str(len(peaks)), transform=ax[i, 2].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             counts, _ = np.histogram(peaks, bins=bins)
             ax[i, 2].set_yticks([0,counts.max()])
@@ -315,12 +383,20 @@ if main_text == False:
                 ax[0, 1].set_title('Turboprop Aircrafts', fontsize=14, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[idx, 1].text(0.99, 0.95, equip, transform=ax[idx, 1].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+            ax[idx, 1].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[idx, 1].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.85, label_count, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.75, label_tail, transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.65, str(len(peaks)), transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            for g in range(0,50):
+            for g in range(0,line_count):
                 ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+                if equip == 'AT73':
+                    ax[idx, 1].axvline(x= (1 + g) * 17, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)
+            med_display = f"{med:.1f}" if float(med).is_integer() else str(round(med, 1))
+            ax[idx, 1].text(
+                0.99, 0.55, med_display,
+                transform=ax[idx, 1].transAxes, fontsize=9, va='top', ha='right',
+                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+            )
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 1].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 1))
@@ -336,15 +412,20 @@ if main_text == False:
             )
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[idx, 0].text(0.99, 0.95, equip, transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+            ax[idx, 0].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[idx, 0].transAxes, fontsize=10, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            for g in range(0,50):
+            for g in range(0,line_count):
                 ax[idx, 0].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+            med_display = f"{med:.1f}" if float(med).is_integer() else str(round(med, 1))
+            ax[idx, 0].text(
+                0.99, 0.55, med_display,
+                transform=ax[idx, 0].transAxes, fontsize=9, va='top', ha='right',
+                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+            )
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 0].set_yticks([0,counts.max()])
             axes_with_data.add((idx, 0))
-
 
     # Remove outline for axes with no data
     for row in range(ax.shape[0]):
@@ -359,20 +440,12 @@ if main_text == False:
                 plt.setp(ax[row, col].get_xticklabels(), visible=False)
                 ax[row, col].tick_params(axis='x', which='both', length=0, labelbottom=False)
 
-    #add gridlines to all axes
-    for row in range(ax.shape[0]):
-        for col in range(ax.shape[1]):
-            if (row, col) in axes_with_data:
-                #ax[row, col].grid(axis='x',color='gray', linestyle='--', alpha=0.5)
-                ax[row, col].set_facecolor('none')  # Remove plot background
-            else:
-                ax[row, col].grid(False)  # Disable grid for empty axes
     # Set x-ticks for specific axes and ensure they are visible
     for (row, col) in [(3,1), (4,0), (5,2)]:
         ax[row, col].set_xticks(np.arange(0, 300, 25))
         ax[row, col].tick_params(axis='x', which='both', length = 3, labelbottom=True)
         ax[row, col].set_xlabel('Frequency (Hz)', fontsize=12)
-    #plt.subplots_adjust(hspace=0, wspace=0.1)  # Small vertical and horizontal space between subplots
+
     plt.xlim(5, 300)
     plt.tight_layout(pad=3, w_pad=0.5, h_pad=0)
 
