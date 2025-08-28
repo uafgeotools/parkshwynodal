@@ -33,8 +33,8 @@ for li in file_in.readlines():
     folder_spectrum = equip + '_spectrum_c'
 
     file_check = str(equip)+'_'+ str(date) +'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
-    if file_check not in paper_figures:
-        continue
+    #if file_check not in paper_figures:
+    #    continue
     if mk_picks == False:
         file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
         if not os.path.exists(file_name):
@@ -54,7 +54,13 @@ for li in file_in.readlines():
     folder_spectrum = equip + '_spectrum_c'
     try:
         data, fs, torg, title = load_waveform(sta, (tarrive-window))
-        frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
+        frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
+        # fs=500:
+        # nperseg = 500  # (segment length)
+        # noverlap = 500 * 0.9  # = 450 (overlap)
+        # time_per_segment = nperseg / fs = 500 / 500 = 1 second
+        # number_per_segments = int((len(data) - noverlap) // (nperseg - noverlap))
+        # percent_overlap = (noverlap / nperseg) * 100 = (450 / 500) * 100 = 90%
         spec, MDF = remove_median(Sxx)
     except Exception as e:
         if rerun_fig == True:
@@ -63,6 +69,7 @@ for li in file_in.readlines():
         error_file.write(f"Error loading waveform for {sta} on {date} at flight {flight_num}: {str(e)}\n")
         error_file.close()
         continue
+    continue
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
     vmin = 0  

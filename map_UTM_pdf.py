@@ -1,5 +1,7 @@
 import pandas as pd
 import pyproj
+
+from pathlib import Path
 from prelude import load_flight_file, closest_point_on_segment
 from main_inv_fig_functions import plot_map
 
@@ -39,6 +41,11 @@ for line in input.readlines():
     closest_p = (closest_x_m / 1000, closest_y_m / 1000)  # Convert to kilometers
     head_avg = float(text[8])
     sta = text[9]
+
+    file_check = '/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(sta) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.pdf'
+    if Path(file_check).exists():
+        continue
+
     for s, stat in enumerate(stations):
         if int(stat) == int(sta):
             seismometer = (seismo_utm_x_km[s], seismo_utm_y_km[s])
@@ -63,6 +70,9 @@ for line in input.readlines():
             index = i
         else:
             continue
+
+    print(file_check)
+    
 
     plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km, closest_time, dist_km, index, flight_num, date, seismometer, closest_p, head, sta)
 

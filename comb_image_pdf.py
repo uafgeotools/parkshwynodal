@@ -44,10 +44,12 @@ for line in file_in.readlines():
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
-
-	file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
-	if file_check not in paper_figures:
+	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	if Path(file_check).exists():
 		continue
+	#file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
+	#if file_check not in paper_figures:
+	#	continue
 	index = None
 	for i, station in enumerate(stations):
 		if str(station) == str(sta):
@@ -72,6 +74,8 @@ for line in file_in.readlines():
 	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
+			if image.endswith('.pdf'):
+				continue
 			im = os.path.join(spec_dir, image)
 			split_array = np.array(image.split('_'))
 			plot_time = split_array[0]
@@ -157,13 +161,21 @@ for line in file_in.readlines():
 
 
 	# Get the path of the image file using a wildcard
-	#try:
+
 	image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
-	spectrogram = load_pdf_as_image(im)
-	map_img = load_pdf_as_image(image_path)
-	spec_img = load_pdf_as_image('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
-
-
+ 
+		
+	spectrogram = Image.open(im)
+	try:
+		map_img = load_pdf_as_image(image_path)
+	except:
+		
+	#spec_img = load_pdf_as_image('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
+	try:	
+		spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+	except Exception as e:
+		print(f"{str(e)}")
+		continue
 	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
 	if os.path.isfile(path):
 		plane_img = Image.open(path)
@@ -218,6 +230,6 @@ for line in file_in.readlines():
 	make_base_dir(BASE_DIR)
 	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
-	# Save as PDF 
-	canvas.save(name, "PDF", resolution=600.0)
+	# Save as PDF
+	canvas.save(name, "PDF", resolution=500.0)
 file_in.close()

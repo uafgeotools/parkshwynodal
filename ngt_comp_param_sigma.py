@@ -64,7 +64,9 @@ inverse_dists = np.array(inverse_dists)
 inverse_speeds = np.array(inverse_speeds)
 fr_dists = np.array(fr_dists)
 fr_speeds = np.array(fr_speeds)
-axs[0, 0].scatter(inverse_speeds, fr_speeds, c='k', s=15, zorder=2)
+sc0 = axs[0, 0].scatter(inverse_speeds, fr_speeds, c=fr_dists, cmap='cividis', s=15, zorder=2)
+cbar0 = plt.colorbar(sc0, ax=axs[0, 0])
+cbar0.set_label('flightradar24 Distance (m)', fontsize=8)
 if error_bar:
     axs[0].errorbar(
         inverse_speeds, fr_speeds, xerr=error_vel,
@@ -85,7 +87,9 @@ rmsd = np.sqrt(mean_squared_difference)
 axs[0, 0].text(0.05, 0.85, 'RMSD = {:.2f}'.format(rmsd), transform=axs[0, 0].transAxes, fontsize=12, va='top', ha='left')
 
 rms_speed = rmsd
-axs[0, 1].scatter(inverse_dists, fr_dists, c='k', s=15, zorder=2)
+sc = axs[0, 1].scatter(inverse_dists, fr_dists, c=fr_speeds, cmap='cividis', s=15, zorder=2)
+cbar = plt.colorbar(sc, ax=axs[0, 1])
+cbar.set_label('flightradar24 Velocity (m/s)', fontsize=8)
 if error_bar:
     axs[0, 1].errorbar(inverse_dists, fr_dists, xerr=error_dist, fmt='none', ecolor='gray', alpha=0.3, capsize=1, zorder=1, linewidth=0.7)
 

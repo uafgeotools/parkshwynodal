@@ -6,6 +6,7 @@ from pathlib import Path
 from matplotlib.patches import Rectangle
 from scipy.signal import find_peaks
 from prelude import make_base_dir, calc_ft, calc_f0, invert_f
+from matplotlib.ticker import MaxNLocator
 
 ################################################################################################################################################
 
@@ -137,7 +138,7 @@ def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km,
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/'+ str(flight_num) + '/' + str(station) + '/'
     make_base_dir(BASE_DIR)
-    plt.savefig('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(station) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.png', bbox_inches='tight',dpi=500)
+    plt.savefig('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(station) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.pdf', bbox_inches='tight',dpi=500)
     plt.close()
 
 
@@ -289,7 +290,10 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax2.margins(x=0)
     ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
 
-    plt.colorbar(mappable=cax, cax=ax3)
+    # Set colorbar with integer ticks only
+    cbar = plt.colorbar(mappable=cax, cax=ax3)
+    cbar.locator = MaxNLocator(integer=True)
+    cbar.update_ticks()
     ax3.set_ylabel('Relative Amplitude (dB)')
 
     ax2.margins(x=0)
