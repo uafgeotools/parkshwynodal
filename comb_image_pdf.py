@@ -44,7 +44,7 @@ for line in file_in.readlines():
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
-	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf_ngt/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 	if Path(file_check).exists():
 		continue
 	#file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
@@ -71,7 +71,7 @@ for line in file_in.readlines():
 			break
 		else:
 			continue
-	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
 			if image.endswith('.pdf'):
@@ -172,7 +172,7 @@ for line in file_in.readlines():
 		
 	#spec_img = load_pdf_as_image('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
 	try:	
-		spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+		spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results/ngt/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 	except Exception as e:
 		print(f"{str(e)}")
 		continue
@@ -226,7 +226,7 @@ for line in file_in.readlines():
 	draw.rectangle(bbox, fill="white")
 	draw.text((canvas_width - plane.width, 0), text3, fill='black', font=font)
 
-	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf/'
+	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf_ngt/'
 	make_base_dir(BASE_DIR)
 	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
