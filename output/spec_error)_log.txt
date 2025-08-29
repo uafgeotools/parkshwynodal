@@ -24,3 +24,9 @@ Error loading waveform for 1168 on 20190213 at flight 528155836: not enough valu
 Error loading waveform for 1169 on 20190213 at flight 528155836: not enough values to unpack (expected 2, got 1)
 Error loading waveform for 1170 on 20190213 at flight 528155836: not enough values to unpack (expected 2, got 1)
 Error loading waveform for 1171 on 20190213 at flight 528155836: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1009 on 20190211 at flight 527958214: local variable 'data' referenced before assignment
+Error loading waveform for 1177 on 20190212 at flight 528147455: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1178 on 20190212 at flight 528147455: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1179 on 20190212 at flight 528147455: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1180 on 20190212 at flight 528147455: not enough values to unpack (expected 2, got 1)
+Error loading waveform for 1181 on 20190212 at flight 528147455: not enough values to unpack (expected 2, got 1)

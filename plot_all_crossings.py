@@ -23,8 +23,6 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, arrive_tim
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
 
-
-    ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
 
     ax2.margins(x=0)
@@ -61,6 +59,24 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, arrive_tim
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png')
     plt.close()
 
+def plot_spectrum(spec, frequencies, fs, closest_index, closest_time, sta, dir_name):
+
+    vmax = np.max(spec[:,closest_index])
+    fig = plt.figure(figsize=(10,6))
+    plt.grid()
+
+    plt.plot(frequencies, spec[:,closest_index], c='#377eb8')
+  
+    plt.xlim(0, int(fs/2))
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0,vmax*1.1)
+    plt.xlabel('Frequency (Hz)', fontsize=17)
+    plt.ylabel('Relative Amplitude at t = 120 s (dB)', fontsize=17)
+
+    fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.pdf')
+    plt.close()
+
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 
@@ -80,7 +96,6 @@ for li in file_in.readlines():
     equip = text[10]
     folder_spec = equip + '_spec_c'
 
-
     DIR = '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.png'
     if os.path.exists(DIR):
         if os.path.isfile(DIR):
@@ -94,6 +109,7 @@ for li in file_in.readlines():
     ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
 
     try:
+        
         data, fs, torg, title = load_waveform(sta, (tarrive-window))
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
         spec, MDF = remove_median(Sxx)
@@ -104,8 +120,10 @@ for li in file_in.readlines():
         continue
 
     middle_index =  len(times) // 2
-    middle_column = spec[:, middle_index]
-    vmin = 0  
-    vmax = np.max(middle_column) 
-
-    plot_spectrogram(data, fs, torg, title, spec, times, frequencies, 120, MDF, flight_num, middle_index, closest_time, '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta))  
+    base_dir = '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
+    make_base_dir(base_dir)
+    plot_spectrogram(data, fs, torg, title, spec, times, frequencies, 120, MDF, flight_num, middle_index, closest_time, base_dir)
+    
+    BASE_DIR =  '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
+    make_base_dir(BASE_DIR)
+    plot_spectrum(spec, frequencies, fs, middle_index, closest_time, sta, BASE_DIR)

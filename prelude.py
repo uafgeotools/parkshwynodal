@@ -1099,3 +1099,149 @@ def load_waveform(sta, start_time, spec_window=120):
 	
 
 #########################################################################################################################################################################################################
+
+'''
+def load_waveform(sta, start_time, spec_window=120):
+	"""
+	Load waveform data for a specific station and time window.
+	If the requested time window spans two files, stitch them together.
+
+	Args:
+		sta (str): Station code.
+		start_time (float): Start time in seconds since the epoch.
+		spec_window (int): Time window in seconds to trim the waveform data, default is 120 seconds.
+
+	Returns:
+		tuple: A tuple containing the waveform data, sampling frequency, time origin, and title
+	"""
+
+	ht = datetime.fromtimestamp(start_time + spec_window, tz=timezone.utc)
+	h = ht.hour
+	month = ht.month
+	day = ht.day
+
+	h_u = (h + 1) % 24
+	day2 = day
+	if h_u == 0:
+		# Next day
+		ht_next = ht.replace(hour=0) + pd.Timedelta(days=1)
+		day2 = ht_next.day
+		month = ht_next.month
+	h_str = f"{h:02d}"
+	h_u_str = f"{h_u:02d}"
+	day_str = f"{day:02d}"
+	day2_str = f"{day2:02d}"
+
+	# Always define both waveform file paths for both hours
+	waveform1 = f"/scratch/naalexeev/NODAL/2019-0{month}-{day_str}T{h_str}:00:00.000000Z.2019-0{month}-{day2_str}T{h_u_str}:00:00.000000Z.{sta}.mseed"
+	waveform2 = f"/scratch/irseppi/500sps/2019_0{month}_{day_str}/ZE_{sta}_DPZ.msd"
+
+		# tr is an ObsPy Stream
+		# Returns trimmed data, fs, torg, title
+		file_start = tr[0].stats.starttime
+		file_end = tr[0].stats.endtime
+		if t_start >= file_start and t_end <= file_end:
+			tr_trim = tr.copy()
+			tr_trim.trim(t_start, t_end)
+			data = tr_trim[0][:]
+			fs = int(tr_trim[0].stats.sampling_rate)
+			title = f'{tr_trim[0].stats.network}.{tr_trim[0].stats.station}.{tr_trim[0].stats.location}.{tr_trim[0].stats.channel} − starting {tr_trim[0].stats["starttime"]}'
+			torg = tr_trim[0].times()
+			return data, fs, torg, title
+		else:
+			# Need to stitch with next/previous file
+			st = tr.copy()
+			# Try previous file if needed
+			if t_start < file_start:
+				# Previous hour
+				prev_ht = file_start - 3600
+				prev_h = prev_ht.hour
+				prev_day = prev_ht.day
+				prev_month = prev_ht.month
+				prev_h_str = f"{prev_h:02d}"
+				prev_day_str = f"{prev_day:02d}"
+				prev_month_str = f"{prev_month}"
+				prev_day_str = f"{prev_day:02d}"
+				prev_month_str = f"{prev_month}"
+				prev_day2_str = prev_day_str
+				prev_h_u_str = f"{(prev_h+1)%24:02d}"
+				prev_waveform1 = f"/scratch/naalexeev/NODAL/2019-0{prev_month_str}-{prev_day_str}T{prev_h:02d}:00:00.000000Z.2019-0{prev_month_str}-{prev_day2_str}T{prev_h_u_str}:00:00.000000Z.{sta}.mseed"
+				if Path(prev_waveform1).exists():
+					tr_prev = obspy.read(prev_waveform1)
+					st += tr_prev
+				next_ht = file_end + 1
+				next_h = next_ht.hour
+				next_day = next_ht.day
+				next_month = next_ht.month
+				next_h_str = f"{next_h:02d}"
+				next_day_str = f"{next_day:02d}"
+				next_month_str = f"{next_month}"
+				next_day2_str = next_day_str
+				next_day_str = f"{next_day:02d}"
+				next_month_str = f"{next_month}"
+				next_day2_str = next_day_str
+				next_h_u_str = f"{(next_h+1)%24:02d}"
+				next_waveform1 = f"/scratch/naalexeev/NODAL/2019-0{next_month_str}-{next_day_str}T{next_h:02d}:00:00.000000Z.2019-0{next_month_str}-{next_day2_str}T{next_h_u_str}:00:00.000000Z.{sta}.mseed"
+				if Path(next_waveform1).exists():
+					tr_next = obspy.read(next_waveform1)
+					st += tr_next
+			title = f'{st[0].stats.network}.{st[0].stats.station}.{st[0].stats.location}.{st[0].stats.channel} − starting {st[0].stats["starttime"]}'
+			torg = st[0].times()
+
+
+	# Calculate UTCDateTime for trimming
+	t_start = UTCDateTime(start_time)
+	t_end = t_start + spec_window
+
+	if Path(waveform1).exists():
+		tr = obspy.read(waveform1)
+		return try_stitch(tr, t_start, t_end)
+	elif Path(waveform2).exists():
+		tr = obspy.read(waveform2)
+		# For waveform2, try to stitch only if needed (if window is outside file)
+		file_start = tr[0].stats.starttime
+		file_end = tr[0].stats.endtime
+		if t_start >= file_start and t_end <= file_end:
+			tr[0].trim(t_start, t_end)
+			data = tr[0][:]
+			fs = int(tr[0].stats.sampling_rate)
+			title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'
+			torg = tr[0].times()
+			return data, fs, torg, title
+		else:
+			# Try to find and stitch with adjacent file if available
+			st = tr.copy()
+			# Try previous file
+			if t_start < file_start:
+				prev_ht = file_start - 3600
+				prev_h = prev_ht.hour
+				prev_day = prev_ht.day
+				prev_month = prev_ht.month
+				prev_h_str = f"{prev_h:02d}"
+				prev_day_str = f"{prev_day:02d}"
+				prev_month_str = f"{prev_month}"
+				prev_waveform2 = f"/scratch/irseppi/500sps/2019_0{prev_month_str}_{prev_day_str}/ZE_{sta}_DPZ.msd"
+				if Path(prev_waveform2).exists():
+					tr_prev = obspy.read(prev_waveform2)
+					st += tr_prev
+			# Try next file
+			if t_end > file_end:
+				next_ht = file_end + 1
+				next_h = next_ht.hour
+				next_day = next_ht.day
+				next_month = next_ht.month
+				next_h_str = f"{next_h:02d}"
+				next_day_str = f"{next_day:02d}"
+				next_month_str = f"{next_month}"
+				next_waveform2 = f"/scratch/irseppi/500sps/2019_0{next_month_str}_{next_day_str}/ZE_{sta}_DPZ.msd"
+				if Path(next_waveform2).exists():
+					tr_next = obspy.read(next_waveform2)
+					st += tr_next
+			st.merge(method=1, fill_value='interpolate')
+			st.trim(t_start, t_end)
+			data = st[0][:]
+			fs = int(st[0].stats.sampling_rate)
+			title = f'{st[0].stats.network}.{st[0].stats.station}.{st[0].stats.location}.{st[0].stats.channel} − starting {st[0].stats["starttime"]}'
+			torg = st[0].times()
+			return data, fs, torg, title
+'''

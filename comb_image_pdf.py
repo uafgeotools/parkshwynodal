@@ -166,9 +166,9 @@ for line in file_in.readlines():
  
 		
 	spectrogram = Image.open(im)
-	try:
-		map_img = load_pdf_as_image(image_path)
-	except:
+	#try:
+	map_img = load_pdf_as_image(image_path)
+	#except:
 		
 	#spec_img = load_pdf_as_image('/scratch/irseppi/nodal_data/plane_info/inversion_results/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
 	try:	
