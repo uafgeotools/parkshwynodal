@@ -213,6 +213,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
 
     ax1.margins(x=0)
     ax1.set_position([0.125, 0.6, 0.775, 0.3]) 
+    ax1.set_ylabel('Counts')
     # Plot spectrogram
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
     ax2.set_xlabel('Time (s)')
