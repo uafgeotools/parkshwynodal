@@ -213,12 +213,23 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                 fig.plot(x=-150.1072713049972, y=62.30091781635389, style="x0.3c", pen="02p,pink", projection=proj)
                 pygmt.makecpt(cmap="gmt/seis", series=[np.min(med)-0.01, np.max(med)+0.01])
                 yy = fig.plot(x=lon, y=lat, style="c0.3c", fill=med, pen="black", cmap=True, projection=proj)
-                fig.colorbar(frame=["a0.5f0.1", 'xaf+l\u0394'+'F, Hz'], position="JMR+o8c/-6.5c+w11.5c/0.5c")
+                fig.colorbar(frame=["a0.5f0.1", 'xaf+l\u0394'+'f, Hz'], position="JMR+o8c/-6.5c+w11.5c/0.5c")
 
                 zoom_region = [np.min(lon) - 0.01, np.max(lon) + 0.01, np.min(lat) - 0.01, np.max(lat) + 0.01]
                 rectangle = [[zoom_region[0], zoom_region[2], zoom_region[1], zoom_region[3]]]
                 fig.plot(data=rectangle, style="r+s", pen="0.5p,black", projection=proj)
+                # add a km bar scale
+                fig.basemap(region=[-151.2, -150.05, 62.29, 63.15], projection=proj, map_scale="jBL+w5k+f+o0.5c/0.5c")
 
+                fig.text(
+                    text="b)",
+                    x=-151.19,
+                    y=63.13,
+                    font="14p,Helvetica-Bold,black",
+                    fill="white",
+                    justify="LB",
+                    projection=proj,
+                )
         with fig.set_panel(panel=[0,0]):
             zoom_region = [np.min(lon) - 0.01, np.max(lon) + 0.01, np.min(lat) - 0.005, np.max(lat)+ 0.015]
             with pygmt.config(MAP_FRAME_TYPE = 'plain',FORMAT_GEO_MAP="ddd.xx"):
@@ -253,7 +264,16 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                 fig.plot(x=seismo_longitudes, y=seismo_latitudes, projection=proj, style="x0.6c", pen="2p,black")
                 pygmt.makecpt(cmap="gmt/seis", series=[np.min(med)-0.01, np.max(med)+0.01]) 
                 yy = fig.plot(x=lon, y=lat, style="c0.4c", fill=med, projection=proj, pen="black", cmap=True) 
-
+                fig.basemap(region=zoom_region, projection=proj, map_scale="jBL+w1k+f+o0.5c/0.5c")
+                fig.text(
+                    text="a)",
+                    x=zoom_region[0] + 0.0025,
+                    y=zoom_region[3] - 0.0014,
+                    font="14p,Helvetica-Bold,black",
+                    fill="white",
+                    justify="LT",
+                    projection=proj,
+                )
     fig.shift_origin(yshift="-8c")
     proj = "X24.5c/6c"
     with fig.subplot(nrows=1, ncols=1, figsize=("27c", "10c"), margins=["0.1c", "0.1c"],autolabel=False):
@@ -376,7 +396,18 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
         projection=proj,
         perspective=[199,90]
         )
+        #label a) b) and c) for the left upper corrner of the three plots
 
-fig.savefig("flight_path_10512184.png", dpi=300)
-fig.show(verbose="i") 
+        fig.text(
+            text="c)",
+            x=1.5,
+            y=np.max(prof_region) - 280,
+            font="14p,Helvetica-Bold,black",
+            fill="white",
+            justify="LB",
+            projection=proj,
+        )
+
+fig.savefig("flight_path_10512184.pdf", dpi=300)
+fig.show(verbose="i")
 

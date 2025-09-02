@@ -134,7 +134,7 @@ for tail_num, peaks in peaks_dict.items():
 
 ax2.tick_params(left=False, right=False, labelleft=False, labelbottom=True, bottom=True)
 ax1.set_xlabel('Frequency (Hz)', fontsize=30)
-ax2.set_xlabel('Median '+'\u0394'+'F (Hz)', fontsize=30)
+ax2.set_xlabel('Median '+'\u0394'+'f (Hz)', fontsize=30)
 ax1.set_xticks(range(10, 270, 10))
 ax1.set_xticklabels(
     [str(x) if x % 20 == 0 else '' for x in range(10, 270, 10)],

@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import concurrent.futures
 from datetime import datetime, timezone
 from scipy.signal import spectrogram
 import matplotlib.pyplot as plt
@@ -7,7 +8,8 @@ from prelude import make_base_dir, calc_time, get_speed_of_sound, get_sta_elevat
 from main_inv_fig_functions import remove_median
 from matplotlib.ticker import MaxNLocator
 
-window = 120  # seconds before the arrival time to load the waveform
+num_workers = os.cpu_count()
+
 
 def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, arrive_time, MDF, flight, middle_index, closest_time, dir_name):
 
@@ -76,10 +78,33 @@ def plot_spectrum(spec, frequencies, fs, closest_index, closest_time, sta, dir_n
 
     fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.pdf')
     plt.close()
+def load_plot_spectrogram(sta, date, flight_num, tarrive, closest_time):
+    window = 120  # seconds before the arrival time to load the waveform
+    try:
+        data, fs, torg, title = load_waveform(sta, (tarrive-window))
+        frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
+        spec, MDF = remove_median(Sxx)
+    except Exception as e:
+        error_file = open('output/spec_error)_log.txt', 'a')
+        error_file.write(f"Error loading waveform for {sta} on {date} at flight {flight_num}: {str(e)}\n")
+        error_file.close()
 
+    middle_index =  len(times) // 2
+    base_dir = '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
+    make_base_dir(base_dir)
+    plot_spectrogram(data, fs, torg, title, spec, times, frequencies, 120, MDF, flight_num, middle_index, closest_time, base_dir)
+    
+    BASE_DIR =  '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
+    make_base_dir(BASE_DIR)
+    plot_spectrum(spec, frequencies, fs, middle_index, closest_time, sta, BASE_DIR)
+    return BASE_DIR
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
-
+sta_list = []
+date_list = []
+flight_list = []
+tarrive_list = []
+closest_time_list = []
 for li in file_in.readlines():
     text = li.split(',')
     date = text[0]
@@ -105,25 +130,11 @@ for li in file_in.readlines():
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
 
     tarrive = calc_time(closest_time,dist_m,alt,c) 
-    print(tarrive)
-    ht = datetime.fromtimestamp(tarrive, tz=timezone.utc)
+    sta_list.append(sta)
+    date_list.append(date)
+    flight_list.append(flight_num)
+    tarrive_list.append(tarrive)
+    closest_time_list.append(closest_time)
 
-    try:
-        
-        data, fs, torg, title = load_waveform(sta, (tarrive-window))
-        frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
-        spec, MDF = remove_median(Sxx)
-    except Exception as e:
-        error_file = open('output/spec_error)_log.txt', 'a')
-        error_file.write(f"Error loading waveform for {sta} on {date} at flight {flight_num}: {str(e)}\n")
-        error_file.close()
-        continue
-
-    middle_index =  len(times) // 2
-    base_dir = '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
-    make_base_dir(base_dir)
-    plot_spectrogram(data, fs, torg, title, spec, times, frequencies, 120, MDF, flight_num, middle_index, closest_time, base_dir)
-    
-    BASE_DIR =  '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
-    make_base_dir(BASE_DIR)
-    plot_spectrum(spec, frequencies, fs, middle_index, closest_time, sta, BASE_DIR)
+with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
+    dir = executor.map(load_plot_spectrogram, sta_list, date_list, flight_list, tarrive_list, closest_time_list)

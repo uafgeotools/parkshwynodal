@@ -102,8 +102,10 @@ peaks = []
 coord_inv = []
 upper_array = []
 lower_array = []
-corridor_width = 10 
-for t_f in range(len(times)):
+corridor_width = 10
+time_corr = np.arange(0, 240, 1)
+for ttt in time_corr:
+    t_f = (np.abs(times - ttt)).argmin()
     upper = int(ft[t_f] + corridor_width)
     lower = int(ft[t_f] - corridor_width)
     if lower < 0:
@@ -120,6 +122,7 @@ for t_f in range(len(times)):
     coord_inv.append((times[t_f], max_amplitude_frequency))
     upper_array.append(upper)
     lower_array.append(lower)
+
 coord_inv_array = np.array(coord_inv)
 cax = ax[3].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
@@ -138,7 +141,7 @@ print(l)
 l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope
 print(l)
 m[2] = l
-ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
+ft = calc_ft(time_corr, m[3], m[0], m[1], m[2], m[4])
 
 delf = np.array(ft) - np.array(peaks)
 
@@ -200,10 +203,12 @@ for i in range(fig_num):
 plt.subplots_adjust(hspace=0.3)
 ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
-fig.savefig("inversion_steps.png", dpi=600)
-plt.show()
+fig.savefig("inversion_steps.jpg", dpi=600)
 plt.close()
-make_final_plot = True
+
+
+
+make_final_plot = False
 if make_final_plot:
 	covm = np.sqrt(np.diag(covm0))
 	fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
