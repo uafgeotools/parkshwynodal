@@ -15,7 +15,7 @@ jet = ['B733', 'B763', 'B772', 'B77W', 'B788', 'B789']
 eq = 'R44'
 
 # Define the directory where your files are located
-file = 'output/inv_results_old/' + eq + '_full_inv_results.csv' 
+file = 'output/inv_results/' + eq + '_full_inv_results.csv' 
 
 with open(file, 'r') as f:
     # Read the data from the file and append it to the list

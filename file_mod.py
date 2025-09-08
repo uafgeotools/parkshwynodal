@@ -1,8 +1,11 @@
 import sys
 import fileinput
 import os
+import shutil
 import pandas as pd
 from datetime import datetime
+
+from comb_image import BASE_DIR
 
 #############################################################################################################################
 
@@ -457,3 +460,131 @@ def remove_dir_with_no_picks(base_dir='/home/irseppi/REPOSITORIES/parkshwynodal/
 				print(f"Deleted empty directory: {root}")
 
 ################################################################################################################
+
+def clean_inv_results():
+	"""
+	Cleans up the formatting of files in the 'output/inv_results/' directory by replacing specific patterns.
+	Replaces all instances of '\n ' with ' ', '  ' with ' ', '[ ' with '[', and ' ]' with ']'.
+	"""
+
+	# specify the directory containing the files to be cleaned
+	dir_path = 'output/inv_results/'
+
+	# loop through the directories in the directory
+	for dir_name in os.listdir(dir_path):
+		filename = os.path.join(dir_path, dir_name)
+
+		for line in fileinput.input(filename, inplace=1):
+			line = line.replace('\n ', ' ').replace('  ', ' ').replace('[ ', '[').replace(' ]', ']')
+			sys.stdout.write(line)
+
+################################################################################################################
+
+def combine_text_files(input_files, output_file):
+	"""
+	Combines multiple text files into a single output file.
+
+	Args:
+		input_files (list): List of input file names to combine.
+		output_file (str): The path to the output file.
+
+	Example usage:
+		files_to_combine = []
+		for file in os.listdir('output/inv_results/'):
+			if file.endswith('.txt'):
+				files_to_combine.append(file)
+		output_filename = 'combined_python.txt'
+		combine_text_files(files_to_combine, output_filename)
+	"""
+	with open(output_file, 'w') as outfile:
+		for fname in input_files:
+			equip = fname[0:4]
+			with open(os.path.join('output/inv_results/', fname)) as infile:
+				for line in infile:
+					if line.strip():
+						outfile.write(line.rstrip('\n') + equip + ',\n')
+
+#############################################################################################################################
+
+def change_directory_structure(BASE_DIR, BASE_DIR2):
+	"""
+	Changes the directory structure by copying files from the source directory to the target directory while maintaining the
+	original structure.
+	Args:
+		BASE_DIR (str): The source base directory.
+		BASE_DIR2 (str): The target base directory.
+	"""
+	for file_name in os.listdir(BASE_DIR):
+		sig_file = os.path.join(BASE_DIR, file_name)
+		sig_hold = os.path.join(BASE_DIR2, file_name)
+		for eq in os.listdir(sig_file):
+			eq_file = os.path.join(sig_file, eq)
+			for date_file in os.listdir(eq_file):
+				full_path = os.path.join(eq_file, date_file)
+				for flight_file in os.listdir(full_path):
+					flight_path = os.path.join(full_path, flight_file)
+					for sta_file in os.listdir(flight_path):
+						sta_path = os.path.join(flight_path, sta_file)
+						for file in os.listdir(sta_path):
+							image_file = os.path.join(sta_path, file)
+							new_image_file = os.path.join(sig_hold,file)
+							os.makedirs(os.path.dirname(new_image_file), exist_ok=True)
+							shutil.copy2(image_file, new_image_file)
+
+#############################################################################################################################
+
+def combine_all_text_files_in_dir(input_dir, output_file):
+	"""
+	Reads all text files in a directory and combines all lines from all text files into a single output text file.
+
+	Args:
+		input_dir (str): The directory containing the text files.
+		output_file (str): The path to the output file.
+	"""
+	with open(output_file, 'a') as output:
+		for file_name in os.listdir(input_dir):
+			file_path = os.path.join(input_dir, file_name)
+			if file_name.endswith('.txt'):
+				with open(file_path, 'r') as f:
+					lines = f.readlines()
+					output.writelines(lines)
+
+#############################################################################################################################
+
+def compare_directories(dir1, dir2, dir3):
+	"""
+	Compares files in three directories and prints out any files that are missing in either of the
+	second or third directories compared to the first directory.
+	Args:
+		dir1 (str): The path of the first directory.
+		dir2 (str): The path of the second directory.
+		dir3 (str): The path of the third directory.
+	Returns:
+		int: The total number of files checked across all three directories.
+
+	EXAMPLE USAGE:
+	AIRCRAFT_TYPES = 0
+	for dirc in os.listdir('input/Data_Picks'):
+		dirc_list = []
+		new_dirc = os.path.join('input/Data_Picks', dirc)
+		for dirc in os.listdir(new_dirc):
+			dirc_list.append(os.path.join(new_dirc, dirc))
+		AIRCRAFT_TYPES += compare_directories(dirc_list[0], dirc_list[1], dirc_list[2])
+	print(AIRCRAFT_TYPES)
+	"""
+	
+	FILE_COUNT = 0
+	for root, _, files in os.walk(dir1):
+		for filename in files:
+			print(root)
+			file1 = os.path.join(root, filename)
+			file2 = os.path.join(dir2, os.path.relpath(file1, dir1))
+			file3 = os.path.join(dir3, os.path.relpath(file1, dir1))
+			FILE_COUNT += 3
+			if not os.path.exists(file2):
+				print(f"Missing in {dir2}: {file2}")
+			if not os.path.exists(file3):
+				print(f"Missing in {dir3}: {file3}")
+	return FILE_COUNT
+
+#############################################################################################################################
