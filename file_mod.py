@@ -5,8 +5,6 @@ import shutil
 import pandas as pd
 from datetime import datetime
 
-from comb_image import BASE_DIR
-
 #############################################################################################################################
 
 def modify_file(input_file_name, output_file_name):

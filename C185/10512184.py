@@ -5,7 +5,7 @@ import glob
 import numpy as np
 import json
 from pyproj import Proj
-from prelude import speed_of_sound, add_vectors, make_base_dir
+from doppler_funcs import speed_of_sound, add_vectors, make_base_dir
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 

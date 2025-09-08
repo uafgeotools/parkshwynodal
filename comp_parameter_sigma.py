@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from prelude import *
+from doppler_funcs import *
 
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
 stations = seismo_data['Station']

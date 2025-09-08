@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import obspy
 import pyproj
 import datetime
-from prelude import *
+from doppler_funcs import *
 from scipy.signal import find_peaks, spectrogram
 
 seismo_data = pd.read_csv('input/all_sta.txt', sep="|")

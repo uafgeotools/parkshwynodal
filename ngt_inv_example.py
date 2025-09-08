@@ -3,7 +3,7 @@ import numpy.linalg as la
 import obspy
 from matplotlib import pyplot as plt
 from datetime import datetime, timezone
-from prelude import calc_ft, invert_f, speed_of_sound
+from doppler_funcs import calc_ft, invert_f, speed_of_sound
 from scipy.signal import spectrogram
 from main_inv_fig_functions import  remove_median
 

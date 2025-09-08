@@ -2,7 +2,7 @@ import pandas as pd
 import pyproj
 
 from pathlib import Path
-from prelude import load_flight_file, closest_point_on_segment
+from doppler_funcs import load_flight_file, closest_point_on_segment
 from main_inv_fig_functions import plot_map
 
 utm_proj = pyproj.Proj(proj='utm', zone='6', ellps='WGS84')

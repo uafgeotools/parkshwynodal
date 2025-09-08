@@ -5,7 +5,7 @@ import matplotlib.patches as mpatch
 from pathlib import Path
 from matplotlib.patches import Rectangle
 from scipy.signal import find_peaks
-from prelude import make_base_dir, calc_ft, calc_f0, invert_f
+from doppler_funcs import make_base_dir, calc_ft, calc_f0, invert_f
 from matplotlib.ticker import MaxNLocator
 
 ################################################################################################################################################

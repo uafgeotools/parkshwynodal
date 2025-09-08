@@ -5,7 +5,7 @@ import json
 import datetime
 from datetime import datetime, timezone
 from pyproj import Proj
-from prelude import *
+from doppler_funcs import *
 from plot_func import *
 
 def speed_of_sound(Tc):

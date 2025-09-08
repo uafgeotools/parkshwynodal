@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
-from prelude import *
+from doppler_funcs import *
 
 def add_arrival_time(file_path, arrival_time):
     with open(file_path, 'r') as file:

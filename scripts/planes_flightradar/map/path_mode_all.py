@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pyproj
 import pygmt
-from prelude import *
+from doppler_funcs import *
 
 #Load seismometer data
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_sta.txt', sep="|")

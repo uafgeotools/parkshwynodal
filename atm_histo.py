@@ -6,7 +6,7 @@ import json
 import datetime
 from datetime import datetime, timezone
 from pyproj import Proj
-from prelude import speed_of_sound, add_wind_vector
+from doppler_funcs import speed_of_sound, add_wind_vector
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 

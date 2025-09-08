@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import matplotlib.pyplot as plt
 from pyproj import Proj
-from prelude import *
+from doppler_funcs import *
 from scipy.optimize import minimize
 
 # Function to calculate L1 norm and produce best fit line for plot

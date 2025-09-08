@@ -6,7 +6,7 @@ import numpy as np
 import json
 from pyproj import Proj, Geod
 from pathlib import Path
-from prelude import speed_of_sound, add_wind_vector, make_base_dir
+from doppler_funcs import speed_of_sound, add_wind_vector, make_base_dir
 from pdf2image import convert_from_path
 
 def load_pdf_as_image(pdf_path, page=0, dpi=600):

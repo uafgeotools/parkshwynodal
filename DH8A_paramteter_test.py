@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime, timezone
 from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
-from prelude import calc_time, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
+from doppler_funcs import calc_time, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
 from main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
 
 nrl = NRL()
