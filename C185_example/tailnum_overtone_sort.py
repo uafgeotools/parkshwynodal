@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.patheffects as patheffects
 
-file = open('output/inv_results_old/C185_full_inv_results.txt', 'r')
+file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/C185_full_inv_results.txt', 'r')
 
 file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
 tail_nums = file2['TAIL_NUM']
@@ -203,6 +203,5 @@ print(del_f_t1, del_f_t2_1, del_f_t2_2)
 ax2.axvline(x=del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_1, color =   [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_2, color =  [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
-fig.savefig("overtone_tail_num_diff.pdf", dpi=500)
 plt.tight_layout(pad=2.5, w_pad=0.5, h_pad=1.5)
 plt.show()

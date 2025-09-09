@@ -3,6 +3,9 @@ import pandas as pd
 import json
 import matplotlib.pyplot as plt
 from pyproj import Proj
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.doppler_funcs import *
 from scipy.optimize import minimize
 
@@ -44,7 +47,7 @@ def fit_l1_line(x, y, bounds=None):
     m, b = result.x
     return m, b
 
-seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
+seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_sta.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 stations = seismo_data['Station']
@@ -52,7 +55,7 @@ elevations = seismo_data['Elevation']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_UTM.txt','r')
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 
 latc = []
 lonc = []
@@ -78,7 +81,7 @@ for line in file_in.readlines():
     stat_list.append(text[9])
 file_in.close()
 
-file_list = ['C185data_atm_1o.txt','C185data_atm_full.txt','C185data_1o.txt','C185data_full.txt']
+file_list = ['1o_atmc_v_2c.txt', '2c_1o_v_full.txt', 'full_atmc_v_2c.txt', 'atmc_1o_v_full.txt']
 title = ['OH/VT','FH/VT','OH/FT','FH/FT']
 
 fig, axs = plt.subplots(4, 3, figsize=(18, 24), sharey=False)

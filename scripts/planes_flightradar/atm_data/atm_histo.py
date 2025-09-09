@@ -1,19 +1,13 @@
 import numpy as np
 import pandas as pd
+import os
 from matplotlib import pyplot as plt
 import json
 import datetime
 from datetime import datetime, timezone
 from pyproj import Proj
-from src.doppler_funcs import *
-from plot_func import *
+from src.doppler_funcs import speed_of_sound, add_wind_vector
 
-def speed_of_sound(Tc):
-    #Tc is the temperature in degrees celsius
-    #gama = 1.4 #typical adiabatic index for air
-    #c = np.sqrt(gama*R*T/M)
-    c = 331.3+0.6*Tc
-    return c
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
@@ -38,7 +32,6 @@ for li in file_in.readlines():
     start_time = time - 120
     equip = text[10]
     if equip in ['B737', 'B738', 'B739', 'B77W', 'B772', 'B788', 'B789', 'B763', 'B744','B733','B732','B77L','B748','CRJ2', 'A332', 'A359', 'E75S']:
-        print(equip)
         continue
     for i, station in enumerate(stations):
         if str(station) == str(sta):
@@ -143,45 +136,70 @@ for li in file_in.readlines():
             file.close()
 
 fig, ax = plt.subplots(3,3, figsize=(15, 10), sharex=False, sharey=False)
-ax[0, 0].hist(air_temp_array, bins=20)
+ax[0, 0].hist(air_temp_array, bins=20, color='black', alpha=0.5, edgecolor='black')
 median_temp = np.median(air_temp_array)
 ax[0, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
-ax[0, 0].set_title('Temperature Distribution')
-ax[0, 0].set_ylabel('Aircraft Location Data')
-print('Median temperature:', median_temp)
-ax[0, 1].hist(air_wind_array, bins=20)
+ax[0, 0].set_title('Temperature Distribution (\u00b0C)')
+ax[0, 0].set_ylabel('Aircraft Location Data\n' + str(len(air_temp_array)) + ' samples')
+ax[0, 0].xaxis.set_label_position('top')
+ax[0, 0].set_xlabel('Median temperature: {:.2f}'.format(median_temp))
+
+ax[0, 1].hist(air_wind_array, bins=20, color='black', alpha=0.5, edgecolor='black')
 median_wind = np.median(air_wind_array)
 ax[0, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
-ax[0, 1].set_title('Wind Speed Distribution')
-print('Median wind speed:', median_wind)
-ax[0, 2].hist(air_c_array, bins=20)
+ax[0, 1].set_title('Wind Speed Distribution (m/s)')
+ax[0, 1].set_ylabel(str(len(air_wind_array)) + ' samples')
+ax[0, 1].xaxis.set_label_position('top')
+ax[0, 1].set_xlabel('Median wind speed: {:.2f}'.format(median_wind))
+
+ax[0, 2].hist(air_c_array, bins=20, color='black', alpha=0.5, edgecolor='black')
 median_c = np.median(air_c_array)
 ax[0, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
-ax[0, 2].set_title('Speed of Sound Distribution')
-print('Median speed of sound:', median_c)
-ax[1, 0].hist(sta_temp_array, bins=20)
+ax[0, 2].set_title('Sound Speed Distribution (m/s)')
+ax[0, 2].set_ylabel(str(len(air_c_array)) + ' samples')
+ax[0, 2].xaxis.set_label_position('top')
+ax[0, 2].set_xlabel('Median speed of sound: {:.2f}'.format(median_c))
+
+ax[1, 0].hist(sta_temp_array, bins=20, color='black', alpha=0.5, edgecolor='black')
 median_temp = np.median(sta_temp_array)
 ax[1, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
-ax[1, 0].set_ylabel('Station Location Data')
-print('Median station temperature:', median_temp)
-ax[1, 1].hist(sta_wind_array, bins=20)
+ax[1, 0].set_ylabel('Station Location Data\n' + str(len(sta_temp_array)) + ' samples')
+ax[1, 0].xaxis.set_label_position('top')
+ax[1, 0].set_xlabel('Median station temperature: {:.2f}'.format(median_temp))
+
+ax[1, 1].hist(sta_wind_array, bins=20, color='black', alpha=0.5, edgecolor='black')
 median_wind = np.median(sta_wind_array)
 ax[1, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
-print('Median station wind speed:', median_wind)
-ax[1, 2].hist(sta_c_array, bins=20)
+ax[1, 1].xaxis.set_label_position('top')
+ax[1, 1].set_xlabel('Median station wind speed: {:.2f}'.format(median_wind))
+ax[1, 1].set_ylabel(str(len(sta_wind_array)) + ' samples')
+ax[1, 2].hist(sta_c_array, bins=20, color='black', alpha=0.5, edgecolor='black')
 median_c = np.median(sta_c_array)
 ax[1, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
-print('Median station speed of sound:', median_c)
-ax[2, 0].hist(np.array(air_temp_array)-np.array(sta_temp_array), bins=20)
+ax[1, 2].xaxis.set_label_position('top')
+ax[1, 2].set_xlabel('Median station speed of sound: {:.2f}'.format(median_c))
+ax[1, 2].set_ylabel(str(len(sta_c_array)) + ' samples')
+ax[1, 2].set_xticks(np.arange(320,  340, 5))
+
+ax[2, 0].hist(np.array(air_temp_array)-np.array(sta_temp_array), bins=20, color='black', alpha=0.5, edgecolor='black')
 median_temp = np.median(np.array(air_temp_array)-np.array(sta_temp_array))
 ax[2, 0].axvline(median_temp, color='r', linestyle='--', label=str(median_temp))
-ax[2, 0].set_ylabel('Difference (Aircraft - Station)')
+ax[2, 0].set_ylabel('Difference (Aircraft - Station)\n' + str(len(air_temp_array)) + ' samples')
+ax[2, 0].xaxis.set_label_position('top')
+ax[2, 0].set_xlabel('Median temperature difference: {:.2f}'.format(median_temp))
 
-ax[2, 1].hist(np.array(air_wind_array) - np.array(sta_wind_array), bins=20)
+ax[2, 1].hist(np.array(air_wind_array) - np.array(sta_wind_array), bins=20, color='black', alpha=0.5, edgecolor='black')
 median_wind = np.median(np.array(air_wind_array) - np.array(sta_wind_array))
 ax[2, 1].axvline(median_wind, color='r', linestyle='--', label=str(median_wind))
+ax[2, 1].set_ylabel(str(len(air_wind_array)) + ' samples')
+ax[2, 1].xaxis.set_label_position('top')
+ax[2, 1].set_xlabel('Median wind speed difference: {:.2f}'.format(median_wind))
 
-ax[2, 2].hist(np.array(air_c_array) - np.array(sta_c_array), bins=20)
+ax[2, 2].hist(np.array(air_c_array) - np.array(sta_c_array), bins=20, color='black', alpha=0.5, edgecolor='black')
 median_c = np.median(np.array(air_c_array) - np.array(sta_c_array))
 ax[2, 2].axvline(median_c, color='r', linestyle='--', label=str(median_c))
+ax[2, 2].set_ylabel(str(len(air_c_array)) + ' samples')
+ax[2, 2].xaxis.set_label_position('top')
+ax[2, 2].set_xlabel('Median speed of sound difference: {:.2f}'.format(median_c))
+fig.savefig("atm_histo.pdf", dpi=500)
 plt.show()
