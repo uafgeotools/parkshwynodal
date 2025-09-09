@@ -178,7 +178,7 @@ for line in file_in.readlines():
 		# 'maps' is now set above, so this line is no longer needed
 		# maps = map_img.resize((int(google_slide_width *  0.28), int(google_slide_width *0.28* map_img.height / map_img.width)))
 	else:
-		plane_img = Image.open('hold.png')
+		plane_img = Image.open('/home/irseppi/REPOSITORIES/parkshwynodal/input/hold.png')
 		
 	scale = 70/1280
 	plane = plane_img.resize((int(google_slide_width * 0.26), int(google_slide_height * 0.26)))

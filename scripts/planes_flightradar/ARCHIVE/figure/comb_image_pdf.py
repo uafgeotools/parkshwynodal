@@ -26,7 +26,7 @@ stations = seismo_data['Station']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 geod = Geod(ellps='WGS84')
-file_in = open('input/node_crossings_db_UTM.txt', 'r')
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
 
 for line in file_in.readlines():
 	text = line.split(',')
@@ -180,7 +180,7 @@ for line in file_in.readlines():
 	if os.path.isfile(path):
 		plane_img = Image.open(path)
 	else:
-		plane_img = Image.open('hold.png')
+		plane_img = Image.open('/home/irseppi/REPOSITORIES/parkshwynodal/input/hold.png')
 		
 	# Resize images
 	google_slide_width = 1280  # Width of a Google Slide in pixels
