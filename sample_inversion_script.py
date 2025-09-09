@@ -1,33 +1,30 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import numpy.linalg as la
-import obspy
-import datetime
-import pyproj
-from scipy.signal import find_peaks, spectrogram
-from src.main_inv_fig_functions import remove_median, get_auto_picks_full, get_auto_picks_1o
-from src.doppler_funcs import invert_f, calc_ft, full_inversion, calc_f0
+from scipy.signal import spectrogram
+from src.main_inv_fig_functions import remove_median, get_auto_picks_full
+from src.doppler_funcs import invert_f, calc_ft, full_inversion
 from obspy.clients.fdsn import Client
 from obspy.core import UTCDateTime
 from matplotlib.ticker import MaxNLocator
-# Initialize a client for a specific FDSN data center (e.g., IRIS, GEONET)
+
+# Initialize IRIS as a client for the specific FDSN data center
 client = Client("http://service.iris.edu", service_mappings={"dataselect": "http://service.iris.edu/ph5ws/dataselect/1"}) 
 
 starttime = UTCDateTime("2019-03-04T01:17:22")
 endtime = UTCDateTime("2019-03-04T01:21:22")
 
+# Fetch waveform data for a specific seismic station and channel
 st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
+
 tr = st[0]
-
 data = tr.data
-
-# Create a title for the seismic data
-title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
 
 # Get the time values of and sampling rate of the data
 torg = tr.times()
 fs = int(tr.stats.sampling_rate)
+
+# Create a title for the seismic data
+title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
 
 # Compute spectrogram
 frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
@@ -69,7 +66,7 @@ c = 311.1 # Default speed of sound, average of dataset, m/s
 fa = np.max(coords_array[:, 1]) 
 fr = np.min(coords_array[:, 1])
 #insert method to get initial model here
-fm = (fa+fr)/2 #- 20
+fm = (fa+fr)/2 
 
 #find the closest coordinate to f0
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
@@ -324,6 +321,7 @@ ax2.set_ylim(0, int(fs/2))
 ax1.tick_params(axis='both', which='major', labelsize=9)
 ax2.tick_params(axis='both', which='major', labelsize=9)
 ax3.tick_params(axis='both', which='major', labelsize=9)
+
 # Plot overlay
 spec2 = 10 * np.log10(MDF)
 middle_column2 = spec2[:, middle_index]
