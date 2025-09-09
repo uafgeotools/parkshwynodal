@@ -173,7 +173,9 @@ f0lab = sorted(f0_array)
 for f0 in f0lab:
     ft = calc_ft(times, tprime0, f0, v0, l, c)
     ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
-    ft0p = f0 / (1 + (v0 / c) * (v0 * 0) / np.sqrt(l ** 2 + (v0 * 0) ** 2))
+    tprime = tprime0
+    t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+    ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
     ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30)
 fss = 'x-small'
 
