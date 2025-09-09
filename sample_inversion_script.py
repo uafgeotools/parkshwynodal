@@ -126,7 +126,6 @@ while pick_again == 'y':
     plt.figure()
     plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
     plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
-    plt.axvline(x=120, c = '#e41a1c', ls = '--')
 
     # Function to handle mouse click events
     def onclick(event):
