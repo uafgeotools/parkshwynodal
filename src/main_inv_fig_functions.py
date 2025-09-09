@@ -731,7 +731,7 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, mprior, sigm
 
 ################################################################################################################################
 
-def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip):
+def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax):
     """
     Get automatic picks for all overtones.
 
@@ -748,7 +748,6 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         c (float): Model parameter for the speed of sound.
         sigma_prior (float): Prior uncertainty for the model parameters.
         vmax (float): Maximum amplitude value for peak detection.
-        equip (str): Equipment identifier.
 
     Returns:
         list: List of observed times.
