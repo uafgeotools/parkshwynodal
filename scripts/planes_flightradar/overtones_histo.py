@@ -55,7 +55,7 @@ for eq in jet + Turboprop + piston + Heli:
         if equip == eq:
             count1 += 1
     # Define the directory where your files are located
-    file = 'output/inv_results/' + eq + '_full_inv_results.csv' 
+    file = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/' + eq + '_full_inv_results.csv' 
 
     with open(file, 'r') as f:
         # Read the data from the file and append it to the list
@@ -449,6 +449,6 @@ if main_text == False:
     plt.xlim(5, 300)
     plt.tight_layout(pad=3, w_pad=0.5, h_pad=0)
 
-    fig.savefig('histogram.png', dpi=300, bbox_inches='tight')
+    #fig.savefig('histogram.png', dpi=300, bbox_inches='tight')
     plt.show()
 
