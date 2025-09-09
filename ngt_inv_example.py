@@ -3,9 +3,9 @@ import numpy.linalg as la
 import obspy
 from matplotlib import pyplot as plt
 from datetime import datetime, timezone
-from doppler_funcs import calc_ft, invert_f, speed_of_sound
+from src.doppler_funcs import calc_ft, invert_f, speed_of_sound
 from scipy.signal import spectrogram
-from main_inv_fig_functions import  remove_median
+from src.main_inv_fig_functions import  remove_median
 
 generate_samples = False
 c = speed_of_sound(-33.7)

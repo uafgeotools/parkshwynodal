@@ -6,7 +6,7 @@ import numpy as np
 import json
 from pyproj import Proj
 from pathlib import Path
-from doppler_funcs import speed_of_sound, add_wind_vector, make_base_dir
+from src.doppler_funcs import speed_of_sound, add_wind_vector, make_base_dir
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']

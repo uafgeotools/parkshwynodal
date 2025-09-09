@@ -5,7 +5,7 @@ import obspy
 import datetime
 from datetime import datetime, timezone
 from pyproj import Proj
-from doppler_funcs import *
+from src.doppler_funcs import *
 from scipy.signal import spectrogram
 from plot_func import *
 import os

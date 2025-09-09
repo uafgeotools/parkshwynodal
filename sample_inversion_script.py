@@ -6,7 +6,7 @@ import obspy
 import datetime
 import pyproj
 from scipy.signal import find_peaks, spectrogram
-from doppler_funcs import invert_f, calc_ft, df, calc_f0, calc_time, find_closest_point, get_speed_of_sound
+from src.doppler_funcs import invert_f, calc_ft, df, calc_f0, calc_time, find_closest_point, get_speed_of_sound
 #Load seismometer data
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_sta.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']

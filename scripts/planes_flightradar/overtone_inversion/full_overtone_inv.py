@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import obspy
 import datetime
-from doppler_funcs import *
+from src.doppler_funcs import *
 from scipy.signal import find_peaks, spectrogram
 import json
 import obspy

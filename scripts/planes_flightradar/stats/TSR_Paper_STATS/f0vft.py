@@ -6,7 +6,7 @@ from pyproj import Proj
 from matplotlib.gridspec import GridSpec
 from matplotlib import colors as mcolors
 import os
-from doppler_funcs import calc_ft
+from src.doppler_funcs import calc_ft
 file_list =[]
 # loop through the directories in the directory
 for file in os.listdir('/home/irseppi/REPOSITORIES/parkshwynodal/output/Inversion_Results/'):

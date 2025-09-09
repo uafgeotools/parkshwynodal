@@ -4,8 +4,8 @@ import concurrent.futures
 from datetime import datetime, timezone
 from scipy.signal import spectrogram
 import matplotlib.pyplot as plt
-from doppler_funcs import make_base_dir, calc_time, get_speed_of_sound, get_sta_elevation, load_waveform
-from main_inv_fig_functions import remove_median
+from src.doppler_funcs import make_base_dir, calc_time, get_speed_of_sound, get_sta_elevation, load_waveform
+from src.main_inv_fig_functions import remove_median
 from matplotlib.ticker import MaxNLocator
 
 num_workers = os.cpu_count()
