@@ -85,7 +85,7 @@ def load_plot_spectrogram(sta, date, flight_num, tarrive, closest_time):
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
         spec, MDF = remove_median(Sxx)
     except Exception as e:
-        error_file = open('output/spec_error)_log.txt', 'a')
+        error_file = open('output/spec_error_log.txt', 'a')
         error_file.write(f"Error loading waveform for {sta} on {date} at flight {flight_num}: {str(e)}\n")
         error_file.close()
 
