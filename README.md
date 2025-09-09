@@ -2,5 +2,5 @@
 ## Bella Seppi
 
 ## University of Alaska Fairbanks
-![stations](sample_image.png)
+![stations](/input/sample_image.png)
 
