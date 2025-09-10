@@ -70,9 +70,10 @@ fs = int(tr.stats.sampling_rate)
 title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
 
 # Compute spectrogram
-WIN_LEN = 3  # window length, in s
+WIN_LEN = 1  # window length, in s
 NPER = int(WIN_LEN * fs)
 frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=NPER, noverlap=int(NPER * .9), detrend='constant')
+
 spec, MDF = remove_median(Sxx)  # Remove median for better visualization
 middle_index = len(times) // 2
 middle_column = spec[:, middle_index]
