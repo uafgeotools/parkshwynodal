@@ -777,6 +777,9 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
 
             upper = int(ft[t_f] + corridor_width)
             lower = int(ft[t_f] - corridor_width)
+            #find closest index to upper and lower in frequencies array
+            lower_index = np.argmin(np.abs(frequencies - lower))
+            upper_index = np.argmin(np.abs(frequencies - upper))
             if lower < 0:
                 lower = 0
             elif lower >= 250:
@@ -785,8 +788,8 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
                 pass
             if upper > 250:
                 upper = 250
-            
-            tt = spec[int(np.round(lower,0)):int(np.round(upper,0)), t_f]
+
+            tt = spec[lower_index:upper_index, t_f]
 
             max_amplitude_index,_ = find_peaks(tt, prominence = 15, wlen=10, height=vmax*0.1)
             if len(max_amplitude_index) == 0:
@@ -795,10 +798,10 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
             maxa = np.argmax(tt[max_amplitude_index])
 
             # Get the corresponding index into tt
-            peak_idx = max_amplitude_index[maxa]
-
+            peak_idx = int(max_amplitude_index[maxa])
+            freq_index = peak_idx + int(np.round(lower_index,0))
             # Now map it to frequency
-            max_amplitude_frequency = frequencies[peak_idx]+int(np.round(lower,0))
+            max_amplitude_frequency = frequencies[freq_index] 
 
             maxfreq.append(max_amplitude_frequency)
             coord_inv.append((times[t_f], max_amplitude_frequency))
