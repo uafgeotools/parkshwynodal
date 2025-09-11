@@ -243,9 +243,4 @@ ax4.set_xlim(vmax2 * 1.1, vmin2)
 ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
 ax4.grid(axis='y')
 plt.show()
-<<<<<<< HEAD
-=======
 plt.close()
-
-
-###
