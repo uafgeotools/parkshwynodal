@@ -42,7 +42,7 @@ equip_counts = {k: v for k, v in sorted(equip_counts.items(), key=lambda item: i
 # Define a color dictionary
 colors=[]
 #Read in color text file to get different flights to be diffrent colors on map
-with open('input/colors.txt','r') as c_in:
+with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/colors.txt','r') as c_in:
 	for i, line in enumerate(c_in):
 		if (i + 1) % 9 == 0:
 			c = str(line[0:7])
@@ -64,20 +64,21 @@ modified_colors[-1] = 'magenta'  # Set the color for 'Other' slice to magenta
 # Plot the first pie chart with improved label spacing using 'autopct' and 'pctdistance'
 axes[0].pie(
 	sorted_sizes,
-	labels=[f"{label}" for label, size in zip(sorted_labels, sorted_sizes)],
+	labels=[f"{label}: {size}" for label, size in zip(sorted_labels, sorted_sizes)],
 	colors=modified_colors,
-	textprops={'fontsize': 25, 'fontweight': 'bold'},
-	#labeldistance=0.9 # Move labels closer to the center of the pie slices
+	textprops={'fontsize': 11},#, 'fontweight': 'bold'},
+	labeldistance=1 # Move labels closer to the center of the pie slices
 )
 axes[0].axis('equal')
 # Plot the second pie chart for values less than 50 with improved label spacing
 axes[1].pie(
 	less_than_50.values(),
-	labels=[f"{label}" for label, size in less_than_50.items()],
+	labels=[f"{label}: {size}" for label, size in less_than_50.items()],
 	colors=colors[(len(equip_counts)+10):((len(equip_counts)+10+len(less_than_50)))][::-1],
-	textprops={'fontsize': 25, 'fontweight': 'bold'},
-	#labeldistance=0.9
+	textprops={'fontsize': 11},#, 'fontweight': 'bold'},
+	labeldistance=1
 )
 axes[1].axis('equal')
-plt.savefig('/home/irseppi/REPOSITORIES/parkshwynodal/output/pie_charts_equipment.png', dpi=650, bbox_inches='tight')
+plt.show()
+#plt.savefig('/home/irseppi/REPOSITORIES/parkshwynodal/output/pie_charts_equipment.png', dpi=650, bbox_inches='tight')
 
