@@ -466,14 +466,14 @@ def clean_inv_results():
 	"""
 
 	# specify the directory containing the files to be cleaned
-	dir_path = 'output/inv_results/'
+	dir_path = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth_320/'
 
 	# loop through the directories in the directory
 	for dir_name in os.listdir(dir_path):
 		filename = os.path.join(dir_path, dir_name)
 
 		for line in fileinput.input(filename, inplace=1):
-			line = line.replace('\n ', ' ').replace('  ', ' ').replace('[ ', '[').replace(' ]', ']')
+			line = line.replace('\n ', ' ') #.replace('  ', ' ').replace('[ ', '[').replace(' ]', ']')
 			sys.stdout.write(line)
 
 ################################################################################################################
