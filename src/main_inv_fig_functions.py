@@ -7,7 +7,9 @@ from matplotlib.patches import Rectangle
 from scipy.signal import find_peaks
 from src.doppler_funcs import make_base_dir, calc_ft, calc_f0, invert_f
 from matplotlib.ticker import MaxNLocator
-
+import psutil
+import os 
+import gc
 ################################################################################################################################################
 
 def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km, closest_time, d, index, flight_num, date, seismometer, closest_p, head, station):
@@ -203,6 +205,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     Returns:
         str: The user assigned quality number.
     """
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 1: {mem:.2f} MB")
     # Plot settings and calculations
     vmin = np.min(arrive_time) 
     vmax = np.max(arrive_time)
@@ -214,8 +219,14 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax1.margins(x=0)
     ax1.set_position([0.125, 0.6, 0.775, 0.3]) 
     ax1.set_ylabel('Counts')
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 2: {mem:.2f} MB")
     # Plot spectrogram
-    cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
+    cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)		
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 3: {mem:.2f} MB")		
     ax2.set_xlabel('Time (s)')
     f0lab = []
     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
@@ -231,7 +242,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
         
         ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30) 
-
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 4: {mem:.2f} MB")
     fss = 'x-small'
     f0lab = sorted(f0_array)
 
@@ -263,7 +276,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
             f_range.append(med)
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
-
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 5: {mem:.2f} MB")
     if len(f0lab) > 10:
         # Split f0lab into lines of 10 entries each
         f0lab_lines = []
@@ -290,7 +305,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
 
     ax2.margins(x=0)
     ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
-
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 6: {mem:.2f} MB")
     # Set colorbar with integer ticks only
     cbar = plt.colorbar(mappable=cax, cax=ax3)
     cbar.locator = MaxNLocator(integer=True)
@@ -322,10 +339,15 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-    
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage 7: {mem:.2f} MB")
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.pdf')
-    plt.close()
 
+    fig.clf()
+    plt.close(fig)
+    gc.collect()
+    #del fig, f0lab, cax, ax1, ax2, ax3, ax4, spec2, middle_column2, ftry, frequencies, times, Sxx, spec, MDF
     return qnum
 
 ################################################################################################################################################################################################################################################################################################################################
@@ -396,8 +418,9 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
     plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
 
     fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.pdf')
-    plt.close()
-
+    fig.clf()
+    plt.close(fig)
+    gc.collect()
 ##############################################################################################################################################################################################################
 
 def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, tarrive, make_picks=True, spec_window = 120):

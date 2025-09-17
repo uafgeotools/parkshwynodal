@@ -712,6 +712,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 	Cpost = la.inv(G.T@la.pinv(Cd)@G + la.inv(cprior))
 	Cpost0 = la.inv(G.T@la.pinv(Cd0)@G + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
+	del G, G_hold, Gm, H, dm, gamma, fpred, m, n, Cd, Cd0, cprior, cprior0
 	return mnew, Cpost0, Cpost, F_m
 
 #####################################################################################################################################################################################################################################################################################################################
@@ -869,7 +870,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 	Cpost = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior))
 	Cpost0 = la.inv(Gm.T@la.inv(Cd0)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-
+	del G, G_hold, Gm, H, dm, gamma, fpred, m, n, Cd, Cd0, cprior, cprior0
 	return mnew, Cpost0, Cpost, mnew[4:], F_m
 
 ########################################################################################################################################################################################

@@ -1,4 +1,5 @@
 import numpy as np
+import obspy
 import matplotlib.pyplot as plt
 from scipy.signal import spectrogram
 from src.main_inv_fig_functions import remove_median, get_auto_picks_full
@@ -58,17 +59,14 @@ def pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs):
     plt.show(block=True)
     return set_time
 
-# Download waveform data from IRIS PH5WS
-client = Client("http://service.iris.edu", service_mappings={"dataselect": "http://service.iris.edu/ph5ws/dataselect/1"})
-starttime = UTCDateTime("2019-03-04T01:19:48")
-endtime = UTCDateTime("2019-03-04T01:20:00")
-st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
-tr = st[0]
+waveform =  '/home/irseppi/Downloads/IM.IS02.01.CDF.2025.228.20'
+tr = obspy.read(waveform)[0]
+#tr.trim(tr.stats.starttime + 650, tr.stats.starttime + 900)
+tr.trim(tr.stats.starttime + 420, tr.stats.starttime + 540)
 data = tr.data
 torg = tr.times()
 fs = int(tr.stats.sampling_rate)
 title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
-
 # Compute spectrogram
 WIN_LEN = 1  # window length, in s
 NPER = int(WIN_LEN * fs)
@@ -88,7 +86,7 @@ while True:
 coords_array = np.array(coords)
 
 # Estimate initial model parameters from picked points
-c = 320 #11.1  # Speed of sound (m/s)
+c = 320  # Speed of sound (m/s)
 fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])  # Max/min frequency
 fm = (fa + fr) / 2
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
