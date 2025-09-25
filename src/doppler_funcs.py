@@ -870,7 +870,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 	Cpost = la.inv(Gm.T@la.inv(Cd)@Gm + la.inv(cprior))
 	Cpost0 = la.inv(Gm.T@la.inv(Cd0)@Gm + la.inv(cprior0))
 	F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
-	del G, G_hold, Gm, H, dm, gamma, fpred, m, n, Cd, Cd0, cprior, cprior0
+	del G, G_hold, Gm, H, dm, gamma, fpred, m, Cd, Cd0, cprior, cprior0
 	return mnew, Cpost0, Cpost, mnew[4:], F_m
 
 ########################################################################################################################################################################################

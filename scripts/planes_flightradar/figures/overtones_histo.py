@@ -252,7 +252,7 @@ if main_text == True:
             label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
             if i == 0:
-                ax[i, 2].set_title('Jet Aircrafts', fontsize=title_size, fontweight='bold')
+                ax[i, 2].set_title('Jet Aircraft', fontsize=title_size, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[i, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[i, 2].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
@@ -266,7 +266,7 @@ if main_text == True:
         elif equip in Turboprop:
             idx = i - len(jet)
             if i == 8:
-                ax[0, 1].set_title('Turboprop Aircrafts', fontsize=title_size, fontweight='bold')
+                ax[0, 1].set_title('Turboprop Aircraft', fontsize=title_size, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 1].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
@@ -293,7 +293,7 @@ if main_text == True:
         elif equip in piston:
             idx = i - len(jet) - len(Turboprop)
             if i == len(jet) + len(Turboprop):
-                ax[idx, 0].set_title('Piston Aircrafts', fontsize=title_size, fontweight='bold')
+                ax[idx, 0].set_title('Piston Aircraft', fontsize=title_size, fontweight='bold')
                 ax[idx, 0].text(0.99, 0.65, 'f\u2080 count: ' + str(len(peaks)), transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
                 ax[idx, 0].text(0.99, 0.55, '\u0394f\u2080: ' + str(round(med,1)) + ' Hz', transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             else:
@@ -374,7 +374,7 @@ if main_text == False:
         label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
             if i == 0:
-                ax[i, 2].set_title('Jet Aircrafts', fontsize=title_size, fontweight='bold')
+                ax[i, 2].set_title('Jet Aircraft', fontsize=title_size, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[i, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[i, 2].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
@@ -387,7 +387,7 @@ if main_text == False:
         elif equip in Turboprop:
             idx = i - len(jet)
             if i == len(jet):
-                ax[0, 1].set_title('Turboprop Aircrafts', fontsize=title_size, fontweight='bold')
+                ax[0, 1].set_title('Turboprop Aircraft', fontsize=title_size, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 1].text(0.99, 0.95, equip + ' [' + blade_count + ']', transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
@@ -410,7 +410,7 @@ if main_text == False:
         elif equip in piston:
             idx = i - len(jet) - len(Turboprop)
             if i == len(jet) + len(Turboprop):
-                ax[idx, 0].set_title('Piston Aircrafts', fontsize=title_size, fontweight='bold')
+                ax[idx, 0].set_title('Piston Aircraft', fontsize=title_size, fontweight='bold')
 
             ax[idx, 0].text(
                 0.99, 0.65, str(len(peaks)),

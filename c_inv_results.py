@@ -14,7 +14,7 @@ stations = seismo_data['Station']
 
 cc_array = []
 fig, axs = plt.subplots(1, 3, figsize=(15, 5), sharey=False, layout='constrained')
-folder_list = ['/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/','/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth/']
+folder_list = ['/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/','/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth_320/']
 c_array = []
 for jj,folder in enumerate(folder_list):
     for filename in os.listdir(folder):

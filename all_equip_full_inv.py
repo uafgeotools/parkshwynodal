@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import psutil
+import gc
 from datetime import datetime, timezone
 from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
@@ -166,7 +168,7 @@ for li in file_in.readlines():
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False, gt = True)
     qnum = "__"
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
@@ -178,3 +180,25 @@ for li in file_in.readlines():
         output.close()
     else:
         continue  # Skip saving results if rerun_fig is True
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage post: {mem:.2f} MB")
+    # Explicitly delete large variables and collect garbage to free memory
+    # Delete all variables and objects that may impact short-term memory
+    del data, fs, torg, title
+    del frequencies, times, Sxx, spec, MDF
+    del coords, coords_array
+    del m, covm0, covm, f0_array, F_m, arrive_time, BASE_DIR
+    del peaks, freqpeak, tobs, fobs, peaks_assos, mprior
+    del date, month, day, flight_num, closest_time, sta, equip
+    del alt,  dist_m, elev, height_m
+    del folder_spec, folder_spectrum, file_name
+    del start_time, c, closest_index, f0, tprime0, 
+    del v0, l, m0, sigma_prior, tf
+    del sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c
+    del corridor_width, qnum
+
+    gc.collect()
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage: {mem:.2f} MB")
