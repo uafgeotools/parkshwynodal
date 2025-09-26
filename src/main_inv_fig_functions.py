@@ -346,7 +346,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage 7: {mem:.2f} MB")
-    fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.pdf')
+    fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png', dpi=500)
 
     fig.clf()
     plt.close(fig)
@@ -421,7 +421,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
     plt.xlabel('Frequency (Hz)', fontsize=17)
     plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
 
-    fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.pdf')
+    fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.png', dpi=500)
     fig.clf()
     plt.close(fig)
     gc.collect()
