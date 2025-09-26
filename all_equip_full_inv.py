@@ -11,7 +11,7 @@ jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', '
 #paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
-rerun_fig = True #Flag rerun the figures without saving the inversion results = True
+rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
