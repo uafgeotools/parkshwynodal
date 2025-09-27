@@ -424,7 +424,8 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
     plt.xlim(0, int(fs/2))
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
-    plt.ylim(0,vmax*1.1)
+    plt.ylim(0, vmax*1.1)
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.xlabel('Frequency (Hz)', fontsize=17)
     plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
 
