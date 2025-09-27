@@ -7,7 +7,6 @@ from src.doppler_funcs import make_base_dir, invert_f, full_inversion, get_sta_e
 from src.main_inv_fig_functions import time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
 import psutil
 
-
 jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
 
 nrl = NRL()
@@ -27,7 +26,6 @@ for li in file_in.readlines():
     closest_time = float(text[5])
     sta = text[9]
     equip = text[10]
-    #for comp
     alt = float(text[6]) 
     speed_gt = float(text[7]) 
     dist_m = float(text[4])   # Distance in meters
