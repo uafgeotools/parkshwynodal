@@ -233,7 +233,8 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     print(f"Memory usage 3: {mem:.2f} MB")		
     ax2.set_xlabel('Time (s)')
     f0lab = []
-    ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
+    if gt == True:
+        ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
     ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
@@ -325,6 +326,8 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax1.tick_params(axis='both', which='major', labelsize=9)
     ax2.tick_params(axis='both', which='major', labelsize=9)
     ax3.tick_params(axis='both', which='major', labelsize=9)
+    cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    cbar.update_ticks()
     # Plot overlay
     spec2 = 10 * np.log10(MDF)
     middle_column2 = spec2[:, middle_index]
@@ -351,7 +354,11 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     fig.clf()
     plt.close(fig)
     gc.collect()
-    #del fig, f0lab, cax, ax1, ax2, ax3, ax4, spec2, middle_column2, ftry, frequencies, times, Sxx, spec, MDF
+    del fig, f0lab, cax, ax1, ax2, ax3, ax4, spec2, middle_column2, frequencies, times, spec, MDF
+    gc.collect()
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage: {mem:.2f} MB")
     return qnum
 
 ################################################################################################################################################################################################################################################################################################################################

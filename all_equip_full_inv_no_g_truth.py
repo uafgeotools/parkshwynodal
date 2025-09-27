@@ -12,7 +12,7 @@ jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', '
 
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
-rerun_fig = False #Flag rerun the figures without saving the inversion results = True
+rerun_fig = True #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
@@ -199,7 +199,7 @@ for li in file_in.readlines():
     print(speed_gt, distance_gt)
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False, gt = False)
     qnum = "__"
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 

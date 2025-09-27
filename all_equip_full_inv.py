@@ -31,6 +31,8 @@ for li in file_in.readlines():
     speed_mps = float(text[7])  # Speed in meters per second
     sta = text[9]
     equip = text[10]
+    if equip not in jet:
+        continue
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
 
@@ -41,10 +43,10 @@ for li in file_in.readlines():
         file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
         if not os.path.exists(file_name):
             continue
-    #DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.pdf'
-    #if os.path.exists(DIR):
-    #    if os.path.isfile(DIR):
-    #        continue
+    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.pdf'
+    if os.path.exists(DIR):
+        if os.path.isfile(DIR):
+            continue
 
     elev = get_sta_elevation(sta)
     c, Tc = get_speed_of_sound(alt, closest_time, x, y)
@@ -57,12 +59,6 @@ for li in file_in.readlines():
     try:
         data, fs, torg, title = load_waveform(sta, (tarrive-window))
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
-        # fs=500:
-        # nperseg = 500  # (segment length)
-        # noverlap = 500 * 0.9  # = 450 (overlap)
-        # time_per_segment = nperseg / fs = 500 / 500 = 1 second
-        # number_per_segments = int((len(data) - noverlap) // (nperseg - noverlap))
-        # percent_overlap = (noverlap / nperseg) * 100 = (450 / 500) * 100 = 90%
         spec, MDF = remove_median(Sxx)
     except Exception as e:
         if rerun_fig == True:
@@ -169,11 +165,16 @@ for li in file_in.readlines():
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False, gt = True)
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage spec 2: {mem:.2f} MB")
     qnum = "__"
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
-    
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage spec 2: {mem:.2f} MB")
     if rerun_fig == False:
         output = open('output/inv_results/' + equip + '_full_inv_results.csv', 'a')
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
@@ -197,6 +198,7 @@ for li in file_in.readlines():
     del v0, l, m0, sigma_prior, tf
     del sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c
     del corridor_width, qnum
+    del tarrive, ht, speed_mps
 
     gc.collect()
     process = psutil.Process(os.getpid())

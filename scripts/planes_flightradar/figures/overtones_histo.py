@@ -60,7 +60,7 @@ for eq in jet + Turboprop + piston + Heli:
         if equip == eq:
             count1 += 1
     # Define the directory where your files are located
-    file = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/' + eq + '_full_inv_results.csv' 
+    file = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth_320/' + eq + '_full_inv_results.txt' 
 
     with open(file, 'r') as f:
         # Read the data from the file and append it to the list

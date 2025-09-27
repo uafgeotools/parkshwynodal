@@ -389,7 +389,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             region=prof_region,
         )
 
-        fig.image(imagefile="N125KT.png",
+        fig.image(imagefile="input/N125KT.png",
         position="g65/1217+w2.7c+jCM",
         box=False,
         region=prof_region,
