@@ -320,7 +320,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax3.set_ylabel('Relative Amplitude (dB)')
 
     ax2.margins(x=0)
-    ax2.set_xlim(0, 240)
+    #ax2.set_xlim(0, 240)
     ax2.set_ylim(0, int(fs/2))
 
     ax1.tick_params(axis='both', which='major', labelsize=9)
@@ -349,7 +349,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage 7: {mem:.2f} MB")
-    fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png', dpi=500)
+    fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png', dpi=600)
 
     fig.clf()
     plt.close(fig)
