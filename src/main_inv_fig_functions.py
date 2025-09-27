@@ -245,8 +245,8 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         tprime = tprime0
         t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
         ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-        
-        ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30) 
+
+        ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30, zorder=10)
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage 4: {mem:.2f} MB")
@@ -415,7 +415,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
         else:
             ampp = np.max(tt)
             freqp = np.argmax(tt)+lower
-        plt.scatter(freqp, ampp, color='black', marker='x', s=100)
+        plt.scatter(freqp, ampp, color='black', marker='x', s=100, zorder=10)
         if isinstance(sta, int):
             plt.text(freqp - 5, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
         else:
