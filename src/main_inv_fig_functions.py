@@ -206,9 +206,9 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
         str: The user assigned quality number.
     """
     if gt:
-        type_inv = "GT"
+        type_inv = "[GT]"
     else:
-        type_inv = "NGT"
+        type_inv = "[NGT]"
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage 1: {mem:.2f} MB")
