@@ -44,9 +44,9 @@ for line in file_in.readlines():
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
-	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_pdf_ngt_320/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
-	#if Path(file_check).exists():
-	#	continue
+	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	if Path(file_check).exists():
+		continue
 	file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
 	#if file_check not in paper_figures:
 	#	continue
