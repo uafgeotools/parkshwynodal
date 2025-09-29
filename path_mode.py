@@ -22,7 +22,7 @@ seismo_utm_x, seismo_utm_y = zip(*seismo_utm)
 seismo_utm_x_km = [x / 1000 for x in seismo_utm_x]
 seismo_utm_y_km = [y / 1000 for y in seismo_utm_y]
 
-file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth_320/C185_full_inv_results.txt', 'r')
+file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/C185_full_inv_results.txt', 'r')
 
 x_airport, y_airport = utm_proj(-150.1072713049972,62.30091781635389)
 
