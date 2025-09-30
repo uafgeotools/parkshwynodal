@@ -185,7 +185,13 @@ for line in file_in.readlines():
 				deg = (90 -  np.degrees(direction)) % 360
 			else:
 				deg = heading
+
 	dist = np.sqrt(dist_m**2 + (alt_m-sta_elv)**2)
+	dist = round(dist,2)
+	alt = round((alt_m-sta_elv),2)
+	if alt_m == 0:
+		dist = "--"
+		alt = "--"
 	temp = Tc
 	sound = c
 	
@@ -193,7 +199,7 @@ for line in file_in.readlines():
 
 	_, backazimuth, _ = geod.inv(lon, lat, seismo_longitudes[index], seismo_latitudes[index])
 
-	text1 = 'Altitude: '+str(round((alt_m-sta_elv),2))+' m\nDistance: '+str(round(dist,2))+' m\n               at '+str(round(backazimuth,2))+ '\N{DEGREE SIGN}\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}'
+	text1 = 'Altitude: '+str(alt)+' m\nDistance: '+str(dist)+' m\n               at '+str(round(backazimuth,2))+ '\N{DEGREE SIGN}\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}'
 	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 	text3 = 'Callsign: ' +  str(call) + ' (' + str(equip) + ')'
 
