@@ -7,6 +7,8 @@ from scipy.signal import spectrogram
 from src.main_inv_fig_functions import remove_median
 from src.doppler_funcs import S
 from matplotlib.ticker import MaxNLocator
+from obspy.clients.fdsn import Client
+from obspy.core import UTCDateTime
 def calc_ft(times, tprime0, f0, v0, l, c):
     """
     Calculate the frequency at each given time using the model parameters.
@@ -621,14 +623,18 @@ def pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs):
     plt.show(block=True)
     return set_time
 
-waveform =  '/home/irseppi/Downloads/IM.IS02.01.CDF.2025.228.20'
-tr = obspy.read(waveform)[0]
-#tr.trim(tr.stats.starttime + 650, tr.stats.starttime + 900)
-tr.trim(tr.stats.starttime + 420, tr.stats.starttime + 540)
+
+# Download waveform data from IRIS PH5WS
+client = Client("http://service.iris.edu", service_mappings={"dataselect": "http://service.iris.edu/ph5ws/dataselect/1"})
+starttime = UTCDateTime("2019-03-04T01:17:22")
+endtime = UTCDateTime("2019-03-04T01:21:22")
+st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
+tr = st[0]
 data = tr.data
 torg = tr.times()
 fs = int(tr.stats.sampling_rate)
 title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
+
 # Compute spectrogram
 WIN_LEN = 1  # window length, in s
 NPER = int(WIN_LEN * fs)
