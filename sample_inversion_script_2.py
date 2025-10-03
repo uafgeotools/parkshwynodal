@@ -365,6 +365,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
     F_m = S(fpred, fobs, len(fobs), mnew, mprior, cprior, sigma)
     del G, G_hold, Gm, H, dm, gamma, fpred, m, Cd, Cd0, cprior, cprior0
     return mnew, Cpost0, Cpost, mnew[4:], F_m
+
 def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax):
     """
     Get automatic picks for all overtones.
