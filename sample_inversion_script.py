@@ -60,8 +60,8 @@ def pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs):
 
 # Download waveform data from IRIS PH5WS
 client = Client("http://service.iris.edu", service_mappings={"dataselect": "http://service.iris.edu/ph5ws/dataselect/1"})
-starttime = UTCDateTime("2019-03-04T01:19:48")
-endtime = UTCDateTime("2019-03-04T01:20:00")
+starttime = UTCDateTime("2019-03-04T01:17:22")
+endtime = UTCDateTime("2019-03-04T01:21:22")
 st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
 tr = st[0]
 data = tr.data
