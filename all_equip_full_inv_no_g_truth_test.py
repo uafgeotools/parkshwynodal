@@ -1,13 +1,14 @@
 import numpy as np
-from scipy.signal import find_peaks
+import os
+import gc
+from obspy.clients.nrl import NRL
+from scipy.signal import spectrogram, find_peaks
+from src.doppler_funcs import make_base_dir, invert_f, full_inversion, get_sta_elevation, load_waveform
+from src.main_inv_fig_functions import time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
+import psutil
 import numpy.linalg as la
-import matplotlib.pyplot as plt
-from scipy.signal import spectrogram
 from src.main_inv_fig_functions import remove_median
 from src.doppler_funcs import S
-from matplotlib.ticker import MaxNLocator
-from obspy.clients.fdsn import Client
-from obspy.core import UTCDateTime
 
 def calc_ft(tpr, tprime0, f0, v0, l, c):
     """
@@ -479,224 +480,231 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
 
     return tobs, fobs, peaks_assos, f0_array
 
+jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
 
+nrl = NRL()
+window = 120  # seconds before the arrival time to load the waveform
+rerun_fig = True #Flag rerun the figures without saving the inversion results = True
+mk_picks = False
 
-# Download waveform data from IRIS PH5WS
-client = Client("http://service.iris.edu", service_mappings={"dataselect": "http://service.iris.edu/ph5ws/dataselect/1"})
-starttime = UTCDateTime("2019-03-04T01:17:22")
-endtime = UTCDateTime("2019-03-04T01:21:22")
-st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
-tr = st[0]
-data = tr.data
-torg = tr.times()
-fs = int(tr.stats.sampling_rate)
-title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
+# Loop through each station in text file that we already know comes within 2km of the nodes
+file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 
-# Compute spectrogram
-WIN_LEN = 1  # window length, in s
-NPER = int(WIN_LEN * fs)
-frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=NPER, noverlap=int(NPER * .9), detrend='constant')
+for li in file_in.readlines():
+    text = li.split(',')
+    date = text[0]
+    month = int(date[4:6])
+    day = date[6:8]
+    flight_num = text[1]
+    closest_time = float(text[5])
+    sta = text[9]
+    equip = text[10]
+    alt = float(text[6]) 
+    speed_gt = float(text[7]) 
+    dist_m = float(text[4])   # Distance in meters
+    elev = get_sta_elevation(sta)
+    height_m = alt - elev
+    distance_gt = np.sqrt(dist_m**2 + (height_m)**2) 
 
-spec, MDF = remove_median(Sxx)  # Remove median for better visualization
-middle_index = len(times) // 2
-middle_column = spec[:, middle_index]
-vmin, vmax = 0, np.max(middle_column)
-coords = []
-
-coords.append((30.375000000000007, 137.44588744588745))
-coords.append((51.094758064516135, 136.0930735930736))
-coords.append((78.56048387096774, 136.0930735930736))
-coords.append((99.28024193548387, 130.6818181818182))
-coords.append((112.77217741935485, 115.12445887445887))
-coords.append((121.92741935483872, 109.71320346320346))
-coords.append((134.45564516129033, 102.94913419913419))
-coords.append((151.32056451612905, 101.59632034632034))
-coords.append((169.6310483870968, 100.24350649350649))
-coords.append((188.4233870967742, 100.24350649350649))
-coords_array = np.array(coords)
-
-peaks = []
-freqpeak = []
-
-freqpeak.append(112.77217741935485)
-peaks.append(115.80086580086581)
-freqpeak.append(113.25403225806451)
-peaks.append(136.7694805194805)
-freqpeak.append(113.25403225806451)
-peaks.append(154.35606060606062)
-freqpeak.append(113.25403225806451)
-peaks.append(174.6482683982684)
-freqpeak.append(114.21774193548387)
-peaks.append(190.2056277056277)
-freqpeak.append(116.62701612903226)
-peaks.append(226.05519480519484)
-freqpeak.append(113.25403225806451)
-peaks.append(57.62987012987013)
-freqpeak.append(112.29032258064518)
-peaks.append(96.18506493506493)
-
-# Estimate initial model parameters from picked points
-c = 320  # Speed of sound (m/s)
-fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])  # Max/min frequency
-fm = (fa + fr) / 2
-closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
-f0, tprime0 = coords_array[closest_index, 1], coords_array[closest_index, 0]
-t_hold, second_index = np.inf, None
-for i, t in enumerate(coords_array[:, 0]):
-    if t != tprime0 and abs(t - tprime0) < t_hold:
-        t_hold = abs(t - tprime0)
-        second_index = i
-#v0 = c * abs(fa - fr) / (2 * f0)  # Initial velocity estimate
-v0 = -c - c*np.sqrt(f0**2 + (fa-fr)**2) / (fa+fr)
-slope = (coords_array[closest_index, 1] - coords_array[second_index, 1]) / (coords_array[closest_index, 0] - coords_array[second_index, 0])
-l = -((f0 * v0 ** 2 / c) * (1 - (v0 / c) ** 2) ** (-3 / 2)) / slope  # Initial length estimate
-#l = tprime0 *c
-m0 = [f0, v0, l, tprime0, c]
-sigma_prior = [40, 1, 1, 200, 1]  # Initial prior uncertainties
-
-# First inversion to refine model - USING CORRECTED TIMING
-m, _, _, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=3)
-m0[0], m0[3] = m[0], m[3]
-
-# Second inversion with wider priors
-sigma_prior = [150, 100, 10000, 200, 100]
-m, _, _, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=3)
-v0, l, tprime0, c = m[1], m[2], m[3], m[4]
-mprior = [v0, l, tprime0, c]
-
-# Automatically associate picked peaks with overtone curves - USING CORRECTED TIMING
-corridor_width = 10 if len(peaks) <= 15 else 5
-tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax)
-mprior += [float(f) for f in f0_array]
-
-start_time = 23.14717741935484
-end_time = 222.15322580645164
-
-# Filter picks to only those within the selected time window
-ftobs, ffobs, peak_ass = [], [], []
-cum = 0
-for p in range(len(f0_array)):
-    count = 0
-    for j in range(cum, cum + peaks_assos[p]):
-        if start_time <= tobs[j] <= end_time:
-            ftobs.append(tobs[j])
-            ffobs.append(fobs[j])
-            count += 1
-    cum += peaks_assos[p]
-    peak_ass.append(count)
-peaks_assos = peak_ass
-tobs, fobs = ftobs, ffobs
-
-# Final inversion using filtered picks - USING CORRECTED TIMING
-sigma_prior = [10, 125, 15000, 30, 100] if abs(slope) < 1 else [10, 30, 500, 30, 100]
-m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-v0, l, tprime0, c = m[0], m[1], m[2], m[3]
-Cpost, Cpost0 = np.sqrt(np.diag(covm)), np.sqrt(np.diag(covm0))
-
-# Plot results
-closest_index = np.argmin(np.abs(tprime0 - times))
-arrive_time = np.clip(spec[:, closest_index], 0, None)
-vmin, vmax = np.min(arrive_time), np.max(arrive_time)
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=False, figsize=(8, 10))
-
-# Plot raw waveform
-ax1.plot(torg, data, 'k', linewidth=0.5)
-ax1.set_title(title)
-ax1.margins(x=0)
-ax1.set_position([0.125, 0.6, 0.775, 0.3])
-ax1.set_ylabel('Counts')
-
-# Plot spectrogram and inversion results
-cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-ax2.set_xlabel('Time (s)')
-ax2.axvline(x=tprime0, c='#377eb8', ls='--', linewidth=0.7, label=f"t\u2080' = {tprime0:.2f} s")
-f0lab = sorted(f0_array)
-
-# CORRECTED: Use updated calc_ft for plotting
-for f0 in f0lab:
-    ft = calc_ft(times, tprime0, f0, v0, l, c)  # Uses corrected timing
-    ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
-    
-    ax2.scatter(tprime0, f0, color='black', marker='x', s=30)
-    
-fss = 'x-small'
-
-# Estimate overtone frequency spacing and uncertainty
-if len(f0lab) > 1:
-    f_range = []
-    NTRY = 1000
-    for _ in range(NTRY):
-        ftry = [f0_array[i - 4] + np.random.uniform(-Cpost0[i], Cpost0[i]) for i in range(4, len(Cpost0))]
-        ftry = np.sort(ftry)
-        f1 = [ftry[g] - ftry[g - 1] for g in range(1, len(ftry))]
-        f_range.append(np.nanmedian(f1))
-    med_df = np.nanmedian(f_range)
-    mad_df = np.nanmedian(np.abs(f_range - med_df))
-else:
-    med_df = mad_df = "NaN"
-
-# Format overtone frequencies for display
-if len(f0lab) > 10:
-    f0lab_lines = [', '.join([f"{f:.2f}" for f in f0lab[i:i + 10]]) for i in range(0, len(f0lab), 10)]
-    f0lab_str = '[%s]' % (',\n'.join(f0lab_lines))
-else:
-    f0lab_str = '[' + ', '.join([f"{f:.2f}" for f in f0lab]) + ']'
-
-# Compose plot title with inversion results and uncertainties
-if isinstance(F_m, str):
-    misfit_str = f"\n[{F_m}]"
-else:
-    misfit_str = f"\nMisfit: {F_m:.4f}"
-df_str = f", df\u2080 = {med_df:.2f} \u00B1 {mad_df:.2f} Hz" if med_df != "NaN" else ""
-ax2.set_title(
-    f"t\u2080'= {tprime0:.2f} \u00B1 {Cpost0[2]:.2f} s, v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
-    f"c = {c:.2f} \u00B1 {Cpost0[3]:.2f} m/s, l = {l:.2f} \u00B1 {Cpost0[1]:.2f} m, \n"
-    f"f\u2080 = {f0lab_str} \u00B1 {np.median(Cpost0[3:]):.2f} Hz{df_str}{misfit_str}",
-    fontsize=fss
-)
-ax2.legend(loc='upper right', fontsize='small')
-ax2.set_ylabel('Frequency (Hz)')
-ax2.margins(x=0)
-
-
-ax2.set_ylim(0, int(fs / 2))
-ax1.tick_params(axis='both', which='major', labelsize=9)
-ax2.tick_params(axis='both', which='major', labelsize=9)
-ax3.tick_params(axis='both', which='major', labelsize=9)
-
-
-vmax_freq = np.max(arrive_time)
-ax3.grid()
-
-ax3.plot(frequencies, spec[:, closest_index], c='#377eb8')
-
-for pp in range(len(f0_array)):
-    f0 = f0_array[pp]
-    if fs / 2 < f0:
+    folder_spec = equip + '_spec_c'
+    folder_spectrum = equip + '_spectrum_c'
+    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_test_check/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    if os.path.exists(DIR):
         continue
-    tprime = tprime0
-    t = ((tprime - tprime0) - np.sqrt((tprime - tprime0) ** 2 - (1 - v0 ** 2 / c ** 2) * ((tprime - tprime0) ** 2 - l ** 2 / c ** 2))) / (1 - v0 ** 2 / c ** 2)
-    ft0p = f0 / (1 + (v0 / c) * (v0 * t) / (np.sqrt(l ** 2 + (v0 * t) ** 2)))
-    if np.isnan(ft0p):
-        continue
-    if ft0p > 250:
+    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
+    if not os.path.exists(file_name):
         continue
 
-    upper = int(ft0p + 10)
-    lower = int(ft0p - 10)
-    tt = spec[lower:upper, closest_index]
-    if upper > 250 or lower < 0:
-        freqp = ft0p
-        ampp = np.interp(ft0p, frequencies, arrive_time)
     else:
-        ampp = np.max(tt)
-        freqp = np.argmax(tt) + lower
-    ax3.scatter(freqp, ampp, color='black', marker='x', s=100, zorder=10)
-    ax3.text(freqp - 1, ampp + 0.8, f"{freqp:.2f}", fontsize=12, fontweight='bold')
+        coords = []
+        with open(file_name, 'r') as file:
+            for line in file:
+                pick_data = line.split(',')
+                coords.append((float(pick_data[0]), float(pick_data[1])))
+            if len(pick_data) == 4:
+                start_time = float(pick_data[2])
+            else:
+                file.close() 
+                continue
 
-ax3.set_xlim(0, int(fs / 2))
-ax3.set_xticks(np.arange(0, int(fs / 2) + 1, 20))
+        file.close()  
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage load: {mem:.2f} MB")
+    coords_array = np.array(coords)
+    if len(coords_array) == 0:
+        continue
 
-ax3.set_ylim(0, vmax_freq * 1.1)
+    elif equip == 'C185':
+        start_time = start_time - 120
 
-plt.show()
+    c = 320 # Default speed of sound, average of dataset, m/s
+    fa = np.max(coords_array[:, 1]) 
+    fr = np.min(coords_array[:, 1])
+    #insert method to get initial model here
+    fm = (fa+fr)/2 
+
+    #find the closest coordinate to f0
+    closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
+    f0 = coords_array[closest_index, 1] 
+    tprime0 = coords_array[closest_index, 0]  
+    t_hold = np.inf
+    for i,t in enumerate(coords_array[:, 0]):
+        if t != tprime0:
+            if (t - tprime0) < t_hold:
+                t_hold = abs(t - tprime0)
+                second_index = i
+
+    v0 = c*abs(fa-fr) / (2 * f0)
+    v0 = -c + c*np.sqrt(f0**2 + (fa-fr)**2) / (fa+fr)
+    slope = (coords_array[closest_index,1] - coords_array[second_index,1]) / (coords_array[closest_index,0] - coords_array[second_index,0])
+    l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope 
+    m0 = [f0, v0, l, tprime0, c]
+
+    data, fs, torg, title = load_waveform(sta, start_time)
+    frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
+    if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
+        continue
+    spec, MDF = remove_median(Sxx)
+    print('Initial model:', m0)
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage load: {mem:.2f} MB")
+
+    middle_index =  len(times) // 2
+    middle_column = spec[:, middle_index]
+    vmin = 0  
+    vmax = np.max(middle_column) 
+
+        
+    m0 = [f0, v0, l, tprime0, c]
+    sigma_prior = [40, 1, 1, 200, 1]
+    m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=3)
+    m0[0] = m[0]
+    m0[3] = m[3]
+
+    tf = np.arange(0, 240, 1)
+
+    sigma_f0 = 150
+    sigma_v0 = 100
+    sigma_l = 10000
+    sigma_tprime0 = 200
+    sigma_c = 100
+
+
+    m0 = [f0, v0, l, tprime0, c]
+    sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c]
+    m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c], coords_array, num_iterations=3)
+    v0 = m[1]
+    l = m[2]
+    tprime0 = m[3]
+    c = m[4]
+    mprior = []
+    mprior.append(v0)
+    mprior.append(l)
+    mprior.append(tprime0)
+    mprior.append(c)
+
+    mprior[2] = tprime0
+    mprior[3] = c
+
+    output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
+    if not os.path.exists(output2):
+        continue
+    else:
+        peaks = []
+        freqpeak = []
+        with open(output2, 'r') as file:
+            for line in file:
+                pick_data = line.split(',')
+                peaks.append(float(pick_data[1]))
+                freqpeak.append(float(pick_data[0]))
+        file.close()  
+    if len(peaks) <= 15:
+        corridor_width = 10
+    else:
+        corridor_width = 5
+    try:
+        tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax)
+    except:
+        continue
+
+    if len(fobs) == 0:
+        continue
+
+    for o in range(len(f0_array)):
+        mprior.append(float(f0_array[o]))
+
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=mk_picks)
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage: {mem:.2f} MB")
+    if abs(slope) < 1:
+        sigma_prior = [10, 125, 15000, 30, 100]
+    else:
+        sigma_prior = [10, 30, 500, 30, 100]
+    if equip in jet:
+        sigma_prior = [100, 300, 50000, 100, 100]
+
+    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage: {mem:.2f} MB")
+    v0 = m[0]
+    l = m[1]
+    tprime0 = m[2]
+    c = m[3]
+
+    covm = np.sqrt(np.diag(covm))
+    covm0 = np.sqrt(np.diag(covm0))
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage pre: {mem:.2f} MB")
+    closest_index = np.argmin(np.abs(tprime0 - times))
+    arrive_time = spec[:,closest_index]
+    for i in range(len(arrive_time)):
+        if arrive_time[i] < 0:
+            arrive_time[i] = 0
+    print(slope)
+    print(speed_gt, distance_gt)
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_test_check/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    make_base_dir(BASE_DIR)
+    qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False, gt = False)
+    qnum = "__"
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage spec 1: {mem:.2f} MB")
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_test_check/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    make_base_dir(BASE_DIR)
+    plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage spec 2: {mem:.2f} MB")
+    if rerun_fig == False:
+        output = open('output/inv_results_no_g_truth_test_check/' + equip + '_full_inv_results.csv', 'a')
+        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
+        output.close()
+    else:
+        continue  # Skip saving results if rerun_fig is True
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage post: {mem:.2f} MB")
+    # Explicitly delete large variables and collect garbage to free memory
+    # Delete all variables and objects that may impact short-term memory
+    del data, fs, torg, title
+    del frequencies, times, Sxx, spec, MDF
+    del coords, coords_array
+    del m, covm0, covm, f0_array, F_m, arrive_time, BASE_DIR
+    del peaks, freqpeak, tobs, fobs, peaks_assos, mprior
+    del date, month, day, flight_num, closest_time, sta, equip
+    del alt, speed_gt, dist_m, elev, height_m, distance_gt
+    del folder_spec, folder_spectrum, DIR, file_name
+    del start_time, c, fa, fr, fm, closest_index, f0, tprime0, t_hold, second_index
+    del v0, slope, l, m0, sigma_prior, tf
+    del sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c
+    del output2, corridor_width, qnum
+
+    gc.collect()
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 ** 2) 
+    print(f"Memory usage: {mem:.2f} MB")
