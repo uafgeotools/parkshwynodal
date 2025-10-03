@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.signal import find_peaks
 import numpy.linalg as la
-import obspy
 import matplotlib.pyplot as plt
 from scipy.signal import spectrogram
 from src.main_inv_fig_functions import remove_median
@@ -9,12 +8,13 @@ from src.doppler_funcs import S
 from matplotlib.ticker import MaxNLocator
 from obspy.clients.fdsn import Client
 from obspy.core import UTCDateTime
-def calc_ft(times, tprime0, f0, v0, l, c):
+
+def calc_ft(tpr, tprime0, f0, v0, l, c):
     """
     Calculate the frequency at each given time using the model parameters.
 
     Args:
-        times (list): List of time values.
+        tpr (list): List of time values.
         tprime0 (float): The time at which the central frequency of the overtones occur, 
                         when the aircraft is at the closest approach to the station.
         f0 (float): Fundamental frequency produced by the aircraft.
@@ -26,101 +26,55 @@ def calc_ft(times, tprime0, f0, v0, l, c):
         list: List of calculated frequency values.
     """
     ft = []
-    beta = v0 / c
-    beta2 = beta * beta
-    
-    for tprime in times:
-        delta = tprime - tprime0
-        
-        # CORRECTED: t=0 at closest approach
-        numerator = delta + l/c - np.sqrt(beta2 * delta**2 + beta2 * (2*l/c) * delta + (l/c)**2)
-        denominator = 1 - beta2
-        t = numerator / denominator
-        
-        # Geometry now makes sense: v0*t is displacement from closest approach
-        ft0p = f0 / (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
-                                
-        ft.append(ft0p)
+    times = calc_t(v0,l,c,tprime0,tpr)
+    for t in times:
+        f = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+        ft.append(f)
     return ft
-def df(f0, v0, l, tp0, tp, c):   
+
+def calc_t(v0,l,c,tprime0,tpr):
+	t_array = []	
+	for tprime in tpr:
+		t = ((tprime - tprime0 + l/c)- np.sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2)
+		t_array.append(t)
+	return t_array
+
+def calc_f0(tprime, tprime0, ft0p, v0, l, c):
+    """
+    Calculate the fundamental frequency produced by an aircraft (where the wave is generated) given the model parameters.
+
+    Parameters:
+    tprime (float): Time at which a frequency (ft0p) is observed on the station.
+    tprime0 (float): The time at which the central frequency of the overtones occur.
+    ft0p (float): Frequency recorded on the seismometer, picked from the overtone doppler curve.
+    v0 (float): Velocity of the aircraft.
+    l (float): Distance between the station and the aircraft at the closest approach.
+    c (float): Speed of sound.
+
+    Returns:
+    f0 (float): Fundamental frequency produced by the aircraft. (Frequency at the source.) 
+    """
+    t = calc_t(v0,l,c,tprime0,[tprime])[0]
+    
+    # Geometry now makes sense
+    f0 = ft0p * (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
+
+    return f0
+
+def df(f0, v0, l, tprime0, tprime, c):   
     """
     Calculate the derivatives of f with respect to f0, v0, l, tprime0 and c.
     Uses CORRECTED timing that ensures t=0 at closest approach.
     """
-    
-    beta = v0 / c
-    beta2 = beta * beta
-    delta = tp - tp0
-    lc = l / c
-    
-    # Helper terms
-    A = beta2 * delta**2 + beta2 * 2 * lc * delta + lc**2
-    sqrtA = np.sqrt(A)
-    
-    # CORRECTED emitter time
-    t = (delta + lc - sqrtA) / (1 - beta2)
-    
-    # Geometry terms
-    v0t = v0 * t
-    R = np.sqrt(l**2 + v0t**2)
-    cos_theta = v0t / R
-    
-    # The frequency function
-    F = f0 / (1 + beta * cos_theta)
-    
-    # ===== PARTIAL DERIVATIVES =====
-    
-    # 1. Derivative with respect to f0
-    f_derivef0 = 1 / (1 + beta * cos_theta)
-    
-    # 2. Derivative with respect to v0
-    # Need ∂t/∂v0, ∂cos_theta/∂v0
-    dAdbeta = 2 * beta * delta**2 + 2 * beta * 2 * lc * delta
-    dbeta_dv0 = 1 / c
-    
-    dsqrtA_dv0 = (0.5 / sqrtA) * dAdbeta * dbeta_dv0
-    dt_dv0 = (-dsqrtA_dv0 - 2 * beta * t * (1 - beta2) / (1 - beta2)**2)
-    
-    dcos_theta_dv0 = (t + v0 * dt_dv0) / R - (v0t * (v0 * dt_dv0 + v0t * v0 / R**2)) / R**2
-    dF_dv0 = -f0 * (dbeta_dv0 * cos_theta + beta * dcos_theta_dv0) / (1 + beta * cos_theta)**2
-    
-    f_derivev0 = dF_dv0
-    
-    # 3. Derivative with respect to l
-    dA_dl = beta2 * 2 * delta / c + 2 * lc / c
-    dsqrtA_dl = (0.5 / sqrtA) * dA_dl
-    dt_dl = (1/c - dsqrtA_dl) / (1 - beta2)
-    
-    dcos_theta_dl = (v0 * dt_dl) / R - (v0t * (l + v0t * v0 * dt_dl / R)) / R**2
-    dF_dl = -f0 * beta * dcos_theta_dl / (1 + beta * cos_theta)**2
-    
-    f_derivel = dF_dl
-    
-    # 4. Derivative with respect to tp0
-    dA_dtp0 = -beta2 * 2 * delta - beta2 * 2 * lc
-    dsqrtA_dtp0 = (0.5 / sqrtA) * dA_dtp0
-    dt_dtp0 = (-1 - dsqrtA_dtp0) / (1 - beta2)
-    
-    dcos_theta_dtp0 = (v0 * dt_dtp0) / R - (v0t * (v0t * v0 * dt_dtp0 / R)) / R**2
-    dF_dtp0 = -f0 * beta * dcos_theta_dtp0 / (1 + beta * cos_theta)**2
-    
-    f_derivetprime0 = dF_dtp0
-    
-    # 5. Derivative with respect to c
-    dbeta_dc = -v0 / c**2
-    dA_dc = (2 * beta * dbeta_dc * delta**2 + 
-             2 * beta * dbeta_dc * 2 * lc * delta +
-             beta2 * 2 * delta * (-l/c**2) +
-             -2 * lc * l / c**2)
-    dsqrtA_dc = (0.5 / sqrtA) * dA_dc
-    dt_dc = (-l/c**2 - dsqrtA_dc + 2 * beta * dbeta_dc * t * (1 - beta2)) / (1 - beta2)**2
-    
-    dcos_theta_dc = (v0 * dt_dc) / R - (v0t * (v0t * v0 * dt_dc / R)) / R**2
-    dF_dc = -f0 * (dbeta_dc * cos_theta + beta * dcos_theta_dc) / (1 + beta * cos_theta)**2
-    
-    f_derivec = dF_dc
+
+    f_derivef0 = 1/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))
+    f_derivev0 = f0*(-v0**2*(-v0*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2 + v0**3*((tprime - tprime0 + l/c)**2 - l**2/c**2)*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**2*(1 - v0**2/c**2)**2*np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2)) - 2*v0**3*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(c**2*(1 - v0**2/c**2)**3))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - 2*v0*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) + v0**3*((tprime - tprime0 + l/c)**2 - l**2/c**2)/(c**3*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)*np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2)) - 2*v0**3*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**3*(1 - v0**2/c**2)**2*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivel = f0*(-v0**2*(-l - v0**2*(-2*(-(1 - v0**2/c**2)*(2*(tprime - tprime0 + l/c)/c - 2*l/c**2)/2 + (tprime - tprime0 + l/c)/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + 2/c)*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(2*(1 - v0**2/c**2)**2))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - v0**2*(-(-(1 - v0**2/c**2)*(2*(tprime - tprime0 + l/c)/c - 2*l/c**2)/2 + (tprime - tprime0 + l/c)/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + 1/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivetprime0 = f0*(v0**4*(-2 - 2*(-tprime + tprime0 - (1 - v0**2/c**2)*(-2*tprime + 2*tprime0 - 2*l/c)/2 - l/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(2*c*(1 - v0**2/c**2)**3*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - v0**2*(-1 - (-tprime + tprime0 - (1 - v0**2/c**2)*(-2*tprime + 2*tprime0 - 2*l/c)/2 - l/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2))/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivec = f0*(-v0**2*(-(-(1 - v0**2/c**2)*(-2*l*(tprime - tprime0 + l/c)/c**2 + 2*l**2/c**3)/2 - l*(tprime - tprime0 + l/c)/c**2 - v0**2*((tprime - tprime0 + l/c)**2 - l**2/c**2)/c**3)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) - l/c**2)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) - v0**2*(-v0**2*(-2*(-(1 - v0**2/c**2)*(-2*l*(tprime - tprime0 + l/c)/c**2 + 2*l**2/c**3)/2 - l*(tprime - tprime0 + l/c)/c**2 - v0**2*((tprime - tprime0 + l/c)**2 - l**2/c**2)/c**3)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) - 2*l/c**2)*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(2*(1 - v0**2/c**2)**2) + 2*v0**4*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(c**3*(1 - v0**2/c**2)**3))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**2*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) + 2*v0**4*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**4*(1 - v0**2/c**2)**2*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
     
     return f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec
+
 def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, off_diagonal = False):
     """
     Inverts the function f using the given initial parameters and data array.
@@ -203,20 +157,10 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
         # CORRECTED: Use new timing and derivatives
         for i in range(0,dw):
             tprime = tobs[i]
-            
-            # CORRECTED timing calculation
-            beta = v0 / c
-            beta2 = beta * beta
-            delta = tprime - tprime0
-            lc = l / c
-            
-            A = beta2 * delta**2 + beta2 * 2 * lc * delta + lc**2
-            sqrtA = np.sqrt(A)
-            t = (delta + lc - sqrtA) / (1 - beta2)
-            
+
             # CORRECTED frequency calculation
-            ft0p = f0 / (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
-            
+            ft0p = calc_ft([tprime], tprime0, f0, v0, l, c)[0]
+
             # CORRECTED derivatives
             f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0, v0, l, tprime0, tprime, c)
             
@@ -358,20 +302,10 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
             
             for j in range(cum,cum+peaks_assos[p]):
                 tprime = tobs[j]
-                
-                # CORRECTED timing calculation
-                beta = v0 / c
-                beta2 = beta * beta
-                delta = tprime - tprime0
-                lc = l / c
-                
-                A = beta2 * delta**2 + beta2 * 2 * lc * delta + lc**2
-                sqrtA = np.sqrt(A)
-                t = (delta + lc - sqrtA) / (1 - beta2)
-                
+
                 # CORRECTED frequency calculation
-                ft0p = f0 / (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
-                
+                ft0p = calc_ft([tprime], tprime0, f0, v0, l, c)[0]
+
                 # CORRECTED derivatives
                 f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0, v0, l, tprime0, tprime, c)
                 
@@ -544,84 +478,6 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
 
     return tobs, fobs, peaks_assos, f0_array
 
-def calc_f0(tprime, tprime0, ft0p, v0, l, c):
-    """
-    Calculate the fundamental frequency produced by an aircraft (where the wave is generated) given the model parameters.
-
-    Parameters:
-    tprime (float): Time at which a frequency (ft0p) is observed on the station.
-    tprime0 (float): The time at which the central frequency of the overtones occur.
-    ft0p (float): Frequency recorded on the seismometer, picked from the overtone doppler curve.
-    v0 (float): Velocity of the aircraft.
-    l (float): Distance between the station and the aircraft at the closest approach.
-    c (float): Speed of sound.
-
-    Returns:
-    f0 (float): Fundamental frequency produced by the aircraft. (Frequency at the source.) 
-    """
-    beta = v0 / c
-    beta2 = beta * beta
-    delta = tprime - tprime0
-    
-    # CORRECTED: t=0 at closest approach
-    numerator = delta + l/c - np.sqrt(beta2 * delta**2 + beta2 * (2*l/c) * delta + (l/c)**2)
-    denominator = 1 - beta2
-    t = numerator / denominator
-    
-    # Geometry now makes sense
-    f0 = ft0p * (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
-
-    return f0
-# Interactive picking of points on spectrogram for overtone curve
-def pick_points_on_spectrogram(times, frequencies, spec, vmin, vmax, prompt, axvline=None):
-    coords = []
-    plt.figure()
-    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-    if axvline is not None:
-        plt.axvline(x=axvline, c='#377eb8', ls='--')
-    def onclick(event):
-        if event.xdata is not None and event.ydata is not None:
-            coords.append((event.xdata, event.ydata))
-            plt.scatter(event.xdata, event.ydata, color='black', marker='x')
-            plt.draw()
-            print('Clicked:', event.xdata, event.ydata)
-    plt.gcf().canvas.mpl_connect('button_press_event', onclick)
-    plt.show(block=True)
-    return coords
-
-# Interactive picking of single points (overtone peaks)
-def pick_single_points(times, frequencies, spec, vmin, vmax, prompt, axvline=None):
-    peaks, freqpeak = [], []
-    plt.figure()
-    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-    if axvline is not None:
-        plt.axvline(x=axvline, c='#377eb8', ls='--')
-    def onclick(event):
-        if event.xdata is not None and event.ydata is not None:
-            peaks.append(event.ydata)
-            freqpeak.append(event.xdata)
-            plt.scatter(event.xdata, event.ydata, color='black', marker='x')
-            plt.draw()
-            print('Clicked:', event.xdata, event.ydata)
-    plt.gcf().canvas.mpl_connect('button_press_event', onclick)
-    plt.show(block=True)
-    return peaks, freqpeak
-
-# Interactive picking of time window for inversion
-def pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs):
-    set_time = []
-    plt.figure()
-    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-    plt.scatter(tobs, fobs, color='black', marker='x')
-    def onclick(event):
-        if event.xdata is not None:
-            set_time.append(event.xdata)
-            plt.scatter(event.xdata, event.ydata, color='red', marker='x')
-            plt.draw()
-            print('Clicked:', event.xdata, event.ydata)
-    plt.gcf().canvas.mpl_connect('button_press_event', onclick)
-    plt.show(block=True)
-    return set_time
 
 
 # Download waveform data from IRIS PH5WS
@@ -644,14 +500,39 @@ spec, MDF = remove_median(Sxx)  # Remove median for better visualization
 middle_index = len(times) // 2
 middle_column = spec[:, middle_index]
 vmin, vmax = 0, np.max(middle_column)
+coords = []
 
-# User picks overtone curve points
-print("Please pick the points on the spectrogram that correspond to the primary overtone of the doppler curves.")
-while True:
-    coords = pick_points_on_spectrogram(times, frequencies, spec, vmin, vmax, "Pick overtone curve points")
-    if input("Do you want to repick your points? (y or n)").lower() != 'y':
-        break
+coords.append((30.375000000000007, 137.44588744588745))
+coords.append((51.094758064516135, 136.0930735930736))
+coords.append((78.56048387096774, 136.0930735930736))
+coords.append((99.28024193548387, 130.6818181818182))
+coords.append((112.77217741935485, 115.12445887445887))
+coords.append((121.92741935483872, 109.71320346320346))
+coords.append((134.45564516129033, 102.94913419913419))
+coords.append((151.32056451612905, 101.59632034632034))
+coords.append((169.6310483870968, 100.24350649350649))
+coords.append((188.4233870967742, 100.24350649350649))
 coords_array = np.array(coords)
+
+peaks = []
+freqpeak = []
+
+freqpeak.append(112.77217741935485)
+peaks.append(115.80086580086581)
+freqpeak.append(113.25403225806451)
+peaks.append(136.7694805194805)
+freqpeak.append(113.25403225806451)
+peaks.append(154.35606060606062)
+freqpeak.append(113.25403225806451)
+peaks.append(174.6482683982684)
+freqpeak.append(114.21774193548387)
+peaks.append(190.2056277056277)
+freqpeak.append(116.62701612903226)
+peaks.append(226.05519480519484)
+freqpeak.append(113.25403225806451)
+peaks.append(57.62987012987013)
+freqpeak.append(112.29032258064518)
+peaks.append(96.18506493506493)
 
 # Estimate initial model parameters from picked points
 c = 320  # Speed of sound (m/s)
@@ -681,25 +562,13 @@ m, _, _, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=3)
 v0, l, tprime0, c = m[1], m[2], m[3], m[4]
 mprior = [v0, l, tprime0, c]
 
-# User picks overtone peaks
-print("Please pick one point on each overtone, it does not have to be at the center of the doppler.")
-while True:
-    peaks, freqpeak = pick_single_points(times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=tprime0)
-    if input("Do you want to repick your points? (y or n)").lower() != 'y':
-        break
-
 # Automatically associate picked peaks with overtone curves - USING CORRECTED TIMING
 corridor_width = 10 if len(peaks) <= 15 else 5
 tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax)
 mprior += [float(f) for f in f0_array]
 
-# User picks time window for inversion
-print('Please pick two points on the spectrogram that correspond to the start and end of the time window you want pull data from in the inversion.')
-while True:
-    set_time = pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs)
-    if input("Do you want to repick your points? (y or n)").lower() != 'y':
-        break
-start_time, end_time = set_time[:2]
+start_time = 23.14717741935484
+end_time = 222.15322580645164
 
 # Filter picks to only those within the selected time window
 ftobs, ffobs, peak_ass = [], [], []
@@ -726,7 +595,7 @@ Cpost, Cpost0 = np.sqrt(np.diag(covm)), np.sqrt(np.diag(covm0))
 closest_index = np.argmin(np.abs(tprime0 - times))
 arrive_time = np.clip(spec[:, closest_index], 0, None)
 vmin, vmax = np.min(arrive_time), np.max(arrive_time)
-fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8, 6))
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=False, figsize=(8, 10))
 
 # Plot raw waveform
 ax1.plot(torg, data, 'k', linewidth=0.5)
@@ -746,19 +615,7 @@ for f0 in f0lab:
     ft = calc_ft(times, tprime0, f0, v0, l, c)  # Uses corrected timing
     ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
     
-    # CORRECTED: Calculate frequency at tprime0 using proper timing
-    beta = v0 / c
-    beta2 = beta * beta
-    delta = tprime0 - tprime0  # = 0
-    lc = l / c
-    
-    A = beta2 * delta**2 + beta2 * 2 * lc * delta + lc**2
-    sqrtA = np.sqrt(A)
-    t = (delta + lc - sqrtA) / (1 - beta2)  # This should be 0 at closest approach
-    
-    # CORRECTED: Frequency calculation
-    ft0p = f0 / (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
-    ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30)
+    ax2.scatter(tprime0, f0, color='black', marker='x', s=30)
     
 fss = 'x-small'
 
@@ -799,28 +656,45 @@ ax2.legend(loc='upper right', fontsize='small')
 ax2.set_ylabel('Frequency (Hz)')
 ax2.margins(x=0)
 
-# Add colorbar for spectrogram
-ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
-cbar = plt.colorbar(mappable=cax, cax=ax3)
-cbar.locator = MaxNLocator(integer=True)
-cbar.update_ticks()
-ax3.set_ylabel('Relative Amplitude (dB)')
-ax2.margins(x=0)
-#ax2.set_xlim(0, 240)
+
 ax2.set_ylim(0, int(fs / 2))
 ax1.tick_params(axis='both', which='major', labelsize=9)
 ax2.tick_params(axis='both', which='major', labelsize=9)
 ax3.tick_params(axis='both', which='major', labelsize=9)
 
-# Overlay median-detrended frequency (MDF) for reference
-spec2 = 10 * np.log10(MDF)
-middle_column2 = spec2[:, middle_index]
-vmin2, vmax2 = np.min(middle_column2), np.max(middle_column2)
-ax4 = fig.add_axes([0.125, 0.11, 0.07, 0.35], sharey=ax2)
-ax4.plot(middle_column2, frequencies, c='#ff7f00')
-ax4.set_ylim(0, int(fs / 2))
-ax4.set_xlim(vmax2 * 1.1, vmin2)
-ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
-ax4.grid(axis='y')
+
+vmax_freq = np.max(arrive_time)
+ax3.grid()
+
+ax3.plot(frequencies, spec[:, closest_index], c='#377eb8')
+
+for pp in range(len(f0_array)):
+    f0 = f0_array[pp]
+    if fs / 2 < f0:
+        continue
+    tprime = tprime0
+    t = ((tprime - tprime0) - np.sqrt((tprime - tprime0) ** 2 - (1 - v0 ** 2 / c ** 2) * ((tprime - tprime0) ** 2 - l ** 2 / c ** 2))) / (1 - v0 ** 2 / c ** 2)
+    ft0p = f0 / (1 + (v0 / c) * (v0 * t) / (np.sqrt(l ** 2 + (v0 * t) ** 2)))
+    if np.isnan(ft0p):
+        continue
+    if ft0p > 250:
+        continue
+
+    upper = int(ft0p + 10)
+    lower = int(ft0p - 10)
+    tt = spec[lower:upper, closest_index]
+    if upper > 250 or lower < 0:
+        freqp = ft0p
+        ampp = np.interp(ft0p, frequencies, arrive_time)
+    else:
+        ampp = np.max(tt)
+        freqp = np.argmax(tt) + lower
+    ax3.scatter(freqp, ampp, color='black', marker='x', s=100, zorder=10)
+    ax3.text(freqp - 1, ampp + 0.8, f"{freqp:.2f}", fontsize=12, fontweight='bold')
+
+ax3.set_xlim(0, int(fs / 2))
+ax3.set_xticks(np.arange(0, int(fs / 2) + 1, 20))
+
+ax3.set_ylim(0, vmax_freq * 1.1)
+
 plt.show()
-plt.close()
