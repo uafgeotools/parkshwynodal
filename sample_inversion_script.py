@@ -80,12 +80,45 @@ middle_column = spec[:, middle_index]
 vmin, vmax = 0, np.max(middle_column)
 
 # User picks overtone curve points
-print("Please pick the points on the spectrogram that correspond to the primary overtone of the doppler curves.")
-while True:
-    coords = pick_points_on_spectrogram(times, frequencies, spec, vmin, vmax, "Pick overtone curve points")
-    if input("Do you want to repick your points? (y or n)").lower() != 'y':
-        break
+#print("Please pick the points on the spectrogram that correspond to the primary overtone of the doppler curves.")
+#while True:
+#    coords = pick_points_on_spectrogram(times, frequencies, spec, vmin, vmax, "Pick overtone curve points")
+#    if input("Do you want to repick your points? (y or n)").lower() != 'y':
+#        break
+#coords_array = np.array(coords)
+coords = []
+
+coords.append((30.375000000000007, 137.44588744588745))
+coords.append((51.094758064516135, 136.0930735930736))
+coords.append((78.56048387096774, 136.0930735930736))
+coords.append((99.28024193548387, 130.6818181818182))
+coords.append((112.77217741935485, 115.12445887445887))
+coords.append((121.92741935483872, 109.71320346320346))
+coords.append((134.45564516129033, 102.94913419913419))
+coords.append((151.32056451612905, 101.59632034632034))
+coords.append((169.6310483870968, 100.24350649350649))
+coords.append((188.4233870967742, 100.24350649350649))
 coords_array = np.array(coords)
+
+peaks = []
+freqpeak = []
+
+freqpeak.append(112.77217741935485)
+peaks.append(115.80086580086581)
+freqpeak.append(113.25403225806451)
+peaks.append(136.7694805194805)
+freqpeak.append(113.25403225806451)
+peaks.append(154.35606060606062)
+freqpeak.append(113.25403225806451)
+peaks.append(174.6482683982684)
+freqpeak.append(114.21774193548387)
+peaks.append(190.2056277056277)
+freqpeak.append(116.62701612903226)
+peaks.append(226.05519480519484)
+freqpeak.append(113.25403225806451)
+peaks.append(57.62987012987013)
+freqpeak.append(112.29032258064518)
+peaks.append(96.18506493506493)
 
 # Estimate initial model parameters from picked points
 c = 320 #11.1  # Speed of sound (m/s)
@@ -115,11 +148,11 @@ v0, l, tprime0, c = m[1], m[2], m[3], m[4]
 mprior = [v0, l, tprime0, c]
 
 # User picks overtone peaks
-print("Please pick one point on each overtone, it does not have to be at the center of the doppler.")
-while True:
-    peaks, freqpeak = pick_single_points(times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=tprime0)
-    if input("Do you want to repick your points? (y or n)").lower() != 'y':
-        break
+#print("Please pick one point on each overtone, it does not have to be at the center of the doppler.")
+#while True:
+#    peaks, freqpeak = pick_single_points(times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=tprime0)
+#    if input("Do you want to repick your points? (y or n)").lower() != 'y':
+#        break
 
 # Automatically associate picked peaks with overtone curves
 corridor_width = 10 if len(peaks) <= 15 else 5
@@ -127,13 +160,14 @@ tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, 
 mprior += [float(f) for f in f0_array]
 
 # User picks time window for inversion
-print('Please pick two points on the spectrogram that correspond to the start and end of the time window you want pull data from in the inversion.')
-while True:
-    set_time = pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs)
-    if input("Do you want to repick your points? (y or n)").lower() != 'y':
-        break
-start_time, end_time = set_time[:2]
-
+#print('Please pick two points on the spectrogram that correspond to the start and end of the time window you want pull data from in the inversion.')
+#while True:
+#    set_time = pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs)
+#    if input("Do you want to repick your points? (y or n)").lower() != 'y':
+#        break
+#start_time, end_time = set_time[:2]
+start_time = 23.14717741935484
+end_time = 222.15322580645164
 # Filter picks to only those within the selected time window
 ftobs, ffobs, peak_ass = [], [], []
 cum = 0

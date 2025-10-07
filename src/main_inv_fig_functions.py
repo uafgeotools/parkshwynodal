@@ -205,6 +205,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     Returns:
         str: The user assigned quality number.
     """
+    t0prime = tprime0 + l/c
     if gt:
         type_inv = "[GT]"
     else:
@@ -233,20 +234,21 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     print(f"Memory usage 3: {mem:.2f} MB")		
     ax2.set_xlabel('Time (s)')
     f0lab = []
-    if gt == True:
-        ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label= r'$t_{i}$ = ' + "%.2f" % tarrive +' s')
-    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
+    #if gt == True:
+
+    ax2.axvline(x=t0prime, c = '#377eb8', ls = '--',linewidth=0.5,label= "t\u2080' = " + "%.2f" % t0prime +' s')
+    ax2.axvline(x=tprime0, c = '#e41a1c', ls = '--', linewidth=0.7,label= "t\u2080 = " + "%.2f" % tprime0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
-        
+
         ft = calc_ft(times, tprime0, f0, v0, l, c)
 
         ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7) 
-        tprime = tprime0
-        t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
-        ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+        #tprime = t0prime
+        #t = ((tprime - t0prime)- np.sqrt((tprime-t0prime)**2-(1-v0**2/c**2)*((tprime-t0prime)**2-l**2/c**2)))/(1-v0**2/c**2)
+        #ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
-        ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30, zorder=10)
+        ax2.scatter(t0prime, f0, color='black', marker='x', s=30, zorder=10)
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage 4: {mem:.2f} MB")
@@ -297,13 +299,13 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
 
     if isinstance(F_m, str):
          if med_df == "NaN":
-             ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz,\n[' + F_m + ']', fontsize=fss)
+             ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" %  +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + ' Hz\n[' + F_m + ']' + ' ' + type_inv, fontsize=fss)
          else:
-            ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']', fontsize=fss)
+            ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']', fontsize=fss)
     elif med_df == "NaN":
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz,\nMisfit: ' + "%.4f" % F_m  + ' ' + type_inv, fontsize=fss)
+        ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
     else:
-        ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
+        ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
@@ -385,6 +387,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
     Returns:
         None
     """
+    t0prime = tprime0 + l/c
     vmax = np.max(arrive_time)
     fig = plt.figure(figsize=(10,6))
     plt.grid()
@@ -395,26 +398,24 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
         f0 = f0_array[pp]
         if fs/2 < f0:
             continue
-        tprime = tprime0
-        t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+        tprime = t0prime
+        t = ((tprime - t0prime)- np.sqrt((tprime-t0prime)**2-(1-v0**2/c**2)*((tprime-t0prime)**2-l**2/c**2)))/(1-v0**2/c**2)
         ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-        if ft0p == np.nan:
+        if f0 == np.nan:
             continue
-        if ft0p > 250:
+        if f0 > 250:
             continue
         
-        upper = int(ft0p + 10)
-        lower = int(ft0p - 10)
-        tt = spec[lower:upper, closest_index]
+        upper = int(f0 + 3)
+        lower = int(f0 - 3)
         if upper > 250:
-            freqp = ft0p
-            ampp = np.interp(ft0p, frequencies, arrive_time)
-        elif lower < 0:
-            freqp = ft0p
-            ampp = np.interp(ft0p, frequencies, arrive_time)
-        else:
-            ampp = np.max(tt)
-            freqp = np.argmax(tt)+lower
+            upper = 250
+
+        
+        tt = spec[lower:upper, closest_index]
+
+        ampp = np.max(tt)
+        freqp = np.argmax(tt)+lower
         plt.scatter(freqp, ampp, color='black', marker='x', s=100, zorder=10)
         if isinstance(sta, int):
             plt.text(freqp - 5, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
@@ -427,7 +428,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
     plt.ylim(0, vmax*1.1)
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.xlabel('Frequency (Hz)', fontsize=17)
-    plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
+    plt.ylabel("Relative Amplitude at t' = {:.2f} s (dB)".format(t0prime), fontsize=17)
 
     fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.png', dpi=500)
     fig.clf()

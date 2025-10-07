@@ -8,7 +8,8 @@ from src.main_inv_fig_functions import time_picks, remove_median, plot_spectrogr
 import psutil
 
 jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
-
+paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
+nrl = NRL()
 nrl = NRL()
 window = 120  # seconds before the arrival time to load the waveform
 rerun_fig = True #Flag rerun the figures without saving the inversion results = True
@@ -33,11 +34,14 @@ for li in file_in.readlines():
     height_m = alt - elev
     distance_gt = np.sqrt(dist_m**2 + (height_m)**2) 
 
+    file_check = str(equip)+'_'+ str(date) +'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
+    if file_check not in paper_figures:
+        continue
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
-    if os.path.exists(DIR):
-        continue
+    #if os.path.exists(DIR):
+    #    continue
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
     if not os.path.exists(file_name):
         continue
@@ -188,28 +192,29 @@ for li in file_in.readlines():
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage pre: {mem:.2f} MB")
-    closest_index = np.argmin(np.abs(tprime0 - times))
+    t0prime = tprime0 + l/c
+    closest_index = np.argmin(np.abs(t0prime - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
         if arrive_time[i] < 0:
             arrive_time[i] = 0
     print(slope)
     print(speed_gt, distance_gt)
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm0, flight_num, middle_index,mprior[2], closest_time, BASE_DIR, plot_show=False, gt = False)
     qnum = "__"
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage spec 1: {mem:.2f} MB")
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage spec 2: {mem:.2f} MB")
     if rerun_fig == False:
-        output = open('output/inv_results_no_g_truth_320/' + equip + '_full_inv_results.csv', 'a')
+        output = open('output/inv_results_no_g_truth_320_test/' + equip + '_full_inv_results.csv', 'a')
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
         output.close()
     else:

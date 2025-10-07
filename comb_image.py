@@ -17,7 +17,7 @@ def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	else:
 		print("Not a PDF file for conversion:", pdf_path)
 
-#paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
+paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
@@ -44,12 +44,12 @@ for line in file_in.readlines():
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
-	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
-	if Path(file_check).exists():
-		continue
-	file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
-	#if file_check not in paper_figures:
+	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_present/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	#if Path(file_check).exists():
 	#	continue
+	file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
+	if file_check not in paper_figures:
+		continue
 	index = None
 	for i, station in enumerate(stations):
 		if str(station) == str(sta):
@@ -72,7 +72,7 @@ for line in file_in.readlines():
 			break
 		else:
 			continue
-	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
 			if not image.endswith('.png'):
@@ -157,8 +157,8 @@ for line in file_in.readlines():
 		file.close()
 		c = (c_air + c_sta) / 2
 		Tc = (Tc_air + Tc_sta) / 2
-		zonal_wind = (zonal_wind_air + zonal_wind_sta) / 2
-		meridional_wind = (meridional_wind_air + meridional_wind_sta) / 2
+		zonal_wind = zonal_wind_air #(zonal_wind_air + zonal_wind_sta) / 2
+		meridional_wind = meridional_wind_air #(meridional_wind_air + meridional_wind_sta) / 2
 		wind, az = add_wind_vector(zonal_wind, meridional_wind)
 	except:
 		c = 320  # Default speed of sound in m/s if no data is available
@@ -218,7 +218,7 @@ for line in file_in.readlines():
 	
 	#except:
 		
-	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 	#try:	
 	#	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
 	#except Exception as e:
@@ -274,10 +274,10 @@ for line in file_in.readlines():
 	draw.rectangle(bbox, fill="white")
 	draw.text((canvas_width - plane.width, 0), text3, fill='black', font=font)
 
-	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/'
+	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_present/'
 	make_base_dir(BASE_DIR)
-	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.png'
 
 	# Save as PDF
-	canvas.save(name, "PDF", resolution=500.0)
+	canvas.save(name, "PNG", resolution=700.0)
 file_in.close()
