@@ -268,8 +268,8 @@ for line in file_in.readlines():
 
 	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_present/'
 	make_base_dir(BASE_DIR)
-	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.png'
+	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
 	# Save as PDF
-	canvas.save(name, "PNG", resolution=700.0)
+	canvas.save(name, "PDF", resolution=700.0)
 file_in.close()
