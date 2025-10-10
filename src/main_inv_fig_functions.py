@@ -174,91 +174,76 @@ def remove_median(Sxx):
 
 ############################################################################################################################################################################################################################
 
-def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, Cpost0, flight, middle_index, tarrive, closest_time, dir_name, plot_show=True, gt = True):
+def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, MDF, Cpost0, flight, middle_index, closest_time, dir_name, plot_show=True, gt = True):
     """
-    Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions and tprime0 initial guess compared to the final.
+    Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions.
 
     Args:
         data (array): The waveform data.
         fs (int): The sampling frequency.
-        torg (array): The time array.
+        t_wf (array): The time array for the spectrogram.
         title (str): The title of the plot.
         spec (array): The spectrogram data.
         times (array): The time array for the spectrogram.
         frequencies (array): The frequency array for the spectrogram.
-        tprime0 (float): The estimated arrival time.
+        t0 (float): The estimated time of aircraft closest approach to the station.
         v0 (float): The velocity.
         l (float): The distance.
         c (float): The speed of sound.
         f0_array (array): The array of frequencies.
         F_m (float): The data misfit value.
-        arrive_time (array): The arrival time array.
         MDF (array): Median removed from spectrogram.
         Cpost (array): The normalized posterior covariance matrix.
         flight (int): The flight number.
         middle_index (int): The index of the middle column.
-        tarrive (float): The initial estimation of the arrival time at the station from wave generated at aircraft at closest approach.
-        closest_time (float): The time of closest approach of aircraft, for saving the file.
+        closest_time (float): The time of closest approach of aircraft from flightradar, for saving the file.
         dir_name (str): The directory name.
         plot_show (bool): If True, show the plot and ask user to provide a quality number. If False, save the plot without showing it. 
         gt (bool): If True, the ground truth is used for the intial model in the inversion.
     Returns:
         str: The user assigned quality number.
     """
-    t0prime = tprime0 + l/c
+    t0prime = t0 + l/c
     if gt:
-        type_inv = "[GT]"
+        type_inv = "[FH/GT]"
     else:
-        type_inv = "[NGT]"
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 1: {mem:.2f} MB")
+        type_inv = "[FH/NGT]"
+    
+    closest_index = np.argmin(np.abs(t0prime - times))
+    arrive_time = spec[:,closest_index]
+    for i in range(len(arrive_time)):
+        if arrive_time[i] < 0:
+            arrive_time[i] = 0
     # Plot settings and calculations
     vmin = np.min(arrive_time) 
     vmax = np.max(arrive_time)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
-    ax1.plot(torg, data, 'k', linewidth=0.5)
+    ax1.plot(t_wf, data, 'k', linewidth=0.5)
     ax1.set_title(title)
 
     ax1.margins(x=0)
     ax1.set_position([0.125, 0.6, 0.775, 0.3]) 
     ax1.set_ylabel('Counts')
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 2: {mem:.2f} MB")
+
     # Plot spectrogram
     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)		
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 3: {mem:.2f} MB")		
     ax2.set_xlabel('Time (s)')
-    f0lab = []
-    #if gt == True:
-
     ax2.axvline(x=t0prime, c = '#377eb8', ls = '--',linewidth=0.5,label= "t\u2080' = " + "%.2f" % t0prime +' s')
-    ax2.axvline(x=tprime0, c = '#e41a1c', ls = '--', linewidth=0.7,label= "t\u2080 = " + "%.2f" % tprime0 +' s')
+    ax2.axvline(x=t0, c = '#e41a1c', ls = '--', linewidth=0.7,label= "t\u2080 = " + "%.2f" % t0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
+        ft = calc_ft(times, t0prime, f0, v0, l, c)
 
-        ft = calc_ft(times, tprime0, f0, v0, l, c)
-
-        ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7) 
-        #tprime = t0prime
-        #t = ((tprime - t0prime)- np.sqrt((tprime-t0prime)**2-(1-v0**2/c**2)*((tprime-t0prime)**2-l**2/c**2)))/(1-v0**2/c**2)
-        #ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-
+        ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7)
         ax2.scatter(t0prime, f0, color='black', marker='x', s=30, zorder=10)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 4: {mem:.2f} MB")
+
     fss = 'x-small'
     f0lab = sorted(f0_array)
 
     if len(f0_array) <= 1:
         med_df = "NaN"
         mad_df = "NaN"
-
     else:
         #Generate random samples of f0 values withing their sigma from the covariance matrix 
         #Calculate the median of the differences and MAD to obtain error
@@ -283,9 +268,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
             f_range.append(med)
         med_df = np.nanmedian(f_range)
         mad_df = np.nanmedian(np.abs(f_range - med_df))
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 5: {mem:.2f} MB")
+
     if len(f0lab) > 10:
         # Split f0lab into lines of 10 entries each
         f0lab_lines = []
@@ -299,22 +282,20 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
 
     if isinstance(F_m, str):
          if med_df == "NaN":
-             ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" %  +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + ' Hz\n[' + F_m + ']' + ' ' + type_inv, fontsize=fss)
+             ax2.set_title("t\u2080 = "+ "%.2f" % t0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u209B = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz' + '\n[' + F_m + ']' + ' ' + type_inv, fontsize=fss)
          else:
-            ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']', fontsize=fss)
+            ax2.set_title("t\u2080 = "+ "%.2f" % t0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u209B = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u209B = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\n[' + F_m + ']' + ' ' + type_inv , fontsize=fss)
     elif med_df == "NaN":
-        ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
+        ax2.set_title("t\u2080 = "+ "%.2f" % t0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0]+' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u209B = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
     else:
-        ax2.set_title("t\u2080 = "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u2080 = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u2080 = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
+        ax2.set_title("t\u2080 = "+ "%.2f" % t0 + ' \u00B1 ' + "%.2f" % Cpost0[2] + ' s, v = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % Cpost0[0] +' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] + ' m/s, d\u2080 = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u209B = ' + f0lab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[3:]) +' Hz, df\u209B = ' + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' + "%.4f" % F_m + ' ' + type_inv, fontsize=fss)
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
 
     ax2.margins(x=0)
     ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 6: {mem:.2f} MB")
+
     # Set colorbar with integer ticks only
     cbar = plt.colorbar(mappable=cax, cax=ax3)
     cbar.locator = MaxNLocator(integer=True)
@@ -322,7 +303,6 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax3.set_ylabel('Relative Amplitude (dB)')
 
     ax2.margins(x=0)
-    #ax2.set_xlim(0, 240)
     ax2.set_ylim(0, int(fs/2))
 
     ax1.tick_params(axis='both', which='major', labelsize=9)
@@ -330,6 +310,7 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax3.tick_params(axis='both', which='major', labelsize=9)
     cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     cbar.update_ticks()
+
     # Plot overlay
     spec2 = 10 * np.log10(MDF)
     middle_column2 = spec2[:, middle_index]
@@ -343,51 +324,54 @@ def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v
     ax4.set_xlim(vmax2*1.1, vmin2) 
     ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     ax4.grid(axis='y')
+
     if plot_show:
         plt.show()     
         qnum = input('What quality number would you give this?(first num for data quality(0-3), second for ability to fit model to data(0-1))')
     else:
         qnum = '__'
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage 7: {mem:.2f} MB")
+   
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png', dpi=600)
 
     fig.clf()
     plt.close(fig)
     gc.collect()
+
     del fig, f0lab, cax, ax1, ax2, ax3, ax4, spec2, middle_column2, frequencies, times, spec, MDF
     gc.collect()
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage: {mem:.2f} MB")
+    
     return qnum
 
 ################################################################################################################################################################################################################################################################################################################################
 
-def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, dir_name):
+def plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time, sta, dir_name):
     """
-    Plot and save the spectrum with markers for the overtones arriving at the station at tprime0.
+    Plot and save the spectrum with markers for the overtones arriving at the station at t0.
 
     Args:
         spec (numpy.ndarray): The spectrum data.
+        times (array): The time array for the spectrogram.
         frequencies (numpy.ndarray): The frequencies.
-        tprime0 (float): The reference arrival time.
-        v0 (float): The velocity.
-        l (float): The distance.
-        c (float): The speed of light.
+        t0 (float): The time of aircraft closest approach relative to start of spectrogram.
+        l (float): The distance between closest approach of the aircraft and the station (d0).
+        c (float): The speed of sound.
         f0_array (list): The list of frequencies.
-        arrive_time (numpy.ndarray): The arrival times.
         fs (int): The sampling frequency.
-        closest_index (int): The index of the closest time.
-        closest_time (float): The closest time.
+        closest_time (float): The time of closest approach of aircraft from flightradar, for saving the file.
         sta (int or str): The station identifier.
         dir_name (str): The directory name.
 
     Returns:
         None
     """
-    t0prime = tprime0 + l/c
+    t0prime = t0 + l/c
+
+    closest_index = np.argmin(np.abs(t0prime - times))
+    arrive_time = spec[:,closest_index]
+    for i in range(len(arrive_time)):
+        if arrive_time[i] < 0:
+            arrive_time[i] = 0
+
     vmax = np.max(arrive_time)
     fig = plt.figure(figsize=(10,6))
     plt.grid()
@@ -398,9 +382,7 @@ def plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, f
         f0 = f0_array[pp]
         if fs/2 < f0:
             continue
-        tprime = t0prime
-        t = ((tprime - t0prime)- np.sqrt((tprime-t0prime)**2-(1-v0**2/c**2)*((tprime-t0prime)**2-l**2/c**2)))/(1-v0**2/c**2)
-        ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
+
         if f0 == np.nan:
             continue
         if f0 > 250:
@@ -519,7 +501,7 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
 
 ##############################################################################################################################################################################################################
 
-def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=True):
+def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, start_time, t0, tarrive, make_picks=True):
     """
     Pick the points for the overtone shift.
 
@@ -536,7 +518,7 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
         equip (str): The equipment identifier.
         closest_time (float): The time of closest approach.
         start_time (float): The start time of the spectrogram, to save for future reference on plotting the spectrogram.
-        tprime0 (float): The estimated acoustic wave arrival time.
+        t0 (float): The estimated acoustic wave arrival time.
         tarrive (float): The initial calculated time of acoustic wave arrival.
         make_picks (bool): If you come to this function and no picks exist, it will allow you to make new picks.
 
@@ -568,7 +550,7 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
             freqpeak = []
             plt.figure()
             plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-            plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
+            plt.axvline(x=t0, c = '#377eb8', ls = '--')
             plt.axvline(x=tarrive-start_time, c = '#e41a1c', ls = '--')
             def onclick(event):
                 #global coords
@@ -750,10 +732,10 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, mprior, sigm
     f0 = m[0]
     v0 = m[1]
     l = m[2]
-    tprime0 = m[3]
+    t0 = m[3]
     c = m[4]
 
-    ft = calc_ft(coord_inv_array[:, 0], tprime0, f0, v0, l, c)
+    ft = calc_ft(coord_inv_array[:, 0], t0, f0, v0, l, c)
 
     delf = np.array(ft) - np.array(coord_inv_array[:, 1])
     
@@ -767,7 +749,7 @@ def get_auto_picks_1o(times, frequencies, spec, ft, corridor_width, mprior, sigm
 
 ################################################################################################################################
 
-def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax):
+def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax):
     """
     Get automatic picks for all overtones.
 
@@ -778,7 +760,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         frequencies (np.ndarray): Array of frequency values from fft.
         spec (np.ndarray): Spectrogram data from fft.
         corridor_width (float): Width of the corridor for picking.
-        tprime0 (float): Model parameter for the arrival time.
+        t0 (float): Model parameter for the arrival time.
         v0 (float): Model parameter for the velocity.
         l (float): Model parameter for the distance.
         c (float): Model parameter for the speed of sound.
@@ -800,14 +782,14 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
     for pp in range(len(peaks)):
         tprime = time_peaks[pp]
         ft0p = peaks[pp]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        f0 = calc_f0(tprime, t0, ft0p, v0, l, c)
         f0_array.append(f0)
 
         maxfreq = []
         coord_inv = []
         ttt = []
 
-        ft = calc_ft(times,  tprime0, f0, v0, l, c)
+        ft = calc_ft(times,  t0, f0, v0, l, c)
 
         for t_f in range(len(times)):
 
@@ -845,7 +827,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
 
         if len(ttt) > 0 and f0 <= 230:
             coord_inv_array = np.array(coord_inv)
-            mtest = [f0,v0, l, tprime0,c]
+            mtest = [f0,v0, l, t0,c]
             mtest,_,_,_ = invert_f(mtest,sigma_prior, coord_inv_array, num_iterations=2)
             ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], mtest[4])
             delf = np.array(ft) - np.array(maxfreq)

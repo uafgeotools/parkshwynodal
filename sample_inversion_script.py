@@ -65,7 +65,7 @@ endtime = UTCDateTime("2019-03-04T01:21:22")
 st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
 tr = st[0]
 data = tr.data
-torg = tr.times()
+t_wf = tr.times()
 fs = int(tr.stats.sampling_rate)
 title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
 
@@ -125,16 +125,16 @@ c = 320 #11.1  # Speed of sound (m/s)
 fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])  # Max/min frequency
 fm = (fa + fr) / 2
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
-f0, tprime0 = coords_array[closest_index, 1], coords_array[closest_index, 0]
+f0, t0 = coords_array[closest_index, 1], coords_array[closest_index, 0]
 t_hold, second_index = np.inf, None
 for i, t in enumerate(coords_array[:, 0]):
-    if t != tprime0 and abs(t - tprime0) < t_hold:
-        t_hold = abs(t - tprime0)
+    if t != t0 and abs(t - t0) < t_hold:
+        t_hold = abs(t - t0)
         second_index = i
 v0 = c * abs(fa - fr) / (2 * f0)  # Initial velocity estimate
 slope = (coords_array[closest_index, 1] - coords_array[second_index, 1]) / (coords_array[closest_index, 0] - coords_array[second_index, 0])
 l = -((f0 * v0 ** 2 / c) * (1 - (v0 / c) ** 2) ** (-3 / 2)) / slope  # Initial length estimate
-m0 = [f0, v0, l, tprime0, c]
+m0 = [f0, v0, l, t0, c]
 sigma_prior = [40, 1, 1, 200, 1]  # Initial prior uncertainties
 
 # First inversion to refine model
@@ -144,19 +144,19 @@ m0[0], m0[3] = m[0], m[3]
 # Second inversion with wider priors
 sigma_prior = [150, 100, 10000, 200, 100]
 m, _, _, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=3)
-v0, l, tprime0, c = m[1], m[2], m[3], m[4]
-mprior = [v0, l, tprime0, c]
+v0, l, t0, c = m[1], m[2], m[3], m[4]
+mprior = [v0, l, t0, c]
 
 # User picks overtone peaks
 #print("Please pick one point on each overtone, it does not have to be at the center of the doppler.")
 #while True:
-#    peaks, freqpeak = pick_single_points(times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=tprime0)
+#    peaks, freqpeak = pick_single_points(times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=t0)
 #    if input("Do you want to repick your points? (y or n)").lower() != 'y':
 #        break
 
 # Automatically associate picked peaks with overtone curves
 corridor_width = 10 if len(peaks) <= 15 else 5
-tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax)
+tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax)
 mprior += [float(f) for f in f0_array]
 
 # User picks time window for inversion
@@ -186,17 +186,17 @@ tobs, fobs = ftobs, ffobs
 # Final inversion using filtered picks
 sigma_prior = [10, 125, 15000, 30, 100] if abs(slope) < 1 else [10, 30, 500, 30, 100]
 m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-v0, l, tprime0, c = m[0], m[1], m[2], m[3]
+v0, l, t0, c = m[0], m[1], m[2], m[3]
 Cpost, Cpost0 = np.sqrt(np.diag(covm)), np.sqrt(np.diag(covm0))
 
 # Plot results
-closest_index = np.argmin(np.abs(tprime0 - times))
+closest_index = np.argmin(np.abs(t0 - times))
 arrive_time = np.clip(spec[:, closest_index], 0, None)
 vmin, vmax = np.min(arrive_time), np.max(arrive_time)
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8, 6))
 
 # Plot raw waveform
-ax1.plot(torg, data, 'k', linewidth=0.5)
+ax1.plot(t_wf, data, 'k', linewidth=0.5)
 ax1.set_title(title)
 ax1.margins(x=0)
 ax1.set_position([0.125, 0.6, 0.775, 0.3])
@@ -205,15 +205,15 @@ ax1.set_ylabel('Counts')
 # Plot spectrogram and inversion results
 cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax2.set_xlabel('Time (s)')
-ax2.axvline(x=tprime0, c='#377eb8', ls='--', linewidth=0.7, label=f"t\u2080' = {tprime0:.2f} s")
+ax2.axvline(x=t0, c='#377eb8', ls='--', linewidth=0.7, label=f"t\u2080' = {t0:.2f} s")
 f0lab = sorted(f0_array)
 for f0 in f0lab:
-    ft = calc_ft(times, tprime0, f0, v0, l, c)
+    ft = calc_ft(times, t0, f0, v0, l, c)
     ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
-    tprime = tprime0
-    t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+    tprime = t0
+    t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
     ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-    ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30)
+    ax2.scatter(t0, ft0p, color='black', marker='x', s=30)
 fss = 'x-small'
 
 # Estimate overtone frequency spacing and uncertainty
@@ -244,7 +244,7 @@ else:
     misfit_str = f"\nMisfit: {F_m:.4f}"
 df_str = f", df\u2080 = {med_df:.2f} \u00B1 {mad_df:.2f} Hz" if med_df != "NaN" else ""
 ax2.set_title(
-    f"t\u2080'= {tprime0:.2f} \u00B1 {Cpost0[2]:.2f} s, v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
+    f"t\u2080'= {t0:.2f} \u00B1 {Cpost0[2]:.2f} s, v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
     f"c = {c:.2f} \u00B1 {Cpost0[3]:.2f} m/s, l = {l:.2f} \u00B1 {Cpost0[1]:.2f} m, \n"
     f"f\u2080 = {f0lab_str} \u00B1 {np.median(Cpost0[3:]):.2f} Hz{df_str}{misfit_str}",
     fontsize=fss

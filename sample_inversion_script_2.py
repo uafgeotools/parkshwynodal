@@ -9,13 +9,13 @@ from matplotlib.ticker import MaxNLocator
 from obspy.clients.fdsn import Client
 from obspy.core import UTCDateTime
 
-def calc_ft(tpr, tprime0, f0, v0, l, c):
+def calc_ft(tpr, t0, f0, v0, l, c):
     """
     Calculate the frequency at each given time using the model parameters.
 
     Args:
         tpr (list): List of time values.
-        tprime0 (float): The time at which the central frequency of the overtones occur, 
+        t0 (float): The time at which the central frequency of the overtones occur, 
                         when the aircraft is at the closest approach to the station.
         f0 (float): Fundamental frequency produced by the aircraft.
         v0 (float): Velocity of the aircraft.
@@ -26,26 +26,26 @@ def calc_ft(tpr, tprime0, f0, v0, l, c):
         list: List of calculated frequency values.
     """
     ft = []
-    times = calc_t(v0,l,c,tprime0,tpr)
+    times = calc_t(v0,l,c,t0,tpr)
     for t in times:
         f = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
         ft.append(f)
     return ft
 
-def calc_t(v0,l,c,tprime0,tpr):
+def calc_t(v0,l,c,t0,tpr):
 	t_array = []	
 	for tprime in tpr:
-		t = ((tprime - tprime0 + l/c)- np.sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2)
+		t = ((tprime - t0 + l/c)- np.sqrt((tprime - t0 + l/c)**2-(1-v0**2/c**2)*((tprime - t0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2)
 		t_array.append(t)
 	return t_array
 
-def calc_f0(tprime, tprime0, ft0p, v0, l, c):
+def calc_f0(tprime, t0, ft0p, v0, l, c):
     """
     Calculate the fundamental frequency produced by an aircraft (where the wave is generated) given the model parameters.
 
     Parameters:
     tprime (float): Time at which a frequency (ft0p) is observed on the station.
-    tprime0 (float): The time at which the central frequency of the overtones occur.
+    t0 (float): The time at which the central frequency of the overtones occur.
     ft0p (float): Frequency recorded on the seismometer, picked from the overtone doppler curve.
     v0 (float): Velocity of the aircraft.
     l (float): Distance between the station and the aircraft at the closest approach.
@@ -54,26 +54,26 @@ def calc_f0(tprime, tprime0, ft0p, v0, l, c):
     Returns:
     f0 (float): Fundamental frequency produced by the aircraft. (Frequency at the source.) 
     """
-    t = calc_t(v0,l,c,tprime0,[tprime])[0]
+    t = calc_t(v0,l,c,t0,[tprime])[0]
     
     # Geometry now makes sense
     f0 = ft0p * (1 + (v0/c) * (v0*t) / np.sqrt(l**2 + (v0*t)**2))
 
     return f0
 
-def df(f0, v0, l, tprime0, tprime, c):   
+def df(f0, v0, l, t0, tprime, c):   
     """
-    Calculate the derivatives of f with respect to f0, v0, l, tprime0 and c.
+    Calculate the derivatives of f with respect to f0, v0, l, t0 and c.
     Uses CORRECTED timing that ensures t=0 at closest approach.
     """
 
-    f_derivef0 = 1/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))
-    f_derivev0 = f0*(-v0**2*(-v0*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2 + v0**3*((tprime - tprime0 + l/c)**2 - l**2/c**2)*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**2*(1 - v0**2/c**2)**2*np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2)) - 2*v0**3*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(c**2*(1 - v0**2/c**2)**3))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - 2*v0*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) + v0**3*((tprime - tprime0 + l/c)**2 - l**2/c**2)/(c**3*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)*np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2)) - 2*v0**3*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**3*(1 - v0**2/c**2)**2*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
-    f_derivel = f0*(-v0**2*(-l - v0**2*(-2*(-(1 - v0**2/c**2)*(2*(tprime - tprime0 + l/c)/c - 2*l/c**2)/2 + (tprime - tprime0 + l/c)/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + 2/c)*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(2*(1 - v0**2/c**2)**2))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - v0**2*(-(-(1 - v0**2/c**2)*(2*(tprime - tprime0 + l/c)/c - 2*l/c**2)/2 + (tprime - tprime0 + l/c)/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + 1/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
-    f_derivetprime0 = f0*(v0**4*(-2 - 2*(-tprime + tprime0 - (1 - v0**2/c**2)*(-2*tprime + 2*tprime0 - 2*l/c)/2 - l/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(2*c*(1 - v0**2/c**2)**3*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - v0**2*(-1 - (-tprime + tprime0 - (1 - v0**2/c**2)*(-2*tprime + 2*tprime0 - 2*l/c)/2 - l/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2))/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
-    f_derivec = f0*(-v0**2*(-(-(1 - v0**2/c**2)*(-2*l*(tprime - tprime0 + l/c)/c**2 + 2*l**2/c**3)/2 - l*(tprime - tprime0 + l/c)/c**2 - v0**2*((tprime - tprime0 + l/c)**2 - l**2/c**2)/c**3)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) - l/c**2)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) - v0**2*(-v0**2*(-2*(-(1 - v0**2/c**2)*(-2*l*(tprime - tprime0 + l/c)/c**2 + 2*l**2/c**3)/2 - l*(tprime - tprime0 + l/c)/c**2 - v0**2*((tprime - tprime0 + l/c)**2 - l**2/c**2)/c**3)/np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) - 2*l/c**2)*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(2*(1 - v0**2/c**2)**2) + 2*v0**4*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(c**3*(1 - v0**2/c**2)**3))*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**2*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) + 2*v0**4*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c**4*(1 - v0**2/c**2)**2*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - tprime0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - tprime0 + l/c)**2 - l**2/c**2) + (tprime - tprime0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivef0 = 1/(1 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))
+    f_derivev0 = f0*(-v0**2*(-v0*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2 + v0**3*((tprime - t0 + l/c)**2 - l**2/c**2)*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c**2*(1 - v0**2/c**2)**2*np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2)) - 2*v0**3*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(c**2*(1 - v0**2/c**2)**3))*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - 2*v0*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) + v0**3*((tprime - t0 + l/c)**2 - l**2/c**2)/(c**3*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)*np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2)) - 2*v0**3*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c**3*(1 - v0**2/c**2)**2*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivel = f0*(-v0**2*(-l - v0**2*(-2*(-(1 - v0**2/c**2)*(2*(tprime - t0 + l/c)/c - 2*l/c**2)/2 + (tprime - t0 + l/c)/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + 2/c)*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(2*(1 - v0**2/c**2)**2))*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - v0**2*(-(-(1 - v0**2/c**2)*(2*(tprime - t0 + l/c)/c - 2*l/c**2)/2 + (tprime - t0 + l/c)/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + 1/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivet0 = f0*(v0**4*(-2 - 2*(-tprime + t0 - (1 - v0**2/c**2)*(-2*tprime + 2*t0 - 2*l/c)/2 - l/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2))*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(2*c*(1 - v0**2/c**2)**3*(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) - v0**2*(-1 - (-tprime + t0 - (1 - v0**2/c**2)*(-2*tprime + 2*t0 - 2*l/c)/2 - l/c)/np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2))/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
+    f_derivec = f0*(-v0**2*(-(-(1 - v0**2/c**2)*(-2*l*(tprime - t0 + l/c)/c**2 + 2*l**2/c**3)/2 - l*(tprime - t0 + l/c)/c**2 - v0**2*((tprime - t0 + l/c)**2 - l**2/c**2)/c**3)/np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) - l/c**2)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) - v0**2*(-v0**2*(-2*(-(1 - v0**2/c**2)*(-2*l*(tprime - t0 + l/c)/c**2 + 2*l**2/c**3)/2 - l*(tprime - t0 + l/c)/c**2 - v0**2*((tprime - t0 + l/c)**2 - l**2/c**2)/c**3)/np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) - 2*l/c**2)*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(2*(1 - v0**2/c**2)**2) + 2*v0**4*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(c**3*(1 - v0**2/c**2)**3))*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)**(3/2)) + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c**2*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)) + 2*v0**4*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c**4*(1 - v0**2/c**2)**2*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))/(1 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)/(c*(1 - v0**2/c**2)*np.sqrt(l**2 + v0**2*(tprime - t0 - np.sqrt(-(1 - v0**2/c**2)*((tprime - t0 + l/c)**2 - l**2/c**2) + (tprime - t0 + l/c)**2) + l/c)**2/(1 - v0**2/c**2)**2)))**2
     
-    return f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec
+    return f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec
 
 def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, off_diagonal = False):
     """
@@ -81,8 +81,8 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
     Uses CORRECTED timing that ensures t=0 at closest approach.
 
     Args:
-        mprior (numpy.ndarray): Initial parameters for the function, f[0] = f0, f[1] = v0, f[2] = l, f[3] = tprime0, f[4] = c.
-        prior_sigma (list): List of standard deviations for the prior parameters prior_sigma[0] = f0_sigma, prior_sigma[1] = v0_sigma, prior_sigma[2] = l_sigma, prior_sigma[3] = tprime0_sigma, prior_sigma[4] = c_sigma.
+        mprior (numpy.ndarray): Initial parameters for the function, f[0] = f0, f[1] = v0, f[2] = l, f[3] = t0, f[4] = c.
+        prior_sigma (list): List of standard deviations for the prior parameters prior_sigma[0] = f0_sigma, prior_sigma[1] = v0_sigma, prior_sigma[2] = l_sigma, prior_sigma[3] = t0_sigma, prior_sigma[4] = c_sigma.
         coords_array (numpy.ndarray): Data picks along overtone doppler curve.
         num_iterations (int): Number of iterations to perform.
         sigma (float): Standard deviation for the data picks, default is 10.
@@ -104,16 +104,16 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
     f0_sigma = prior_sigma[0]
     v0_sigma = prior_sigma[1]
     l_sigma = prior_sigma[2]
-    tprime0_sigma = prior_sigma[3]
+    t0_sigma = prior_sigma[3]
     c_sigma = prior_sigma[4]
 
     cprior0[0][0] = f0_sigma**2
     cprior0[1][1] = v0_sigma**2
     cprior0[2][2] = l_sigma**2
-    cprior0[3][3] = tprime0_sigma**2
+    cprior0[3][3] = t0_sigma**2
     cprior0[4][4] = c_sigma**2
     if off_diagonal:
-        cprior0[0][3] =  -0.4*f0_sigma*tprime0_sigma
+        cprior0[0][3] =  -0.4*f0_sigma*t0_sigma
 
         cprior0[1][2] = -0.7*v0_sigma*l_sigma
         cprior0[1][4] = 0.85*v0_sigma*c_sigma
@@ -121,7 +121,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
         cprior0[2][1] = -0.7*v0_sigma*l_sigma
         cprior0[2][4] = -0.7*l_sigma*c_sigma
 
-        cprior0[3][0] =  -0.4*f0_sigma*tprime0_sigma
+        cprior0[3][0] =  -0.4*f0_sigma*t0_sigma
 
         cprior0[4][1] = 0.85*v0_sigma*c_sigma
         cprior0[4][2] = -0.7*l_sigma*c_sigma
@@ -148,7 +148,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
         f0 = m[0]
         v0 = m[1]
         l = m[2]
-        tprime0 = m[3]
+        t0 = m[3]
         c = m[4]
 
         fpred = []
@@ -159,12 +159,12 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
             tprime = tobs[i]
 
             # CORRECTED frequency calculation
-            ft0p = calc_ft([tprime], tprime0, f0, v0, l, c)[0]
+            ft0p = calc_ft([tprime], t0, f0, v0, l, c)[0]
 
             # CORRECTED derivatives
-            f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0, v0, l, tprime0, tprime, c)
+            f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec = df(f0, v0, l, t0, tprime, c)
             
-            G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
+            G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec]
             fpred.append(ft0p) 
             
         Gm = G
@@ -184,7 +184,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations = 4, sigma = 10, 
             mnew[1] <= 0 or mnew[1] > 350 or     # v0
             mnew[1] >= mnew[4] or  # v0 must be less than c
             mnew[2] < 0 or mnew[2] > 1e5 or      # l
-            mnew[3] < 10 or mnew[3] > 240 or      # tprime0
+            mnew[3] < 10 or mnew[3] > 240 or      # t0
             mnew[4] < 200 or mnew[4] > 400       # c
         )
         
@@ -217,7 +217,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
         fobs (numpy.ndarray): Picked frequency values from individual overtone inversion picks.
         tobs (numpy.ndarray): Picked time values from individual overtone inversion picks.
         peak_assos (list): List of number of peaks associated with each overtone, for indexing the fobs and tobs arrays.
-        mprior (numpy.ndarray): Initial guess for the model parameters, mprior[0] = v0, mprior[1] = l, mprior[2] = tprime0, mprior[3] = c, mprior[4:] = f0_array.
+        mprior (numpy.ndarray): Initial guess for the model parameters, mprior[0] = v0, mprior[1] = l, mprior[2] = t0, mprior[3] = c, mprior[4:] = f0_array.
         num_iterations (int): Number of iterations to perform for the inversion.
         sigma (float): Standard deviation for the data picks, default is 3.
         off_diagonal (bool): Whether to include off-diagonal elements in the prior covariance matrix, default is False.
@@ -236,11 +236,11 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
     f0_sigma = sigma_prior[0]
     v0_sigma = sigma_prior[1]
     l_sigma = sigma_prior[2]
-    tprime0_sigma = sigma_prior[3]
+    t0_sigma = sigma_prior[3]
     c_sigma = sigma_prior[4]
 
     if off_diagonal:
-        cprior0[4:][2] =  -0.4*f0_sigma*tprime0_sigma
+        cprior0[4:][2] =  -0.4*f0_sigma*t0_sigma
 
         cprior0[0][1] = -0.7*v0_sigma*l_sigma
         cprior0[0][3] = 0.85*v0_sigma*c_sigma
@@ -248,7 +248,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
         cprior0[1][0] = -0.7*v0_sigma*l_sigma
         cprior0[1][3] = -0.7*l_sigma*c_sigma
 
-        cprior0[2][4:] =  -0.4*f0_sigma*tprime0_sigma
+        cprior0[2][4:] =  -0.4*f0_sigma*t0_sigma
 
         cprior0[3][0] = 0.85*v0_sigma*c_sigma
         cprior0[3][1] = -0.7*l_sigma*c_sigma
@@ -259,7 +259,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
         elif row == 1:
             cprior0[row][row] = l_sigma**2
         elif row == 2:
-            cprior0[row][row] = tprime0_sigma**2
+            cprior0[row][row] = t0_sigma**2
         elif row == 3:
             cprior0[row][row] = c_sigma**2
         else:
@@ -287,7 +287,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
             
         v0 = m[0]
         l = m[1]
-        tprime0 = m[2]
+        t0 = m[2]
         c = m[3]
         f0_array = m[4:]
 
@@ -304,14 +304,14 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
                 tprime = tobs[j]
 
                 # CORRECTED frequency calculation
-                ft0p = calc_ft([tprime], tprime0, f0, v0, l, c)[0]
+                ft0p = calc_ft([tprime], t0, f0, v0, l, c)[0]
 
                 # CORRECTED derivatives
-                f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0, v0, l, tprime0, tprime, c)
+                f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec = df(f0, v0, l, t0, tprime, c)
                 
                 new_row[0] = f_derivev0
                 new_row[1] = f_derivel
-                new_row[2] = f_derivetprime0
+                new_row[2] = f_derivet0
                 new_row[3] = f_derivec
                 new_row[4+p] = f_derivef0
                 G = np.vstack((G, new_row))
@@ -338,7 +338,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
             mnew[0] <= 0 or mnew[0] > 350 or     # v0
             mnew[0] >= mnew[3] or  # v0 must be less than c
             mnew[1] < 0 or mnew[1] > 1e5 or      # l
-            mnew[2] < 10 or mnew[2] > 240 or      # tprime0
+            mnew[2] < 10 or mnew[2] > 240 or      # t0
             mnew[3] < 200 or mnew[3] > 400       # c
         )
 
@@ -366,7 +366,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
     del G, G_hold, Gm, H, dm, gamma, fpred, m, Cd, Cd0, cprior, cprior0
     return mnew, Cpost0, Cpost, mnew[4:], F_m
 
-def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax):
+def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax):
     """
     Get automatic picks for all overtones.
     Uses CORRECTED timing that ensures t=0 at closest approach.
@@ -378,7 +378,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         frequencies (np.ndarray): Array of frequency values from fft.
         spec (np.ndarray): Spectrogram data from fft.
         corridor_width (float): Width of the corridor for picking.
-        tprime0 (float): Model parameter for the arrival time.
+        t0 (float): Model parameter for the arrival time.
         v0 (float): Model parameter for the velocity.
         l (float): Model parameter for the distance.
         c (float): Model parameter for the speed of sound.
@@ -402,7 +402,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         ft0p = peaks[pp]
         
         # CORRECTED: Use updated calc_f0 function
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        f0 = calc_f0(tprime, t0, ft0p, v0, l, c)
         f0_array.append(f0)
 
         maxfreq = []
@@ -410,7 +410,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
         ttt = []
 
         # CORRECTED: Use updated calc_ft function
-        ft = calc_ft(times, tprime0, f0, v0, l, c)
+        ft = calc_ft(times, t0, f0, v0, l, c)
 
         for t_f in range(len(times)):
             upper = int(ft[t_f] + corridor_width)
@@ -450,7 +450,7 @@ def get_auto_picks_full(peaks, time_peaks, times, frequencies, spec, corridor_wi
 
         if len(ttt) > 0 and f0 <= 230:
             coord_inv_array = np.array(coord_inv)
-            mtest = [f0, v0, l, tprime0, c]
+            mtest = [f0, v0, l, t0, c]
             
             # CORRECTED: Use updated invert_f function
             mtest, _, _, _ = invert_f(mtest, sigma_prior, coord_inv_array, num_iterations=2)
@@ -488,7 +488,7 @@ endtime = UTCDateTime("2019-03-04T01:21:22")
 st = client.get_waveforms("ZE", "1010", "*", "DPZ", starttime, endtime)
 tr = st[0]
 data = tr.data
-torg = tr.times()
+t_wf = tr.times()
 fs = int(tr.stats.sampling_rate)
 title = f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel} − starting {tr.stats["starttime"]}'
 
@@ -540,18 +540,18 @@ c = 320  # Speed of sound (m/s)
 fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])  # Max/min frequency
 fm = (fa + fr) / 2
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
-f0, tprime0 = coords_array[closest_index, 1], coords_array[closest_index, 0]
+f0, t0 = coords_array[closest_index, 1], coords_array[closest_index, 0]
 t_hold, second_index = np.inf, None
 for i, t in enumerate(coords_array[:, 0]):
-    if t != tprime0 and abs(t - tprime0) < t_hold:
-        t_hold = abs(t - tprime0)
+    if t != t0 and abs(t - t0) < t_hold:
+        t_hold = abs(t - t0)
         second_index = i
-#v0 = c * abs(fa - fr) / (2 * f0)  # Initial velocity estimate
+
 v0 = -c - c*np.sqrt(f0**2 + (fa-fr)**2) / (fa+fr)
 slope = (coords_array[closest_index, 1] - coords_array[second_index, 1]) / (coords_array[closest_index, 0] - coords_array[second_index, 0])
 l = -((f0 * v0 ** 2 / c) * (1 - (v0 / c) ** 2) ** (-3 / 2)) / slope  # Initial length estimate
-#l = tprime0 *c
-m0 = [f0, v0, l, tprime0, c]
+
+m0 = [f0, v0, l, t0, c]
 sigma_prior = [40, 1, 1, 200, 1]  # Initial prior uncertainties
 
 # First inversion to refine model - USING CORRECTED TIMING
@@ -561,12 +561,12 @@ m0[0], m0[3] = m[0], m[3]
 # Second inversion with wider priors
 sigma_prior = [150, 100, 10000, 200, 100]
 m, _, _, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=3)
-v0, l, tprime0, c = m[1], m[2], m[3], m[4]
-mprior = [v0, l, tprime0, c]
+v0, l, t0, c = m[1], m[2], m[3], m[4]
+mprior = [v0, l, t0, c]
 
 # Automatically associate picked peaks with overtone curves - USING CORRECTED TIMING
 corridor_width = 10 if len(peaks) <= 15 else 5
-tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax)
+tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax)
 mprior += [float(f) for f in f0_array]
 
 start_time = 23.14717741935484
@@ -590,17 +590,17 @@ tobs, fobs = ftobs, ffobs
 # Final inversion using filtered picks - USING CORRECTED TIMING
 sigma_prior = [10, 125, 15000, 30, 100] if abs(slope) < 1 else [10, 30, 500, 30, 100]
 m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-v0, l, tprime0, c = m[0], m[1], m[2], m[3]
+v0, l, t0, c = m[0], m[1], m[2], m[3]
 Cpost, Cpost0 = np.sqrt(np.diag(covm)), np.sqrt(np.diag(covm0))
 
 # Plot results
-closest_index = np.argmin(np.abs(tprime0 - times))
+closest_index = np.argmin(np.abs(t0 - times))
 arrive_time = np.clip(spec[:, closest_index], 0, None)
 vmin, vmax = np.min(arrive_time), np.max(arrive_time)
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=False, figsize=(8, 10))
 
 # Plot raw waveform
-ax1.plot(torg, data, 'k', linewidth=0.5)
+ax1.plot(t_wf, data, 'k', linewidth=0.5)
 ax1.set_title(title)
 ax1.margins(x=0)
 ax1.set_position([0.125, 0.6, 0.775, 0.3])
@@ -609,15 +609,15 @@ ax1.set_ylabel('Counts')
 # Plot spectrogram and inversion results
 cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax2.set_xlabel('Time (s)')
-ax2.axvline(x=tprime0, c='#377eb8', ls='--', linewidth=0.7, label=f"t\u2080' = {tprime0:.2f} s")
+ax2.axvline(x=t0, c='#377eb8', ls='--', linewidth=0.7, label=f"t\u2080' = {t0:.2f} s")
 f0lab = sorted(f0_array)
 
 # CORRECTED: Use updated calc_ft for plotting
 for f0 in f0lab:
-    ft = calc_ft(times, tprime0, f0, v0, l, c)  # Uses corrected timing
+    ft = calc_ft(times, t0, f0, v0, l, c)  # Uses corrected timing
     ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
     
-    ax2.scatter(tprime0, f0, color='black', marker='x', s=30)
+    ax2.scatter(t0, f0, color='black', marker='x', s=30)
     
 fss = 'x-small'
 
@@ -649,7 +649,7 @@ else:
     misfit_str = f"\nMisfit: {F_m:.4f}"
 df_str = f", df\u2080 = {med_df:.2f} \u00B1 {mad_df:.2f} Hz" if med_df != "NaN" else ""
 ax2.set_title(
-    f"t\u2080'= {tprime0:.2f} \u00B1 {Cpost0[2]:.2f} s, v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
+    f"t\u2080'= {t0:.2f} \u00B1 {Cpost0[2]:.2f} s, v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
     f"c = {c:.2f} \u00B1 {Cpost0[3]:.2f} m/s, l = {l:.2f} \u00B1 {Cpost0[1]:.2f} m, \n"
     f"f\u2080 = {f0lab_str} \u00B1 {np.median(Cpost0[3:]):.2f} Hz{df_str}{misfit_str}",
     fontsize=fss
@@ -674,8 +674,8 @@ for pp in range(len(f0_array)):
     f0 = f0_array[pp]
     if fs / 2 < f0:
         continue
-    tprime = tprime0
-    t = ((tprime - tprime0) - np.sqrt((tprime - tprime0) ** 2 - (1 - v0 ** 2 / c ** 2) * ((tprime - tprime0) ** 2 - l ** 2 / c ** 2))) / (1 - v0 ** 2 / c ** 2)
+    tprime = t0
+    t = ((tprime - t0) - np.sqrt((tprime - t0) ** 2 - (1 - v0 ** 2 / c ** 2) * ((tprime - t0) ** 2 - l ** 2 / c ** 2))) / (1 - v0 ** 2 / c ** 2)
     ft0p = f0 / (1 + (v0 / c) * (v0 * t) / (np.sqrt(l ** 2 + (v0 * t) ** 2)))
     if np.isnan(ft0p):
         continue

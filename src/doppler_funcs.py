@@ -424,18 +424,18 @@ def calc_time(t0, dist, alt, c):
 	float: Time at which the acoustic wave reaches the station (in seconds).
 	"""
 
-	t = t0 + (np.sqrt(dist**2 + alt**2))/c
-	return t
+	t0prime = t0 + (np.sqrt(dist**2 + alt**2))/c
+	return t0prime
 
 ############################################################################################################################
 
-def calc_ft(times, tprime0, f0, v0, l, c):
+def calc_ft(times, t0prime, f0, v0, l, c):
 	"""
 	Calculate the frequency at each given time using the model parameters.
 
 	Args:
 		times (list): List of time values.
-		tprime0 (float): The time at which the central frequency of the overtones occur, 
+		t0 (float): The time at which the central frequency of the overtones occur, 
 		                when the aircraft is at the closest approach to the station.
 		f0 (float): Fundamental frequency produced by the aircraft.
 		v0 (float): Velocity of the aircraft.
@@ -447,7 +447,7 @@ def calc_ft(times, tprime0, f0, v0, l, c):
 	"""
 	ft = []
 	for tprime in times:
-		t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+		t = ((tprime - t0prime)- np.sqrt((tprime-t0prime)**2-(1-v0**2/c**2)*((tprime-t0prime)**2-l**2/c**2)))/(1-v0**2/c**2)
 		ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 								
 		ft.append(ft0p)
@@ -501,13 +501,13 @@ def S(dnew, dobs, ndata, m, mprior, cprior, tsigma):
 
 ###################################################################################################################################################################
 
-def calc_f0(tprime, tprime0, ft0p, v0, l, c):
+def calc_f0(tprime, t0, ft0p, v0, l, c):
 	"""
 	Calculate the fundamental frequency produced by an aircraft (where the wave is generated) given the model parameters.
 
 	Parameters:
 	tprime (float): Time at which a frequency (ft0p) is observed on the station.
-	tprime0 (float):  The time at which the central frequency of the overtones occur.
+	t0 (float):  The time at which the central frequency of the overtones occur.
 	ft0p (float): Frequency recorded on the seismometer, picked from the overtone doppler curve.
 	v0 (float): Velocity of the aircraft.
 	l (float): Distance between the station and the aircraft at the closest approach.
@@ -516,7 +516,7 @@ def calc_f0(tprime, tprime0, ft0p, v0, l, c):
 	Returns:
 	f0 (float): Fundamental frequency produced by the aircraft. (Frequency at the source.) 
 	"""
-	t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+	t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 	f0 = ft0p*(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
 	return f0
@@ -524,7 +524,7 @@ def calc_f0(tprime, tprime0, ft0p, v0, l, c):
 ####################################################################################################################################################################################################################################################################################################################
 def df(f0, v0, l, tp0, tp, c):   
     """
-	Calculate the derivatives of f with respect to f0, v0, l, tprime0 and c.
+	Calculate the derivatives of f with respect to f0, v0, l, t0 and c.
 
 	Parameters:
 	f0 (float): Fundamental frequency produced by the aircraft.
@@ -535,7 +535,7 @@ def df(f0, v0, l, tp0, tp, c):
 	tp (numpy.ndarray): Array of times.
 
 	Returns:
-	tuple: A tuple containing the derivatives of f with respect to f0, v0, l, tprime0 and c.
+	tuple: A tuple containing the derivatives of f with respect to f0, v0, l, t0 and c.
 	"""
 
     #derivative with respect to f0
@@ -561,7 +561,7 @@ def df(f0, v0, l, tp0, tp, c):
 
 
     #derivative of f with respect to tp0
-    f_derivetprime0 = ((f0 * l**2 * (c - v0) * v0**2 * (c + v0) * ((-tp + tp0) * v0**2 + c**2 * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))) / 
+    f_derivet0 = ((f0 * l**2 * (c - v0) * v0**2 * (c + v0) * ((-tp + tp0) * v0**2 + c**2 * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))) / 
     (c * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4) * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * 
     (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2) * (c * (-tp + tp0) * v0**2 + c * v0**2 * np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4) - 
     c**2 * np.sqrt(l**2 + (c**4 * v0**2 * (-tp + tp0 + np.sqrt((-l**2 * v0**2 + c**2 * (l**2 + (tp - tp0)**2 * v0**2))/c**4))**2)/(c**2 - v0**2)**2) + v0**2 * np.sqrt(l**2 + 
@@ -576,7 +576,7 @@ def df(f0, v0, l, tp0, tp, c):
     c**2*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))**2)/(c**2 - v0**2)**2) + 
     v0**2*np.sqrt(l**2 + (c**4*v0**2*(-tp + tp0 + np.sqrt((-l**2*v0**2 + c**2*(l**2 + (tp-tp0)**2*v0**2))/c**4))**2)/(c**2 - v0**2)**2))**2) 
     
-    return f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec
+    return f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec
 
 
 #####################################################################################################################################################################################################################################################################################################################
@@ -585,8 +585,8 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 	Inverts the function f using the given initial parameters and data array.
 
 	Args:
-		mprior (numpy.ndarray): Initial parameters for the function, f[0] = f0, f[1] = v0, f[2] = l, f[3] = tprime0, f[4] = c.
-		prior_sigma (list): List of standard deviations for the prior parameters prior_sigma[0] = f0_sigma, prior_sigma[1] = v0_sigma, prior_sigma[2] = l_sigma, prior_sigma[3] = tprime0_sigma, prior_sigma[4] = c_sigma.
+		mprior (numpy.ndarray): Initial parameters for the function, f[0] = f0, f[1] = v0, f[2] = l, f[3] = t0, f[4] = c.
+		prior_sigma (list): List of standard deviations for the prior parameters prior_sigma[0] = f0_sigma, prior_sigma[1] = v0_sigma, prior_sigma[2] = l_sigma, prior_sigma[3] = t0_sigma, prior_sigma[4] = c_sigma.
 		coords_array (numpy.ndarray): Data picks along overtone doppler curve.
 		num_iterations (int): Number of iterations to perform.
 		sigma (float): Standard deviation for the data picks, default is 10.
@@ -608,16 +608,16 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 	f0_sigma = prior_sigma[0]
 	v0_sigma = prior_sigma[1]
 	l_sigma = prior_sigma[2]
-	tprime0_sigma = prior_sigma[3]
+	t0_sigma = prior_sigma[3]
 	c_sigma = prior_sigma[4]
 
 	cprior0[0][0] = f0_sigma**2
 	cprior0[1][1] = v0_sigma**2
 	cprior0[2][2] = l_sigma**2
-	cprior0[3][3] = tprime0_sigma**2
+	cprior0[3][3] = t0_sigma**2
 	cprior0[4][4] = c_sigma**2
 	if off_diagonal:
-		cprior0[0][3] =  -0.4*f0_sigma*tprime0_sigma
+		cprior0[0][3] =  -0.4*f0_sigma*t0_sigma
 
 		cprior0[1][2] = -0.7*v0_sigma*l_sigma
 		cprior0[1][4] = 0.85*v0_sigma*c_sigma
@@ -625,7 +625,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 		cprior0[2][1] = -0.7*v0_sigma*l_sigma
 		cprior0[2][4] = -0.7*l_sigma*c_sigma
 
-		cprior0[3][0] =  -0.4*f0_sigma*tprime0_sigma
+		cprior0[3][0] =  -0.4*f0_sigma*t0_sigma
 
 		cprior0[4][1] = 0.85*v0_sigma*c_sigma
 		cprior0[4][2] = -0.7*l_sigma*c_sigma
@@ -652,7 +652,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 		f0 = m[0]
 		v0 = m[1]
 		l = m[2]
-		tprime0 = m[3]
+		t0 = m[3]
 		c = m[4]
 
 		fpred = []
@@ -662,11 +662,11 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 		for i in range(0,dw):
 			tprime = tobs[i]
 
-			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+			t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
+			f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
 			
-			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
+			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec]
 			fpred.append(ft0p) 
 		Gm = G
 		
@@ -685,7 +685,7 @@ def invert_f(mprior, prior_sigma, coords_array, num_iterations, sigma = 10, off_
 			mnew[1] <= 0 or mnew[1] > 350 or     # v0
 			mnew[1] >= mnew[4] or  # v0 must be less than c
 			mnew[2] < 0 or mnew[2] > 1e5 or      # l
-			mnew[3] < 10 or mnew[3] > 240 or      # tprime0
+			mnew[3] < 10 or mnew[3] > 240 or      # t0
 			mnew[4] < 200 or mnew[4] > 400       # c
 		)
 		if unreasonable and n > 0:
@@ -725,7 +725,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 		fobs (numpy.ndarray): Picked frequency values from individual overtone inversion picks.
 		tobs (numpy.ndarray): Picked time values from individual overtone inversion picks.
 		peak_assos (list): List of number of peaks associated with each overtone, for indexing the fobs and tobs arrays.
-		mprior (numpy.ndarray): Initial guess for the model parameters, mprior[0] = v0, mprior[1] = l, mprior[2] = tprime0, mprior[3] = c, mprior[4:] = f0_array.
+		mprior (numpy.ndarray): Initial guess for the model parameters, mprior[0] = v0, mprior[1] = l, mprior[2] = t0, mprior[3] = c, mprior[4:] = f0_array.
 		num_iterations (int): Number of iterations to perform for the inversion.
 		sigma (float): Standard deviation for the data picks, default is 3.
 		off_diagonal (bool): Whether to include off-diagonal elements in the prior covariance matrix, default is False.
@@ -744,11 +744,11 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 	f0_sigma = sigma_prior[0]
 	v0_sigma = sigma_prior[1]
 	l_sigma = sigma_prior[2]
-	tprime0_sigma = sigma_prior[3]
+	t0_sigma = sigma_prior[3]
 	c_sigma = sigma_prior[4]
 
 	if off_diagonal:
-		cprior0[4:][2] =  -0.4*f0_sigma*tprime0_sigma
+		cprior0[4:][2] =  -0.4*f0_sigma*t0_sigma
 
 		cprior0[0][1] = -0.7*v0_sigma*l_sigma
 		cprior0[0][3] = 0.85*v0_sigma*c_sigma
@@ -756,7 +756,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 		cprior0[1][0] = -0.7*v0_sigma*l_sigma
 		cprior0[1][3] = -0.7*l_sigma*c_sigma
 
-		cprior0[2][4:] =  -0.4*f0_sigma*tprime0_sigma
+		cprior0[2][4:] =  -0.4*f0_sigma*t0_sigma
 
 		cprior0[3][0] = 0.85*v0_sigma*c_sigma
 		cprior0[3][1] = -0.7*l_sigma*c_sigma
@@ -767,7 +767,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 		elif row == 1:
 			cprior0[row][row] = l_sigma**2
 		elif row == 2:
-			cprior0[row][row] = tprime0_sigma**2
+			cprior0[row][row] = t0_sigma**2
 		elif row == 3:
 			cprior0[row][row] = c_sigma**2
 		else:
@@ -794,7 +794,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 			m = mnew
 		v0 = m[0]
 		l = m[1]
-		tprime0 = m[2]
+		t0 = m[2]
 		c = m[3]
 		f0_array = m[4:]
 
@@ -807,14 +807,14 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 			
 			for j in range(cum,cum+peaks_assos[p]):
 				tprime = tobs[j]
-				t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+				t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 				ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
-				f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0,v0,l,tprime0, tobs[j],c)
+				f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec = df(f0,v0,l,t0, tobs[j],c)
                 
 				new_row[0] = f_derivev0
 				new_row[1] = f_derivel
-				new_row[2] = f_derivetprime0
+				new_row[2] = f_derivet0
 				new_row[3] = f_derivec
 				new_row[4+p] = f_derivef0
 				G = np.vstack((G, new_row))
@@ -840,7 +840,7 @@ def full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations 
 		 	mnew[0] <= 0 or mnew[0] > 350 or     # v0
 		 	mnew[0] >= mnew[3] or  # v0 must be less than c
 		 	mnew[1] < 0 or mnew[1] > 1e5 or      # l
-		 	mnew[2] < 10 or mnew[2] > 240 or      # tprime0
+		 	mnew[2] < 10 or mnew[2] > 240 or      # t0
 		 	mnew[3] < 200 or mnew[3] > 400       # c
 		 )
 
@@ -1034,7 +1034,7 @@ def load_waveform(sta, start_time, spec_window=120):
 		spec_window (int): Time window in seconds to trim the waveform data, default is 120 seconds.
 
 	Returns:
-		tuple: A tuple containing the waveform data, sampling frequency, time origin, and title
+		tuple: A tuple containing the waveform data, sampling frequency, time data correlating to waveform, and title
 	"""
 	
 	ht = datetime.fromtimestamp(start_time + spec_window, tz=timezone.utc)
@@ -1073,18 +1073,18 @@ def load_waveform(sta, start_time, spec_window=120):
 		data = tr[2][:]
 		fs = int(tr[2].stats.sampling_rate)
 		title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'
-		torg = tr[2].times()
+		t_wf = tr[2].times()
 		if len(data) == 0:
 			data = tr[1][:]
 			fs = int(tr[1].stats.sampling_rate)
 			title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'
-			torg = tr[1].times()
+			t_wf = tr[1].times()
 			if len(data) == 0:
 				data = tr[0][:]
 				fs = int(tr[0].stats.sampling_rate)
 				title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-				torg = tr[0].times()
-		return data, fs, torg, title
+				t_wf = tr[0].times()
+		return data, fs, t_wf, title
 	elif Path(waveform2).exists():
 		tr = obspy.read(waveform2)
 		tr[0].trim(tr[0].stats.starttime + (float(h) * 3600) + (mins * 60) + secs - spec_window,
@@ -1092,8 +1092,8 @@ def load_waveform(sta, start_time, spec_window=120):
 		data = tr[0][:]
 		fs = int(tr[0].stats.sampling_rate)
 		title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-		torg = tr[0].times()
-		return data, fs, torg, title
+		t_wf = tr[0].times()
+		return data, fs, t_wf, title
 	else:
 		return None, None, None, None
 
@@ -1138,7 +1138,7 @@ def load_waveform(sta, start_time, spec_window=120):
 	waveform2 = f"/scratch/irseppi/500sps/2019_0{month}_{day_str}/ZE_{sta}_DPZ.msd"
 
 		# tr is an ObsPy Stream
-		# Returns trimmed data, fs, torg, title
+		# Returns trimmed data, fs, t_wf, title
 		file_start = tr[0].stats.starttime
 		file_end = tr[0].stats.endtime
 		if t_start >= file_start and t_end <= file_end:
@@ -1147,8 +1147,8 @@ def load_waveform(sta, start_time, spec_window=120):
 			data = tr_trim[0][:]
 			fs = int(tr_trim[0].stats.sampling_rate)
 			title = f'{tr_trim[0].stats.network}.{tr_trim[0].stats.station}.{tr_trim[0].stats.location}.{tr_trim[0].stats.channel} − starting {tr_trim[0].stats["starttime"]}'
-			torg = tr_trim[0].times()
-			return data, fs, torg, title
+			t_wf = tr_trim[0].times()
+			return data, fs, t_wf, title
 		else:
 			# Need to stitch with next/previous file
 			st = tr.copy()
@@ -1187,7 +1187,7 @@ def load_waveform(sta, start_time, spec_window=120):
 					tr_next = obspy.read(next_waveform1)
 					st += tr_next
 			title = f'{st[0].stats.network}.{st[0].stats.station}.{st[0].stats.location}.{st[0].stats.channel} − starting {st[0].stats["starttime"]}'
-			torg = st[0].times()
+			t_wf = st[0].times()
 
 
 	# Calculate UTCDateTime for trimming
@@ -1207,8 +1207,8 @@ def load_waveform(sta, start_time, spec_window=120):
 			data = tr[0][:]
 			fs = int(tr[0].stats.sampling_rate)
 			title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'
-			torg = tr[0].times()
-			return data, fs, torg, title
+			t_wf = tr[0].times()
+			return data, fs, t_wf, title
 		else:
 			# Try to find and stitch with adjacent file if available
 			st = tr.copy()
@@ -1243,6 +1243,6 @@ def load_waveform(sta, start_time, spec_window=120):
 			data = st[0][:]
 			fs = int(st[0].stats.sampling_rate)
 			title = f'{st[0].stats.network}.{st[0].stats.station}.{st[0].stats.location}.{st[0].stats.channel} − starting {st[0].stats["starttime"]}'
-			torg = st[0].times()
-			return data, fs, torg, title
+			t_wf = st[0].times()
+			return data, fs, t_wf, title
 '''

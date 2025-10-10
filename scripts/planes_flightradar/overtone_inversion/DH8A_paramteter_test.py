@@ -42,7 +42,7 @@ for li in file_in.readlines():
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     try:
-        data, fs, torg, title = load_waveform(sta, (tarrive-window))
+        data, fs, t_wf, title = load_waveform(sta, (tarrive-window))
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
         spec, MDF = remove_median(Sxx)
     except Exception as e:
@@ -62,7 +62,7 @@ for li in file_in.readlines():
         start_time = start_time - 120
 
     if (tarrive - window) != start_time:
-        data, fs, torg, title = load_waveform(sta, start_time)
+        data, fs, t_wf, title = load_waveform(sta, start_time)
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
         spec, MDF = remove_median(Sxx)
 
@@ -73,7 +73,7 @@ for li in file_in.readlines():
 
     # Find the index of the point in coords_array with the closest frequency to f0
     f0 = ((np.max(coords_array[:,1])+np.min(coords_array[:,1]))/2) - 20
-    tprime0 = tarrive-start_time
+    t0 = tarrive-start_time
     v0 = speed_mps
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
@@ -81,37 +81,37 @@ for li in file_in.readlines():
     mprior = []
     mprior.append(v0)
     mprior.append(l)
-    mprior.append(tprime0)
+    mprior.append(t0)
     mprior.append(c)
 
     tf = np.arange(0, 240, 1)
 
-    m0 = [f0, v0, l, tprime0, c]
+    m0 = [f0, v0, l, t0, c]
     sigma_prior = [20, 1, 1, 200, 1]
     m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=8)
-    tprime0 = m[3]
+    t0 = m[3]
 
     sigma_f0 = 100
     sigma_v0 = 100
     sigma_l = 1000
-    sigma_tprime0 = 200
+    sigma_t0 = 200
     sigma_c = 100
 
-    m0 = [f0, v0, l, tprime0, c]
-    sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c]
-    m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_tprime0, sigma_c], coords_array, num_iterations=8)
+    m0 = [f0, v0, l, t0, c]
+    sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c]
+    m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c], coords_array, num_iterations=8)
     v0 = m[1]
     l = m[2]
-    tprime0 = m[3]
+    t0 = m[3]
     c = m[4]
-    mprior[2] = tprime0
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, tarrive, make_picks=True)
+    mprior[2] = t0
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, t0, tarrive, make_picks=True)
 
     corridor_width = 8 
     if equip[0] == 'B' and equip[0:1] != 'BE':
         corridor_width = 5
 
-    tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, tprime0, v0, l, c, sigma_prior, vmax, equip)
+    tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax, equip)
     
     if len(fobs) == 0:
         continue
@@ -132,11 +132,11 @@ for li in file_in.readlines():
 
         v0 = m[0]
         l = m[1]
-        tprime0 = m[2]
+        t0 = m[2]
         c = m[3]
         covm = np.sqrt(np.diag(covm))
 
-        closest_index = np.argmin(np.abs(tprime0 - times))
+        closest_index = np.argmin(np.abs(t0 - times))
         arrive_time = spec[:,closest_index]
         for i in range(len(arrive_time)):
             if arrive_time[i] < 0:
@@ -144,17 +144,17 @@ for li in file_in.readlines():
 
         BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/'+str(sig)+'/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
         make_base_dir(BASE_DIR)
-        qnum = plot_spectrogram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
+        qnum = plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
         qnum = "__"
         BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/with_c_quasi/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
         make_base_dir(BASE_DIR)
-        plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
+        plot_spectrum(spec, frequencies, t0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
         
         if rerun_fig == False and not c_avg:
             output = open('output/inv_results/' + str(sig) + '_' + equip + 'data_atmosphere_full.csv', 'a')
-            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
+            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
             output.close()
         elif rerun_fig == False and c_avg:
             output = open('output/inv_results/FIXED_C_' + str(sig) + '_' + equip + 'data_atmosphere_full.csv', 'a')
-            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(tprime0)+','+ str(start_time + tprime0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
+            output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n')
             output.close()

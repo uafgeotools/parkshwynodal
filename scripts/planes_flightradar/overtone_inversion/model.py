@@ -5,12 +5,12 @@ tpr = np.arange(0, 241, 1)
 
 f0_vary = np.arange(0, 250, 20)
 v0_vary = np.arange(0, 200, 20)
-tprime0_vary = np.arange(0, 250, 24)
+t0_vary = np.arange(0, 250, 24)
 l_vary = np.arange(0, 2000, 250)
 c_vary = np.arange(295, 355, 5)
 for n in range(3, 4):
 	f0 = 100
-	tprime0 = 120
+	t0 = 120
 	c = 343
 	v0 = 50
 	l = 1000
@@ -28,7 +28,7 @@ for n in range(3, 4):
 
 			ft = []
 			for tprime in tpr:
-				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 				
 				ft.append(ft0p)
 			fchange.append(ft[-1]-ft[0])
@@ -46,7 +46,7 @@ for n in range(3, 4):
 		for v0 in v0_vary:
 			ft = []
 			for tprime in tpr:
-				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 			
 				ft.append(ft0p)
 			fchange.append(ft[-1]-ft[0])
@@ -64,7 +64,7 @@ for n in range(3, 4):
 		for l in l_vary:
 			ft = []
 			for tprime in tpr:
-				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 				
 				ft.append(ft0p)
 			
@@ -82,7 +82,7 @@ for n in range(3, 4):
 		for c in c_vary:
 			ft = []
 			for tprime in tpr:
-				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+				ft0p = f0*1/(1+(v0/c)*(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 			
 				ft.append(ft0p)
 			fchange.append(ft[-1]-ft[0])
@@ -97,22 +97,22 @@ for n in range(3, 4):
 #plt.figure()
 tpr = np.arange(0, 241, 1)
 f0 = 100
-tprime0 = 120
+t0 = 120
 c = 343
 v0 = 50
 l = 1000
 ft = []
 
 for tprime in tpr:
-	ft0p = f0*1/(1+(v0/c)*(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+	ft0p = f0*1/(1+(v0/c)*(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 			
 	ft.append(ft0p)
 plt.plot(tpr, ft, 'k', linewidth=0.5)
 l = 10
 ti = [50,200]
-for tprime0 in ti:
+for t0 in ti:
 	
-	ft0p = f0*1/(1+(v0/c)*(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+	ft0p = f0*1/(1+(v0/c)*(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))/(np.sqrt(l**2+(v0*((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 	#plt.axhline(ft0p, color='k', linestyle='--')
 
 plt.ylabel('Frequency (Hz)')

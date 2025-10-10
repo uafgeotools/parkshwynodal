@@ -54,14 +54,14 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 			f0 = m[0]
 			v0 = m[1]
 			l = m[2]
-			tprime0 = m[3]
+			t0 = m[3]
 			c = m[4]
 			tprime = tobs[i]
-			t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+			t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-			f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
+			f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec = df(m[0], m[1], m[2], m[3], tobs[i],m[4])
 			
-			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec]
+			G[i,0:5] = [f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec]
 
 			fpred.append(ft0p) 
 		Gm = G
@@ -86,7 +86,7 @@ def invert_f(mprior, coords_array, num_iterations,sigma = 10):
 
 #####################################################################################################################################################################################################################################################################################################################
 
-def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 10):
+def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, t0, ft0p, v0, l, f0_array, mprior, c, w, num_iterations = 4, sigma = 10):
 	"""
 	Performs inversion using all picked overtones. 
 
@@ -133,14 +133,14 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
 			
 			for j in range(cum,cum+peaks_assos[p]):
 				tprime = tobs[j]
-				t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+				t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 				ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
-				f_derivef0, f_derivev0, f_derivel, f_derivetprime0, f_derivec = df(f0,v0,l,tprime0, tobs[j],c)
+				f_derivef0, f_derivev0, f_derivel, f_derivet0, f_derivec = df(f0,v0,l,t0, tobs[j],c)
                 #reccheck cunstruction of this matrix and how we include all f0's
 				new_row[0] = f_derivev0
 				new_row[1] = f_derivel
-				new_row[2] = f_derivetprime0
+				new_row[2] = f_derivet0
 				new_row[3] = f_derivec
 				new_row[4+p] = f_derivef0
 						
@@ -162,7 +162,7 @@ def full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft
         
 		v0 = mnew[0]
 		l = mnew[1]
-		tprime0 = mnew[2]
+		t0 = mnew[2]
 		c = mnew[3]
 		f0_array = mnew[4:]
 
@@ -339,17 +339,17 @@ for li in file_in.readlines():
         data = tr[2][:]
         fs = int(tr[2].stats.sampling_rate)
         title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-        torg = tr[2].times()
+        t_wf = tr[2].times()
         if len(data) == 0:
             data = tr[1][:]
             fs = int(tr[1].stats.sampling_rate)
             title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
-            torg = tr[1].times()
+            t_wf = tr[1].times()
             if len(data) == 0:
                 data = tr[0][:]
                 fs = int(tr[0].stats.sampling_rate)
                 title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-                torg = tr[0].times()
+                t_wf = tr[0].times()
     except:
         try:
             p = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
@@ -360,7 +360,7 @@ for li in file_in.readlines():
             data = tr[0][:]
             fs = int(tr[0].stats.sampling_rate)
             title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-            torg = tr[0].times()
+            t_wf = tr[0].times()
         except:
             print(p)
             continue
@@ -375,7 +375,7 @@ for li in file_in.readlines():
     vmin = 0  
     vmax = np.max(middle_column) 
 
-    tprime0 = tarrive-start_time
+    t0 = tarrive-start_time
     v0 = speed_mps
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
@@ -392,15 +392,15 @@ for li in file_in.readlines():
     coords_array = np.array(coords)
 
     f0 = 116
-    m0 = [f0, v0, l, tprime0]
+    m0 = [f0, v0, l, t0]
 
     m,covm, F_m = invert_f(m0, coords_array, c, num_iterations=8)
     f0 = m[0]
     v0 = m[1]
     l = m[2]
-    tprime0 = m[3]
+    t0 = m[3]
     
-    ft = calc_ft(times, tprime0, f0, v0, l, c)
+    ft = calc_ft(times, t0, f0, v0, l, c)
     if isinstance(sta, int):
         peaks = []
         p, _ = find_peaks(middle_column, distance = 7)
@@ -434,9 +434,9 @@ for li in file_in.readlines():
         f0 = m[0]
         v0 = m[1]
         l = m[2]
-        tprime0 = m[3]
+        t0 = m[3]
 
-        ft = calc_ft(times, tprime0, f0, v0, l, c)
+        ft = calc_ft(times, t0, f0, v0, l, c)
         
         delf = np.array(ft) - np.array(peaks)
         
@@ -451,21 +451,21 @@ for li in file_in.readlines():
         f0 = m[0]
         v0 = m[1]
         l = m[2]
-        tprime0 = m[3]
+        t0 = m[3]
 
     mprior = []
     mprior.append(v0)
     mprior.append(l)
-    mprior.append(tprime0)       
+    mprior.append(t0)       
 
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, wind, make_picks=False)
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, t0, wind, make_picks=False)
 
     f0_array = []
     w = len(peaks)
     for o in range(w):
         tprime = freqpeak[o]
         ft0p = peaks[o]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+        f0 = calc_f0(tprime, t0, ft0p, v0, l, c)
         mprior.append(f0)
         f0_array.append(f0)
     mprior = np.array(mprior)
@@ -480,8 +480,8 @@ for li in file_in.readlines():
     for pp in range(len(peaks)):
         tprime = freqpeak[pp]
         ft0p = peaks[pp]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        ft = calc_ft(times,  tprime0, f0, v0, l, c)
+        f0 = calc_f0(tprime, t0, ft0p, v0, l, c)
+        ft = calc_ft(times,  t0, f0, v0, l, c)
         
         maxfreq = []
         coord_inv = []
@@ -489,8 +489,8 @@ for li in file_in.readlines():
 
         f01 = f0 + corridor_width
         f02 = f0  - corridor_width
-        upper = calc_ft(times,  tprime0, f01, v0, l, c)
-        lower = calc_ft(times,  tprime0, f02, v0, l, c)
+        upper = calc_ft(times,  t0, f01, v0, l, c)
+        lower = calc_ft(times,  t0, f02, v0, l, c)
 
         for t_f in range(len(times)):
 
@@ -514,11 +514,11 @@ for li in file_in.readlines():
         if len(coord_inv) > 0:
             if f0 < 200:
                 coord_inv_array = np.array(coord_inv)
-                mtest = [f0,v0, l, tprime0]
+                mtest = [f0,v0, l, t0]
                 mtest,_, F_m = invert_f(mtest, coord_inv_array, c, num_iterations=4)
                 ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], c)
             else:
-                ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
+                ft = calc_ft(ttt,  t0, f0, v0, l, c)
 
             delf = np.array(ft) - np.array(maxfreq)
 
@@ -537,16 +537,16 @@ for li in file_in.readlines():
 
     try:
         tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, w, peaks_assos, make_picks=False)
-        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, tprime0, ft0p, v0, l, f0_array, mprior, c, w, 5)
+        m, covm, f0_array, F_m = full_inversion(fobs, tobs, freqpeak, peaks, peaks_assos, tprime, t0, ft0p, v0, l, f0_array, mprior, c, w, 5)
     except:
         print('Inversion failed for: ', date, flight_num, sta)
         continue
     v0 = m[0]
     l = m[1]
-    tprime0 = m[2]
+    t0 = m[2]
     covm = np.sqrt(np.diag(covm))
 
-    closest_index = np.argmin(np.abs(tprime0 - times))
+    closest_index = np.argmin(np.abs(t0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
         if arrive_time[i] < 0:
@@ -554,14 +554,14 @@ for li in file_in.readlines():
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrgram(data, fs, torg, title, spec, times, frequencies, tprime0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
+    qnum = plot_spectrgram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, arrive_time, MDF, covm, flight_num, middle_index, tarrive-start_time, closest_time, BASE_DIR, plot_show=False)
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    plot_spectrum(spec, frequencies, tprime0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
+    plot_spectrum(spec, frequencies, t0, v0, l, c, f0_array, arrive_time, fs, closest_index, closest_time, sta, BASE_DIR)
     
     #if rerun_fig == False:
-    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(tprime0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+    output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(t0)+','+str(v0)+','+str(l)+','+str(f0_array)+','+str(covm)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
 
     #if rerun_fig == False:
     output.close()

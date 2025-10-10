@@ -9,7 +9,7 @@ tr[2].trim(tr[2].stats.starttime + 42 * 60, tr[2].stats.starttime + 43 * 60 + 45
 data = tr[2][:]
 fs = int(tr[2].stats.sampling_rate)
 title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'                        
-torg = tr[2].times()
+t_wf = tr[2].times()
 
 #tr[2].spectrogram(per_lap=0.99,log=False,dbscale=True,cmap='hsv',clip=[0.4, 0.5])
 
@@ -18,7 +18,7 @@ frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, n
 
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(8,6))     
 
-ax1.plot(torg, data, 'k', linewidth=0.5)
+ax1.plot(t_wf, data, 'k', linewidth=0.5)
 ax1.set_title(title)
 
 ax1.margins(x=0)

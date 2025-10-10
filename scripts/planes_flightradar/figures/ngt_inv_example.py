@@ -24,7 +24,7 @@ tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs , tr[2].stats.starttime + 
 data = tr[2][:]
 fs = int(tr[2].stats.sampling_rate)
 title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-torg = tr[2].times()
+t_wf = tr[2].times()
 
 # Compute spectrogram
 frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
@@ -74,13 +74,13 @@ cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r
 
 #insert method to get initial model here
 f0 = (coords_array[1,1]+coords_array[2,1])/2 - 20
-tprime0 = coords_array[0,0] 
+t0 = coords_array[0,0] 
 v0 = c*abs(coords_array[1,1]-coords_array[2,1]) / (2 * f0)
 slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
 l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope #(c**2*f0*v0**2*np.sqrt(c**2 - v0**2)/(c**2 - v0**2)**2)/abs(slope)
 
-m0 = [f0, v0, l, tprime0,c]
-prior_sigma = [50, 70, 2000, 30, 60] #initial prior sigma values for f0, v0, l, tprime0, c
+m0 = [f0, v0, l, t0,c]
+prior_sigma = [50, 70, 2000, 30, 60] #initial prior sigma values for f0, v0, l, t0, c
 
 
 print('Initial model:', m0)
@@ -129,13 +129,13 @@ ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
 ax[3].set_title("(d) data extracted from model corridor (updated prior model \u00B1 10)", fontsize='small')
 
-prior_sigma = [5,10,600,5,30] #prior sigma values for f0, v0, l, tprime0, c
+prior_sigma = [5,10,600,5,30] #prior sigma values for f0, v0, l, t0, c
 m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
 
 f0 = m[0]
 v0 = m[1]
 l = m[2]
-tprime0 = m[3]
+t0 = m[3]
 c = m[4]
 print(l)
 l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope
@@ -154,16 +154,16 @@ coord_inv_array = np.array(new_coord_inv_array)
 ax[3].scatter(coord_inv_array[:, 0], coord_inv_array[:, 1], c='black', marker='x', s=20)
 ax[3].set_ylabel('Frequency (Hz)')
 
-prior_sigma = [5,10,500,30,80] #prior sigma values for f0, v0, l, tprime0, c
+prior_sigma = [5,10,500,30,80] #prior sigma values for f0, v0, l, t0, c
 m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=3)
 
 f0 = m[0]
 v0 = m[1]
 l = m[2]
-tprime0 = m[3]
+t0 = m[3]
 c = m[4]
 
-ft = calc_ft(times, tprime0, f0, v0, l, c)
+ft = calc_ft(times, t0, f0, v0, l, c)
 cax = ax[4].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[4].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[4].set_ylabel('Frequency (Hz)')
@@ -184,13 +184,13 @@ if generate_samples:
 		f0_s = m_samples[0,jj]
 		v0_s = m_samples[1,jj]
 		l_s = m_samples[2,jj]
-		tprime0_s = m_samples[3,jj]
+		t0_s = m_samples[3,jj]
 		c_s = m_samples[4,jj]
-		ft = calc_ft(times, tprime0_s, f0_s, v0_s, l_s, c_s)
+		ft = calc_ft(times, t0_s, f0_s, v0_s, l_s, c_s)
 		ft_matrix[jj, :] = ft 
 	ax[5].set_ylim(0, 250)
 	std_samples  = np.std(ft_matrix,axis=0)
-	ft = calc_ft(times, tprime0, f0, v0, l, c)
+	ft = calc_ft(times, t0, f0, v0, l, c)
 	ax[5].plot(times, ft+std_samples, color='red', linewidth=0.5)
 	ax[5].plot(times, ft-std_samples, color='red', linewidth=0.5)
 	ax[5].set_title("(f) standard deviation of posterior model samples", fontsize='small')
@@ -213,7 +213,7 @@ if make_final_plot:
 	covm = np.sqrt(np.diag(covm0))
 	fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
-	ax1.plot(torg, data, 'k', linewidth=0.5)
+	ax1.plot(t_wf, data, 'k', linewidth=0.5)
 	ax1.set_title(title)
 
 	ax1.margins(x=0)
@@ -223,20 +223,20 @@ if make_final_plot:
 	cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
 	ax2.set_xlabel('Time (s)')
 
-	ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % tprime0 +' s')
+	ax2.axvline(x=t0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % t0 +' s')
 
-	ft = calc_ft(times, tprime0, f0, v0, l, c)
+	ft = calc_ft(times, t0, f0, v0, l, c)
 
 	ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7) 
-	tprime = tprime0
-	t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+	tprime = t0
+	t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 	ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 
-	ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30) 
+	ax2.scatter(t0, ft0p, color='black', marker='x', s=30) 
 
 	fss = 'x-small'
 
-	ax2.set_title("t\u2080'= "+ "%.2f" % tprime0 + ' \u00B1 ' + "%.2f" % covm[3] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[1] + ' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % covm[4] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[2] + ' m, \n' + 'f\u2080 =' + "%.2f" % f0 + ' \u00B1 ' + "%.2f" % covm[0] +' Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
+	ax2.set_title("t\u2080'= "+ "%.2f" % t0 + ' \u00B1 ' + "%.2f" % covm[3] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[1] + ' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % covm[4] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[2] + ' m, \n' + 'f\u2080 =' + "%.2f" % f0 + ' \u00B1 ' + "%.2f" % covm[0] +' Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
 
 
 	ax2.legend(loc='upper right',fontsize = 'small')

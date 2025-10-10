@@ -97,7 +97,7 @@ for n in range(0,3):
 		tpr = np.arange(0, 241, 1)
 		c = 320
 		v0 = 61.22 
-		tprime0 = (((1551066047.29- (time[n] - 120)))) + np.sqrt(1655.578**2 + 426.72**2)/c -2 
+		t0 = (((1551066047.29- (time[n] - 120)))) + np.sqrt(1655.578**2 + 426.72**2)/c -2 
 		l = np.sqrt(1655.58**2 + 426.72**2) 
 
 	if n == 1:
@@ -105,12 +105,12 @@ for n in range(0,3):
 		tpr = np.arange(0, 241, 1)
 		c = 320
 		v0 = 95.429362
-		tprime0 = np.abs(((time[n] - 120) -  1550172810.90)) + np.sqrt(521.55**2 + 2933.7**2)/c 
+		t0 = np.abs(((time[n] - 120) -  1550172810.90)) + np.sqrt(521.55**2 + 2933.7**2)/c 
 		l = np.sqrt(521.55**2 + 2933.7**2)
 
 	if n == 2:
 		fnot = [131]
-		tprime0 = 100
+		t0 = 100
 		tpr = np.arange(0, 241, 1)
 		c = 320
 		v0 = 123.46656
@@ -119,27 +119,27 @@ for n in range(0,3):
 	print(l)
 	print(c)
 
-	tprime0 = l/c
-	t = ((tprime0 - tprime0)+(l/c)- np.sqrt((v0/c)**2*(tprime0-tprime0)**2 + (v0/c)**2*(2*l/c)*((tprime0-tprime0)+l**2/c**2)))/(1-v0**2/c**2)
-	print('tprime0:', tprime0)
+	t0 = l/c
+	t = ((t0 - t0)+(l/c)- np.sqrt((v0/c)**2*(t0-t0)**2 + (v0/c)**2*(2*l/c)*((t0-t0)+l**2/c**2)))/(1-v0**2/c**2)
+	print('t0:', t0)
 	print('t:', t)
 
 
 	for f0 in fnot:
 		ft = []
 		for tprime in tpr:
-			t = ((tprime - tprime0)+(l/c)- np.sqrt((v0/c)**2*(tprime-tprime0)**2 + (v0/c)**2*(2*l/c)*(tprime-tprime0)+l**2/c**2))/(1-v0**2/c**2)
+			t = ((tprime - t0)+(l/c)- np.sqrt((v0/c)**2*(tprime-t0)**2 + (v0/c)**2*(2*l/c)*(tprime-t0)+l**2/c**2))/(1-v0**2/c**2)
 			ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))								
 			ft.append(ft0p)
 
 		ax2.plot(tpr, ft, 'g', linewidth=0.5)
-		ax2.set_title("Forward Model: t'= "+str(tprime0)+' sec, v0 = '+str(v0)+' m/s, l = '+str(l)+' m, \n' + 'f0 = '+str(fnot)+' Hz', fontsize='x-small')
+		ax2.set_title("Forward Model: t'= "+str(t0)+' sec, v0 = '+str(v0)+' m/s, l = '+str(l)+' m, \n' + 'f0 = '+str(fnot)+' Hz', fontsize='x-small')
 	# Plot spectrogram
 	cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
 	ax2.set_xlabel('Time (s)')
 
 
-	ax2.axvline(x=tprime0, c = 'g', ls = '--', label='Estimated arrival: '+str(tprime0)+' s')
+	ax2.axvline(x=t0, c = 'g', ls = '--', label='Estimated arrival: '+str(t0)+' s')
 	ax2.legend(loc='upper right',fontsize = 'x-small')
 	ax2.set_ylabel('Frequency (Hz)')
 

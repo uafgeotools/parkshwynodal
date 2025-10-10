@@ -11,12 +11,12 @@ from matplotlib.ticker import MaxNLocator
 num_workers = os.cpu_count()
 
 
-def plot_spectrogram(data, fs, torg, title, spec, times, frequencies, arrive_time, MDF, flight, middle_index, closest_time, dir_name):
+def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, arrive_time, MDF, flight, middle_index, closest_time, dir_name):
 
     vmin = 0 
     vmax = np.max(spec)
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
-    ax1.plot(torg, data, 'k', linewidth=0.5)
+    ax1.plot(t_wf, data, 'k', linewidth=0.5)
     ax1.set_title(title)
 
     ax1.margins(x=0)
@@ -81,7 +81,7 @@ def plot_spectrum(spec, frequencies, fs, closest_index, closest_time, sta, dir_n
 def load_plot_spectrogram(sta, date, flight_num, tarrive, closest_time):
     window = 120  # seconds before the arrival time to load the waveform
     try:
-        data, fs, torg, title = load_waveform(sta, (tarrive-window))
+        data, fs, t_wf, title = load_waveform(sta, (tarrive-window))
         frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend='constant')
         spec, MDF = remove_median(Sxx)
     except Exception as e:
@@ -92,7 +92,7 @@ def load_plot_spectrogram(sta, date, flight_num, tarrive, closest_time):
     middle_index =  len(times) // 2
     base_dir = '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
     make_base_dir(base_dir)
-    plot_spectrogram(data, fs, torg, title, spec, times, frequencies, 120, MDF, flight_num, middle_index, closest_time, base_dir)
+    plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, 120, MDF, flight_num, middle_index, closest_time, base_dir)
     
     BASE_DIR =  '/scratch/irseppi/nodal_data/plane_info/spec_no_inv/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)
     make_base_dir(BASE_DIR)

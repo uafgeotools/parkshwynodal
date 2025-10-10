@@ -146,17 +146,17 @@ for li in file_in.readlines():
         data = tr[2][:]
         fs = int(tr[2].stats.sampling_rate)
         title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-        torg = tr[2].times()
+        t_wf = tr[2].times()
         if len(data) == 0:
             data = tr[1][:]
             fs = int(tr[1].stats.sampling_rate)
             title = f'{tr[1].stats.network}.{tr[1].stats.station}.{tr[1].stats.location}.{tr[1].stats.channel} − starting {tr[1].stats["starttime"]}'                        
-            torg = tr[1].times()
+            t_wf = tr[1].times()
             if len(data) == 0:
                 data = tr[0][:]
                 fs = int(tr[0].stats.sampling_rate)
                 title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-                torg = tr[0].times()
+                t_wf = tr[0].times()
     except:
         try:
             p = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
@@ -167,7 +167,7 @@ for li in file_in.readlines():
             data = tr[0][:]
             fs = int(tr[0].stats.sampling_rate)
             title = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'                        
-            torg = tr[0].times()
+            t_wf = tr[0].times()
         except:
             print(p)
             continue
@@ -182,7 +182,7 @@ for li in file_in.readlines():
     vmin = 0  
     vmax = np.max(middle_column) 
 
-    tprime0 = tarrive-start_time
+    t0 = tarrive-start_time
     v0 = speed_mps
     height_m = alt - elev
     l = np.sqrt(dist_m**2 + (height_m)**2)
@@ -206,7 +206,7 @@ for li in file_in.readlines():
     coords_array = np.array(coords)
 
 
-    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, tprime0, 120, make_picks=False)
+    peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, t0, 120, make_picks=False)
     plt.scatter(freqpeak, peaks, color='red', s=15, marker='x')
 
     corridor_width = 10
@@ -218,8 +218,8 @@ for li in file_in.readlines():
     for pp in range(len(peaks)):
         tprime = freqpeak[pp]
         ft0p = peaks[pp]
-        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
-        ft = calc_ft(times,  tprime0, f0, v0, l, c)
+        f0 = calc_f0(tprime, t0, ft0p, v0, l, c)
+        ft = calc_ft(times,  t0, f0, v0, l, c)
         
         maxfreq = []
         coord_inv = []
@@ -227,8 +227,8 @@ for li in file_in.readlines():
 
         f01 = f0 + corridor_width
         f02 = f0  - corridor_width
-        upper = calc_ft(times,  tprime0, f01, v0, l, c)
-        lower = calc_ft(times,  tprime0, f02, v0, l, c)
+        upper = calc_ft(times,  t0, f01, v0, l, c)
+        lower = calc_ft(times,  t0, f02, v0, l, c)
 
         for t_f in range(len(times)):
 
@@ -252,11 +252,11 @@ for li in file_in.readlines():
         if len(coord_inv) > 0:
             if f0 < 200:
                 coord_inv_array = np.array(coord_inv)
-                mtest = [f0,v0, l, tprime0]
+                mtest = [f0,v0, l, t0]
                 mtest,_, F_m = invert_f(mtest, coord_inv_array, c, num_iterations=4)
                 ft = calc_ft(ttt,  mtest[3], mtest[0], mtest[1], mtest[2], c)
             else:
-                ft = calc_ft(ttt,  tprime0, f0, v0, l, c)
+                ft = calc_ft(ttt,  t0, f0, v0, l, c)
 
             delf = np.array(ft) - np.array(maxfreq)
 

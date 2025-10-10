@@ -67,7 +67,7 @@ for n in range(0,13):
                         data = tr[0][:]
                         fs = int(tr[0].stats.sampling_rate)
                         title    = f'{tr[0].stats.network}.{tr[0].stats.station}.{tr[0].stats.location}.{tr[0].stats.channel} − starting {tr[0].stats["starttime"]}'						
-                        torg                  = tr[0].times()
+                        t_wf                  = tr[0].times()
                     else:
                         p = "/scratch/naalexeev/NODAL/2019-0"+str(month[n])+"-"+str(day[n])+"T"+str(h)+":00:00.000000Z.2019-0"+str(month[n])+"-"+str(day2)+"T"+str(h_u)+":00:00.000000Z."+str(station[y])+".mseed"
                         tr = obspy.read(p)
@@ -75,7 +75,7 @@ for n in range(0,13):
                         data = tr[2][:]
                         fs = int(tr[2].stats.sampling_rate)
                         title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-                        torg = tr[2].times()
+                        t_wf = tr[2].times()
                       
                     clat, clon, dist_m, tmid = closest_encounter(flight_latitudes, flight_longitudes,line, tm, seismo_latitudes[y], seismo_longitudes[y])
                     dist_km = dist_m / 1000
@@ -216,81 +216,81 @@ for n in range(0,13):
                     coords_array = np.array(coords)
 
                     if n == 0:
-                        tprime0 = 112
+                        t0 = 112
                         f0 = 115
                         v0 = 68
                         l = 2135
 
                     if n == 1:
                         f0 = 110
-                        tprime0 = 107
+                        t0 = 107
                         v0 = 100
                         l = 2700
 
                     if n == 2:
                         f0 = 131
-                        tprime0 = 93
+                        t0 = 93
                         v0 = 139
                         l = 4650
 
                     if n == 3:
                         f0 = 121
-                        tprime0 = 116
+                        t0 = 116
                         v0 = 142
                         l = 2450
 
                     if n == 4:
                         f0 = 120
-                        tprime0 = 140
+                        t0 = 140
                         v0 = 64
                         l = 580
 
                     if n == 5:
                         f0 = 17.5
-                        tprime0 = 123
+                        t0 = 123
                         v0 = 112
                         l = 1150
 
                     if n == 6:
                         f0 = 36
-                        tprime0 = 133
+                        t0 = 133
                         v0 = 92
                         l = 2400
 
                     if n == 7:
                         f0 = 26		
-                        tprime0 = 122
+                        t0 = 122
                         v0 = 126
                         l = 3000
 
                     if n == 8:
                         f0 = 87.7
-                        tprime0 = 100
+                        t0 = 100
                         v0 = 67
                         l = 2300
 
                     if n == 9:
                         f0 = 26
-                        tprime0 = 114
+                        t0 = 114
                         v0 = 144
                         l = 1900
                     if n > 9:
 
                         f0 = fs/4
-                        tprime0 = tarrive
+                        t0 = tarrive
                         v0 = speed_mps
                         l = np.sqrt(dist_m**2 + (alt_m-elevations[y])**2)
 
                     c = 343
-                    m0 = [f0, v0, l, tprime0]
+                    m0 = [f0, v0, l, t0]
 
                     m,covm = invert_f(m0, coords_array, num_iterations=8)
                     f0 = m[0]
                     v0 = m[1]
                     l = m[2]
-                    tprime0 = m[3]
+                    t0 = m[3]
                     
-                    ft = calc_ft(times, tprime0, f0, v0, l, c)
+                    ft = calc_ft(times, t0, f0, v0, l, c)
                     if isinstance(sta[n], int):
                         peaks = []
                         p, _ = find_peaks(middle_column, distance = 7)
@@ -331,9 +331,9 @@ for n in range(0,13):
                         f0 = m[0]
                         v0 = m[1]
                         l = m[2]
-                        tprime0 = m[3]
+                        t0 = m[3]
 
-                        ft = calc_ft(times, tprime0, f0, v0, l, c)
+                        ft = calc_ft(times, t0, f0, v0, l, c)
                         
                         delf = np.array(ft) - np.array(peaks)
                         
@@ -354,9 +354,9 @@ for n in range(0,13):
                         f0 = m[0]
                         v0 = m[1]
                         l = m[2]
-                        tprime0 = m[3]
+                        t0 = m[3]
 
-                        ft = calc_ft(times, tprime0, f0, v0, l, c)
+                        ft = calc_ft(times, t0, f0, v0, l, c)
                         if show_process == True:
                             plt.figure()
                             plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
@@ -373,7 +373,7 @@ for n in range(0,13):
 
                         plt.figure()
                         plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                        plt.axvline(x=tprime0, c = 'g', ls = '--')
+                        plt.axvline(x=t0, c = 'g', ls = '--')
                         plt.plot(col)
                         for p in peaks:
                             plt.scatter(times[closest_time_index], frequencies[p], color='black', marker='x')
@@ -384,7 +384,7 @@ for n in range(0,13):
                         if Path(output2).exists():
                             plt.figure()
                             plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                            plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
+                            plt.axvline(x=t0, c = '#377eb8', ls = '--')
                             pick_data = pd.read_csv(output2, header=None)
 
                             plt.scatter(pick_data.iloc[:, 0], pick_data.iloc[:, 1], color='black', marker='x')
@@ -400,7 +400,7 @@ for n in range(0,13):
                                 freqpeak = []
                                 plt.figure()
                                 plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                                plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
+                                plt.axvline(x=t0, c = '#377eb8', ls = '--')
                                 def onclick(event):
                                     global coords
                                     peaks.append(event.ydata)
@@ -422,7 +422,7 @@ for n in range(0,13):
                                     freqpeak = []
                                     plt.figure()
                                     plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                                    plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
+                                    plt.axvline(x=t0, c = '#377eb8', ls = '--')
                                     def onclick(event):
                                         global coords
                                         peaks.append(event.ydata)
@@ -456,7 +456,7 @@ for n in range(0,13):
                             freqpeak = []
                             plt.figure()
                             plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                            plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
+                            plt.axvline(x=t0, c = '#377eb8', ls = '--')
 
                             def onclick(event):
                                 global coords
@@ -476,7 +476,7 @@ for n in range(0,13):
                                 freqpeak = []
                                 plt.figure()
                                 plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-                                plt.axvline(x=tprime0, c = '#377eb8', ls = '--')
+                                plt.axvline(x=t0, c = '#377eb8', ls = '--')
                                 def onclick(event):
                                     global coords
                                     peaks.append(event.ydata)
@@ -490,7 +490,7 @@ for n in range(0,13):
                                 plt.show(block=True)
                                 r2.close()
                                 pick_again = input("Do you want to repick you points? (y or n)")
-                    closest_index = np.argmin(np.abs(tprime0 - times))
+                    closest_index = np.argmin(np.abs(t0 - times))
                     arrive_time = spec[:,closest_index]
                     for i in range(len(arrive_time)):
                         if arrive_time[i] < 0:
@@ -500,7 +500,7 @@ for n in range(0,13):
 
                     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
 
-                    ax1.plot(torg, data, 'k', linewidth=0.5)
+                    ax1.plot(t_wf, data, 'k', linewidth=0.5)
                     ax1.set_title(title)
 
                     ax1.margins(x=0)
@@ -512,19 +512,19 @@ for n in range(0,13):
                     cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
                     ax2.set_xlabel('Time (s)')
                     f0lab = []
-                    ax2.axvline(x=tprime0, c = '#377eb8', ls = '--', linewidth=0.7,label='Estimated arrival: '+str(np.round(tprime0,2))+' s')
+                    ax2.axvline(x=t0, c = '#377eb8', ls = '--', linewidth=0.7,label='Estimated arrival: '+str(np.round(t0,2))+' s')
                     
                     for pp in range(len(peaks)):
                         tprime = freqpeak[pp]
                         ft0p = peaks[pp]
-                        f0 = calc_f0(tprime, tprime0, ft0p, v0, l, c)
+                        f0 = calc_f0(tprime, t0, ft0p, v0, l, c)
                         
-                        ft = calc_ft(times, tprime0, f0, v0, l, c)
+                        ft = calc_ft(times, t0, f0, v0, l, c)
 
                         ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7) #(0,(5,10)),
                         
-                        if np.abs(tprime -tprime0) < 1.5:
-                            ax2.scatter(tprime0, ft0p, color='black', marker='x', s=30) 
+                        if np.abs(tprime -t0) < 1.5:
+                            ax2.scatter(t0, ft0p, color='black', marker='x', s=30) 
                         f0lab.append(int(f0)) 
                         what_if = calc_ft(times, tarrive, fs/4, speed_mps, np.sqrt(dist_m**2 + alt_m**2), c)
                         #ax2.plot(times, what_if, 'red', ls = '--', linewidth=0.4)
@@ -534,7 +534,7 @@ for n in range(0,13):
                         fss = 'medium'
                     else:
                         fss = 'small'
-                    ax2.set_title("Final Model:\nt0'= "+str(np.round(tprime0,2))+' +/- ' + str(np.round(covm[3],2)) + ' sec, v0 = '+str(np.round(v0,2))+' +/- ' + str(np.round(covm[1],2)) +' m/s, l = '+str(np.round(l,2))+' +/- ' + str(np.round(covm[2],2)) +' m, \n' + 'f0 = '+str(f0lab_sorted)+' +/- ' + str(np.round(covm[0],2)) +' Hz', fontsize=fss)
+                    ax2.set_title("Final Model:\nt0'= "+str(np.round(t0,2))+' +/- ' + str(np.round(covm[3],2)) + ' sec, v0 = '+str(np.round(v0,2))+' +/- ' + str(np.round(covm[1],2)) +' m/s, l = '+str(np.round(l,2))+' +/- ' + str(np.round(covm[2],2)) +' m, \n' + 'f0 = '+str(f0lab_sorted)+' +/- ' + str(np.round(covm[0],2)) +' Hz', fontsize=fss)
                     ax2.axvline(x=tarrive, c = '#e41a1c', ls = '--',linewidth=0.5,label='Wave arrvial: '+str(np.round(tarrive,2))+' s')
 
                     
@@ -583,7 +583,7 @@ for n in range(0,13):
                             plt.text(peaks[g], arrive_time[peaks[g]], peaks[g], fontsize=15)
                     else:    
                         for pp in range(len(peaks)):
-                            if np.abs(freqpeak[pp] -tprime0) < 1.5:
+                            if np.abs(freqpeak[pp] -t0) < 1.5:
                                 upper = int(peaks[pp] + 3)
                                 lower = int(peaks[pp] - 3)
                                 tt = spec[lower:upper, closest_index]
@@ -599,7 +599,7 @@ for n in range(0,13):
                     plt.yticks(fontsize=12)
                     plt.ylim(0,vmax*1.1)
                     plt.xlabel('Frequency (Hz)', fontsize=17)
-                    plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(tprime0), fontsize=17)
+                    plt.ylabel('Relative Amplitude at t = {:.2f} s (dB)'.format(t0), fontsize=17)
 
 
                     make_base_dir('/scratch/irseppi/nodal_data/plane_info/5spec/20190'+str(month[n])+str(day[n])+'/'+str(flight_num[n])+'/'+str(sta[n])+'/')

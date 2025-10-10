@@ -97,7 +97,7 @@ for n in range(0,15):
 		tpr = np.arange(0, 241, 1)
 		c = 329.58
 		v0 = 61.22 
-		tprime0 = (((1551066047.29- (time[n] - 120)))) + np.sqrt(1655.578**2 + 426.72**2)/c
+		t0 = (((1551066047.29- (time[n] - 120)))) + np.sqrt(1655.578**2 + 426.72**2)/c
 		l = np.sqrt(1655.58**2 + 426.72**2) 
 
 	if n == 1:
@@ -105,12 +105,12 @@ for n in range(0,15):
 		tpr = np.arange(0, 241, 1)
 		c = 320
 		v0 = 95.429362
-		tprime0 = 116#np.abs(((time[n] - 120) -  1550172810.90)) + np.sqrt(521.55**2 + 2933.7**2)/c 
+		t0 = 116#np.abs(((time[n] - 120) -  1550172810.90)) + np.sqrt(521.55**2 + 2933.7**2)/c 
 		l = np.sqrt(521.55**2 + 2933.7**2)
 
 	if n == 2:
 		fnot = [79,131,261]
-		tprime0 = 115
+		t0 = 115
 		tpr = np.arange(0, 241, 1)
 		c = 347.15
 		v0 = 123.46656
@@ -118,7 +118,7 @@ for n in range(0,15):
 
 	if n == 3:
 		fnot = [36,73,121,136,144]
-		tprime0 = 116
+		t0 = 116
 		tpr = np.arange(80, 170, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -127,7 +127,7 @@ for n in range(0,15):
 
 	if n == 4:
 		fnot = [13,27,40,47,54,60,67,74,80,87,90,94,101,108,114,121,127,134,148,160,177,189,202,223,239,247,270]
-		tprime0 = 140
+		t0 = 140
 		tpr = np.arange(40, 230, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -136,7 +136,7 @@ for n in range(0,15):
 
 	if n == 5:
 		fnot = [12.5,17.5]
-		tprime0 = 123
+		t0 = 123
 		tpr = np.arange(105, 140, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -145,7 +145,7 @@ for n in range(0,15):
 
 	if n == 6:
 		fnot = [18,36]
-		tprime0 = 133
+		t0 = 133
 		tpr = np.arange(100, 200, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -154,7 +154,7 @@ for n in range(0,15):
 
 	if n == 7:
 		fnot = [26, 49]		
-		tprime0 = 122
+		t0 = 122
 		tpr = np.arange(50, 200, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -163,7 +163,7 @@ for n in range(0,15):
 
 	if n == 8:
 		fnot = [27,57.7,87.7]
-		tprime0 = 100
+		t0 = 100
 		tpr = np.arange(50, 250, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -172,7 +172,7 @@ for n in range(0,15):
 
 	if n == 9:
 		fnot = [26]
-		tprime0 = 114
+		t0 = 114
 		tpr = np.arange(60, 170, 1)
 		tpr = np.arange(0, 241, 1)
 		c = 343
@@ -181,21 +181,21 @@ for n in range(0,15):
 
 	if n == 10:
 		fnot = [38, 57, 76, 96, 116, 135, 154, 173, 192, 211, 231]
-		tprime0 = 112
+		t0 = 112
 		tpr = np.arange(0, 241, 1)
 		v0 = 53 
 		l = 831
 
 	if n == 11:
 		fnot = [19,40,59,79,100,120,140,160,180,200,221,241,261]
-		tprime0 = 118
+		t0 = 118
 		tpr = np.arange(0, 241, 1)
 		v0 = 59
 		l = 479
 
 	if n == 12:
 		fnot = [14,32,43,48,64,80,86,96,112,129,145,158,161,180,194,202,210,227,243,260,277]
-		tprime0 = 110
+		t0 = 110
 		tpr = np.arange(0, 241, 1)
 		v0 = 89
 		l = 1307
@@ -208,20 +208,20 @@ for n in range(0,15):
 				#ceff =
 				#vr = (vp**2*tprime)/np.sqrt((vp*tprime)**2 + l**2)
 				#v0 =vr
-				#t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
-				t = ((tprime0 - tprime)- np.sqrt((tprime0-tprime)**2-(1-v0**2/c**2)*((tprime0-tprime)**2-l**2/c**2)))/(1-v0**2/c**2)
+				#t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
+				t = ((t0 - tprime)- np.sqrt((t0-tprime)**2-(1-v0**2/c**2)*((t0-tprime)**2-l**2/c**2)))/(1-v0**2/c**2)
 				ft0p = f0/(1-(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 										
 				ft.append(ft0p)
 
 			ax2.plot(tpr, ft, 'g', linewidth=0.5)
-			ax2.set_title("Forward Model: t'= "+str(tprime0)+' sec, v0 = '+str(v0)+' m/s, l = '+str(l)+' m, \n' + 'f0 = '+str(fnot)+' Hz', fontsize='x-small')
+			ax2.set_title("Forward Model: t'= "+str(t0)+' sec, v0 = '+str(v0)+' m/s, l = '+str(l)+' m, \n' + 'f0 = '+str(fnot)+' Hz', fontsize='x-small')
 	# Plot spectrogram
 	cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
 	ax2.set_xlabel('Time (s)')
 
 
-	ax2.axvline(x=tprime0, c = 'g', ls = '--', label='Estimated arrival: '+str(tprime0)+' s')
+	ax2.axvline(x=t0, c = 'g', ls = '--', label='Estimated arrival: '+str(t0)+' s')
 	ax2.legend(loc='upper right',fontsize = 'x-small')
 	ax2.set_ylabel('Frequency (Hz)')
 

@@ -22,7 +22,7 @@ for gg, file in enumerate(file_list):
     # Parse the file line by line
     for line in file.readlines():
         lines = line.split(',')
-        tprime0 = float(lines[3])
+        t0 = float(lines[3])
         v0 = float(lines[5])
         l = float(lines[6])
         c = float(lines[10])
@@ -38,8 +38,8 @@ for gg, file in enumerate(file_list):
         for i in range(len(peaks_new)):
             try:
                 f0 = float(peaks_new[i])
-                tprime = tprime0
-                t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
+                tprime = t0
+                t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
                 ft = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
                 diff.append(ft - f0)
             except ValueError:

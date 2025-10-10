@@ -195,7 +195,6 @@ for line in file_in.readlines():
 	temp = Tc
 	sound = c
 	
-	#mnum = "NGT" #"FH/VT"	
 
 	_, backazimuth, _ = geod.inv(lon, lat, seismo_longitudes[index], seismo_latitudes[index])
 
@@ -207,23 +206,16 @@ for line in file_in.readlines():
 
 
 	# Get the path of the image file using a wildcard
-
 	image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
  
 		
 	spectrogram = Image.open(im)
-	#spectrogram = load_pdf_as_image(im)
 
 	map_img = load_pdf_as_image(image_path)
 	
-	#except:
 		
 	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
-	#try:	
-	#	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.pdf')
-	#except Exception as e:
-	#	print(f"{str(e)}")
-	#	continue
+
 	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
 	if os.path.isfile(path):
 		plane_img = Image.open(path)
