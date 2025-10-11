@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-main_text = True
+main_text = False
 title_size = 20
 tick_size = 12
 text_size = 12
@@ -195,15 +195,15 @@ for eq in jet + Turboprop + piston + Heli:
             line_count = 12
             blade_count = '2/3'
         elif eq == 'B18T':
-            med = 32.7
+            med = 32.3
             line_count = 15
             blade_count = '3'
         elif eq == 'C441':
-            med = 31.8
+            med = 32
             line_count = 8
             blade_count = '3/4/5'
         elif eq == 'AT73':
-            med = 68
+            med = 68.6
             line_count = 15
             blade_count = '6'
         elif eq == 'SW4':
@@ -410,16 +410,17 @@ if main_text == False:
             if i == len(jet) + len(Turboprop):
                 ax[idx, 0].set_title('Piston Aircraft', fontsize=title_size, fontweight='bold')
 
-            ax[idx, 0].text(
-                0.99, 0.65, str(len(peaks)),
-                transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right',
-                bbox=dict(facecolor='white', alpha=0.5, edgecolor='none')
-            )
+
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 0].text(0.99, 0.95, equip , transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+            ax[idx, 0].text(
+                0.99, 0.65, str(len(peaks)),
+                transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right',
+                bbox=dict(facecolor='white', alpha=0.5, edgecolor='none')
+            )
             for g in range(0,line_count):
                 ax[idx, 0].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
             med_display = f"{med:.1f}" if float(med).is_integer() else str(round(med, 1))
