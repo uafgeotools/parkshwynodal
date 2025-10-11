@@ -172,10 +172,8 @@ for li in file_in.readlines():
     print(f"Memory usage: {mem:.2f} MB")
     if abs(slope) < 1:
         sigma_prior = [10, 125, 15000, 30, 100]
-        #sigma_prior = [10, 50, 500, 30, 60]
     else:
         sigma_prior = [10, 30, 500, 30, 100]
-        #sigma_prior = [10, 125, 7000, 30, 100]
     if equip in jet:
         sigma_prior = [100, 300, 50000, 100, 100]
 
@@ -207,7 +205,7 @@ for li in file_in.readlines():
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage spec 2: {mem:.2f} MB")
     if rerun_fig == False:
-        output = open('output/inv_results_no_g_truth_320_test/' + equip + '_full_inv_results.csv', 'a')
+        output = open('output/inv_results_ngt/' + equip + '_full_inv_results.csv', 'a')
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
         output.close()
     else:
