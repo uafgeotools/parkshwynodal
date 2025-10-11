@@ -60,7 +60,7 @@ for li in file_in.readlines():
     folder_spectrum = equip + '_spectrum_c'
     DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_tttest/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     #if os.path.exists(DIR):
-    #    continue
+    #    continueq
 
     if equip == 'C185':
         start_time = start_time - 120

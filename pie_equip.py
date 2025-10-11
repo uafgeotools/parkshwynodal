@@ -17,7 +17,6 @@ for line in infile:
 	flight_num = data[1]
 	if flight_num not in flight_nums:
 		flight_nums[flight_num] = []
-		#flight_nums[equip].extend([flight_num]) 
 		equip_counts[equip] = equip_counts.get(equip, 0) + 1  # move outside loop to get count of crossings instead of counts of flights
 
 print(equip_counts)
