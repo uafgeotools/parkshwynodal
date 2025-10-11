@@ -209,7 +209,6 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                 fig.grdimage(grid=grid, projection=proj, frame="a", cmap="geo")
                 fig.colorbar(frame=["a1000", "x+lElevation, m"], position="JMR+o8c/6c+w11.5c/0.5c")
                 fig.plot(x=np.array(f_lon), y=np.array(f_lat), pen="1p,black", projection=proj)
-
                 for i in range(len(f_lat) - 1):
                     if i == 5:
                         angle = np.arctan2(np.array(f_lat)[i + 4] - np.array(f_lat)[i], np.array(f_lon)[i + 4] - np.array(f_lon)[i])
@@ -320,7 +319,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
         for i in range(1,len(ev_utm_x_km)):
             interpolated_dist_p[i] = np.sqrt((np.array(ev_utm_x_km)[i] - np.array(ev_utm_x_km)[i-1]) ** 2 + (np.array(ev_utm_y_km)[i] - np.array(ev_utm_y_km)[i-1]) ** 2) + dist_hold
             dist_hold = interpolated_dist_p[i]
-
+        print(np.max(interpolated_dist_p))
         distance_grid, elevation_grid = np.meshgrid(
         interpolated_dist_p,
         np.linspace(0, np.max(alt_t) + 100, len(interpolated_dist_p))
@@ -343,7 +342,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
         elevation_grid = elevation_grid.flatten()
         color_fill = color_fill.flatten()
 
-        num_cells = 620  # between 600 and 650
+        num_cells = 600  # between 600 and 650
         space_x = (np.max(distance_grid) - np.min(distance_grid)) / num_cells
         space_y = (np.max(elevation_grid) - np.min(elevation_grid)) / num_cells
         grid_y_min, grid_y_max = np.min(elevation_grid), np.max(elevation_grid)
