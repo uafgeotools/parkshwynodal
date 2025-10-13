@@ -30,8 +30,6 @@ x_airport, y_airport = utm_proj(-150.1072713049972,62.30091781635389)
 all_med = {}
 points_lat = {}
 points_lon = {}
-flights = []
-tail = {}
 flight_lat = {}
 flight_lon = {}
 flight_alt = {}
@@ -47,7 +45,6 @@ tail_num = 10512184
 all_med[flight_num] = []
 points_lat[flight_num] = []
 points_lon[flight_num] = []
-tail[flight_num] = []
 flight_lat[flight_num] = []
 flight_lon[flight_num] = []
 flight_alt[flight_num] = []
@@ -292,8 +289,8 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
 
         points = pd.DataFrame({'longitude': [], 'latitude': []})
         for i in range(1, len(f_lon)):
-            lon_segment = np.linspace(f_lon[i-1], f_lon[i])  # 10 intermediate points + start and end
-            lat_segment = np.linspace(f_lat[i-1], f_lat[i])
+            lon_segment = np.linspace(f_lon[i-1], f_lon[i], 4)  # 4 intermediate points + start and end
+            lat_segment = np.linspace(f_lat[i-1], f_lat[i], 4)
             points = pd.concat([points, pd.DataFrame({'longitude': lon_segment, 'latitude': lat_segment})], ignore_index=True)
 
         elevation_data = pygmt.grdtrack(
@@ -319,20 +316,25 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
         for i in range(1,len(ev_utm_x_km)):
             interpolated_dist_p[i] = np.sqrt((np.array(ev_utm_x_km)[i] - np.array(ev_utm_x_km)[i-1]) ** 2 + (np.array(ev_utm_y_km)[i] - np.array(ev_utm_y_km)[i-1]) ** 2) + dist_hold
             dist_hold = interpolated_dist_p[i]
-        print(np.max(interpolated_dist_p))
+        # Interpolate elevation for every 1 km along the path
+        interp_km = np.arange(0, np.max(interpolated_dist_p), 0.1)
+        interp_elev = np.interp(interp_km, interpolated_dist_p, ev)
+
+        # Now interp_km contains every 1 km along the path, interp_elev contains the corresponding elevation
+        # You can use interp_km and interp_elev for further plotting or analysis
         distance_grid, elevation_grid = np.meshgrid(
-        interpolated_dist_p,
-        np.linspace(0, np.max(alt_t) + 100, len(interpolated_dist_p))
+            interp_km,
+            np.linspace(0, np.max(alt_t) + 100, len(interp_km))
         )
 
         # Fill the mesh grid with elevation values for color mapping
         color_fill = np.full_like(distance_grid, 0)  # Initialize with NaN
         for row in range(len(elevation_grid)):
             for col in range(len(elevation_grid[row])):
-                if elevation_grid[row, col] <= float(ev[col]):
+                if elevation_grid[row, col] <= float(interp_elev[col]):
                     color_fill[row, col] = elevation_grid[row, col]
-                    if elevation_grid[row, col] <= np.min(ev):
-                        color_fill[row, col] = np.min(ev)
+                    if elevation_grid[row, col] <= np.min(interp_elev):
+                        color_fill[row, col] = np.min(interp_elev)
                 else:
                     color_fill[row, col] = np.nan  
 
@@ -382,8 +384,6 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
 
         # Apply the color palette table to the grid
         fig.grdimage(grid=c_fill, projection=proj, region=prof_region, cmap=True, nan_transparent=True)
-        print(len(dist_p))
-        print(len(alt_t))
         fig.plot(x=np.array(dist_p), y=np.array(alt_t), pen="1p,black", region=prof_region, projection=proj)
         fig.plot(
             x=np.array(interpolated_dist_p),
@@ -407,13 +407,12 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
         )
 
         fig.image(imagefile="input/N125KT.png",
-        position="g65/1217+w2.7c+jCM",
+        position="g60/1020+w2.5c+jCM",
         box=False,
         region=prof_region,
         projection=proj,
         perspective=[199,90]
         )
-        #label a) b) and c) for the left upper corrner of the three plots
 
         fig.text(
             text="c)",
@@ -428,3 +427,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
 fig.savefig("flight_path_10512184.pdf", dpi=300)
 fig.show(verbose="i")
 
+plt.figure()
+plt.plot(dist_p, alt, color='black')
+plt.plot(np.array(interpolated_dist_p), np.array(ev), color='red', linewidth=2)
+plt.show()
