@@ -57,20 +57,20 @@ points_sta_lon[flight_num] = []
 flight_latitudes = []
 flight_longitudes = []
 alt = []
-flight_latitudes.extend([62.30091781635389])
-flight_longitudes.extend([-150.1072713049972])
-alt.extend([111.3])
+#flight_latitudes.extend([62.30091781635389])
+#flight_longitudes.extend([-150.1072713049972])
+#alt.extend([111.3])
 
 flight_file = '/scratch/irseppi/nodal_data/flightradar24/20190221_positions/20190221_529754214.csv'
 flight_data = pd.read_csv(flight_file, sep=",")
 flight_latitudes.extend(list(flight_data['latitude']))
 flight_longitudes.extend(list(flight_data['longitude']))
-flight_latitudes.extend([62.30091781635389])
-flight_longitudes.extend([-150.1072713049972])
+#flight_latitudes.extend([62.30091781635389])
+#flight_longitudes.extend([-150.1072713049972])
 alt_ft = list(flight_data['altitude'])
 alt_m = [a * 0.3048 for a in alt_ft] 
 alt.extend(alt_m)
-alt.extend([111.3])
+#alt.extend([111.3])
 
 # Convert flight latitude and longitude to UTM coordinates
 flight_utm = [utm_proj(lon, lat) for lat, lon in zip(flight_latitudes, flight_longitudes)]
@@ -207,11 +207,11 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                 fig.colorbar(frame=["a1000", "x+lElevation, m"], position="JMR+o8c/6c+w11.5c/0.5c")
                 fig.plot(x=np.array(f_lon), y=np.array(f_lat), pen="1p,black", projection=proj)
                 for i in range(len(f_lat) - 1):
-                    if i == 5:
+                    if i == 4:
                         angle = np.arctan2(np.array(f_lat)[i + 4] - np.array(f_lat)[i], np.array(f_lon)[i + 4] - np.array(f_lon)[i])
                         angle = np.degrees(angle)
                         fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.7c+e", direction=[[angle-22], [0.7]], fill='black', pen="1p,black", region=[-151.2, -150.05, 62.29, 63.15],projection=proj)
-                    elif i == len(f_lat) - 9:
+                    elif i == len(f_lat) - 8:
                         angle = np.arctan2(np.array(f_lat)[i + 2] - np.array(f_lat)[i], np.array(f_lon)[i + 2] - np.array(f_lon)[i])
                         angle = np.degrees(angle)
 
@@ -253,15 +253,15 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                 fig.plot(x=np.array(f_lon), y=np.array(f_lat), projection=proj, pen="1p,black") 
 
                 for i in range(len(f_lat) - 1):
-                    if i == 27:
+                    if i == 26:
                         angle = np.arctan2(np.array(f_lat)[i + 4] - np.array(f_lat)[i], np.array(f_lon)[i + 4] - np.array(f_lon)[i])
                         angle = np.degrees(angle)
                         fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.9c+e", direction=[[angle-21], [1]], fill='black', pen="1p,black", region=zoom_region,projection=proj)
-                    elif i == len(f_lat) - 11:
-                        angle = np.arctan2(np.array(f_lat)[i + 2] - np.array(f_lat)[i], np.array(f_lon)[i + 2] - np.array(f_lon)[i])
+                    elif i == len(f_lat) - 18:
+                        angle = np.arctan2(np.array(f_lat)[i + 10] - np.array(f_lat)[i], np.array(f_lon)[i + 10] - np.array(f_lon)[i])
                         angle = np.degrees(angle)
 
-                        fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.9c+e", direction=[[angle-10], [1]], fill='black', pen="1p,black", region=zoom_region,projection=proj)
+                        fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.9c+e", direction=[[angle-16], [1]], fill='black', pen="1p,black", region=zoom_region,projection=proj)
                     else:
                         continue
                 
@@ -407,7 +407,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
         )
 
         fig.image(imagefile="input/N125KT.png",
-        position="g60/1020+w2.5c+jCM",
+        position="g55/1100+w2.5c+jCM",
         box=False,
         region=prof_region,
         projection=proj,
