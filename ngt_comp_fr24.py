@@ -70,8 +70,8 @@ squared_differences = (np.array(inverse_speeds) - np.array(fr_speeds)) ** 2
 mean_squared_difference = np.mean(squared_differences)
 rmsd = np.sqrt(mean_squared_difference)
 rms_speed = rmsd
-axs[0, 0].text(0.05, 0.75, 'RMSD = {:.2f}'.format(rmsd), transform=axs[0, 0].transAxes, fontsize=12, va='top', ha='left')
-axs[0, 0].text(0.05, 0.85, '\u03C3 = 30', transform=axs[0, 0].transAxes, fontsize=12, va='top', ha='left')
+axs[0, 0].text(0.05, 0.85, 'RMSD = {:.1f}'.format(rmsd), transform=axs[0, 0].transAxes, fontsize=12, va='top', ha='left')
+axs[0, 0].text(0.05, 0.90, '\u03C3 = 30.0', transform=axs[0, 0].transAxes, fontsize=12, va='top', ha='left')
 axs[0, 0].text(0.05, 0.95, 'n = {}'.format(str(np.sum((inverse_speeds > 20) & (inverse_speeds < 180) & (fr_speeds > 20) & (fr_speeds < 180)))), transform=axs[0, 0].transAxes, fontsize=12, va='top', ha='left')
 
 axs[0, 1].scatter(inverse_dists, fr_dists, c='k', s=15, zorder=2)
@@ -88,8 +88,8 @@ squared_differences = (np.array(inverse_dists) - np.array(fr_dists)) ** 2
 mean_squared_difference = np.mean(squared_differences)
 rmsd = np.sqrt(mean_squared_difference)
 rms_dist = rmsd
-axs[0, 1].text(0.05, 0.75, 'RMSD = {:.2f}'.format(rmsd), transform=axs[0, 1].transAxes, fontsize=12, va='top', ha='left')
-axs[0, 1].text(0.05, 0.85, '\u03C3 = 500', transform=axs[0, 1].transAxes, fontsize=12, va='top', ha='left')
+axs[0, 1].text(0.05, 0.85, 'RMSD = {:.1f}'.format(rmsd), transform=axs[0, 1].transAxes, fontsize=12, va='top', ha='left')
+axs[0, 1].text(0.05, 0.90, '\u03C3 = 500.0', transform=axs[0, 1].transAxes, fontsize=12, va='top', ha='left')
 axs[0, 1].text(0.05, 0.95, 'n = {}'.format(str(np.sum((inverse_dists > 0) & (inverse_dists < 8500) & (fr_dists > 0) & (fr_dists < 8500)))), transform=axs[0, 1].transAxes, fontsize=12, va='top', ha='left')
 diff_speed = np.array(inverse_speeds) - np.array(fr_speeds)
 diff_dist = np.array(inverse_dists) - np.array(fr_dists)
@@ -102,7 +102,7 @@ axs[1, 0].set_ylabel(str(np.sum((diff_speed > -20) & (diff_speed < 10))) + '/' +
 axs[1, 0].axvline(np.mean(diff_speed) - rms_speed, color='red', linestyle='--')
 axs[1, 0].axvline(np.mean(diff_speed) + rms_speed, color='red', linestyle='--')
 axs[1, 0].axvline(np.mean(diff_speed), color='red', linestyle='--', linewidth=2)
-axs[1, 0].set_title('Median Speed Difference (m/s): {:.2f} ± {:.2f}'.format(np.median(diff_speed), rms_speed), fontsize=10)
+axs[1, 0].set_title('Median v Difference (m/s): {:.1f} ± {:.1f}'.format(np.median(diff_speed), rms_speed), fontsize=10)
 axs[1, 0].set_xlabel('inversion - flightradar24', fontsize=10)
 
 bin = int((np.max(diff_dist) - np.min(diff_dist)) / 27)
@@ -113,7 +113,8 @@ axs[1, 1].axvline(np.mean(diff_dist) - rms_dist, color='red', linestyle='--')
 axs[1, 1].axvline(np.mean(diff_dist) + rms_dist, color='red', linestyle='--')
 axs[1, 1].axvline(np.mean(diff_dist), color='red', linestyle='--', linewidth=2)
 
-axs[1, 1].set_title('Median Distance Difference (m): {:.2f} ± {:.2f}'.format(np.median(diff_dist), rms_dist), fontsize=10)
+axs[1, 1].set_title('Median d\u2080 Difference (m): {:.1f} ± {:.1f}'.format(np.median(diff_dist), rms_dist), fontsize=10)
 axs[1, 1].set_xlabel('inversion - flightradar24', fontsize=10)
+
 
 plt.show()
