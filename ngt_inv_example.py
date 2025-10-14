@@ -8,7 +8,7 @@ from scipy.signal import spectrogram
 from src.main_inv_fig_functions import  remove_median
 
 generate_samples = False
-c = speed_of_sound(-33.7)
+c = 320
 start_time = 1550158642.26246    
 ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
 h = ht.hour
