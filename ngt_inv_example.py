@@ -49,7 +49,7 @@ ax[0].axhline(y=coords_array[1,1], color='black', linestyle='--', linewidth=1)
 ax[0].axhline(y=coords_array[2,1], color='black', linestyle='--', linewidth=1)
 ax[0].axhline(y=(coords_array[1,1]+coords_array[2,1])/2, color='red', linestyle='--', linewidth=0.7)
 ax[0].axvline(x=coords_array[0,0], color='red', linestyle='--', linewidth=0.7)
-slope = (coords_array[3,1] - coords_array[4,1]) / (coords_array[3,0] - coords_array[4,0])
+slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
 
 # Add points at x=70 and x=150 using the slope
 y_70 = coords_array[3,1] + slope * (70 - coords_array[3,0])
@@ -67,8 +67,6 @@ cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r
 
 #insert method to get initial model here
 f0 = ((coords_array[1,1]+coords_array[2,1])/2) * 0.84
-ax[0].axhline(y=(f0), color='pink', linestyle='--', linewidth=0.7)
-
 t0 = coords_array[0,0] 
 del_f = coords_array[1,1]-coords_array[2,1]
 v0 = (c/del_f)*(np.sqrt((f0**2+del_f**2)) - f0) 
@@ -133,10 +131,6 @@ v0 = m[1]
 l = m[2]
 t0 = m[3]
 c = m[4]
-print(l)
-l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope
-print(l)
-m[2] = l
 ft = calc_ft(time_corr, m[3], m[0], m[1], m[2], m[4])
 
 delf = np.array(ft) - np.array(peaks)
