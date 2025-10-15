@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.patheffects as patheffects
 
-file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth_320/C185_full_inv_results.txt', 'r')
+file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/C185_full_inv_results.txt', 'r')
 
 file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
 tail_nums = file2['TAIL_NUM']
