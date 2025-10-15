@@ -39,7 +39,6 @@ y = [140.02964002964, 188.29218829218826, 93.7170937170937, 153.9234039234039, 1
 
 coords = [(x[i], y[i]) for i in range(len(x))]
 coords_array = np.array(coords)
-
 fig_num = 5
 
 # Create a subplot for the visualization
@@ -64,7 +63,6 @@ ax[0].set_ylabel('Frequency (Hz)')
 ax[0].set_title("(a) data picks to get prior model", fontsize='small')
 
 cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-
 #insert method to get initial model here
 f0 = ((coords_array[1,1]+coords_array[2,1])/2) * 0.84
 t0 = coords_array[0,0] 
@@ -73,10 +71,7 @@ v0 = (c/del_f)*(np.sqrt((f0**2+del_f**2)) - f0)
 slope_t0prime = slope*((1-(v0/c)**2)**(-3/2))
 l = -(f0*v0**2/(c*slope_t0prime))
 
-m0 = [f0, v0, l, t0,c]
-prior_sigma = [50, 70, 2000, 30, 60] #initial prior sigma values for f0, v0, l, t0, c
-
-
+m0 = [f0, v0, l, t0, c]
 print('Initial model:', m0)
 ft = calc_ft(times, m0[3], m0[0], m0[1], m0[2], m0[4])
 ax[1].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
@@ -85,7 +80,22 @@ ax[1].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100
 ax[1].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[1].set_ylabel('Frequency (Hz)')
 ax[1].set_title("(b) prior model", fontsize='small')
-m, covm,_, F_m = invert_f(m0, prior_sigma, coords_array, num_iterations=5)
+
+m0 = [f0, v0, l, t0, c]
+sigma_prior = [40, 1, 1, 200, 1]
+m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=3)
+m0[0] = m[0]
+m0[3] = m[3]
+
+tf = np.arange(0, 240, 1)
+
+sigma_f0 = 150
+sigma_v0 = 100
+sigma_l = 10000
+sigma_t0 = 200
+sigma_c = 100
+sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c]
+m, covm,_, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=5)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
 cax = ax[2].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
@@ -96,7 +106,7 @@ peaks = []
 coord_inv = []
 upper_array = []
 lower_array = []
-corridor_width = 10
+corridor_width = 10 
 time_corr = np.arange(0, 240, 1)
 for ttt in time_corr:
     t_f = (np.abs(times - ttt)).argmin()
@@ -123,7 +133,7 @@ ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
 ax[3].set_title("(d) data extracted from model corridor (prior model \u00B1 10)", fontsize='small')
 
-prior_sigma = [5,10,600,5,30] #prior sigma values for f0, v0, l, t0, c
+prior_sigma = [10,30,600,30,80] #prior sigma values for f0, v0, l, t0, c
 m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
 
 f0 = m[0]
@@ -144,8 +154,8 @@ coord_inv_array = np.array(new_coord_inv_array)
 ax[3].scatter(coord_inv_array[:, 0], coord_inv_array[:, 1], c='black', marker='x', s=20)
 ax[3].set_ylabel('Frequency (Hz)')
 
-prior_sigma = [5,10,500,30,80] #prior sigma values for f0, v0, l, t0, c
-m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=3)
+prior_sigma = [10,30,500,30,80] #prior sigma values for f0, v0, l, t0, c
+m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=2)
 
 f0 = m[0]
 v0 = m[1]
