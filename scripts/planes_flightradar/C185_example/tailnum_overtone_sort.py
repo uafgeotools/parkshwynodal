@@ -107,13 +107,12 @@ print('Count for 10512184:', count_id2)
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
-ax2 = fig.add_axes([0.87, 0.065, 0.125, 0.918], sharey=ax1)
+ax2 = fig.add_axes([0.87, 0.072, 0.125, 0.904], sharey=ax1)
 
 pos = 1
 tail_num_hold = 0
 color_dict[10512184] = [1.0, 0.5, 0.0]  # Orange color in RGB 
 color_dict[10572742] = [0.0, 0.5, 1.0]  # Blue color in RGB
-
 
 for tail_num, peaks in peaks_dict.items():
     error_med = np.nanmedian(error_dict[tail_num])
@@ -151,9 +150,9 @@ ax2.set_xticklabels(
 ax2.set_xlim(18, 22)
 ax1.set_ylim(0, 82)
 
-del_f_t1 = 19.62
-del_f_t2_1 = 19.17
-del_f_t2_2 = 20.56
+del_f_t1 = 19.6
+del_f_t2_1 = 19.1 #2
+del_f_t2_2 = 20.55 #57
 x_label = []
 for g in range(0,14):
     ax1.axvline(x= (1 + g) * del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
@@ -179,11 +178,11 @@ for x in x_label:
 for label in ax1.get_yticklabels():
     label.set_fontsize(30)
 ax1.set_xlim(5,310)
-med_label = 19.62
+med_label = 19.6
 ax2.text(
     med_label,
     ax2.get_ylim()[1] - 1,  # Place at the very top
-    f"{med_label:.2f}",
+    f"{med_label:.1f}",
     color=[0.0, 0.5, 1.0],
     fontsize=30,
     ha='center',
@@ -203,5 +202,5 @@ print(del_f_t1, del_f_t2_1, del_f_t2_2)
 ax2.axvline(x=del_f_t1, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_1, color =   [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
 ax2.axvline(x=del_f_t2_2, color =  [1.0, 0.5, 0.0], ls = '--', zorder=0, linewidth=1)
-plt.tight_layout(pad=2.5, w_pad=0.5, h_pad=1.5)
+plt.tight_layout(pad=3.5, w_pad=0.5, h_pad=1.5)
 plt.show()
