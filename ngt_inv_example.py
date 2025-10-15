@@ -7,7 +7,9 @@ from scipy.signal import spectrogram
 from src.main_inv_fig_functions import  remove_median
 
 c = 320
-start_time = 1550158642.26246    
+start_time = 1550158642.26246
+ground_truth_time = 1550158750.7401662 - start_time
+
 ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
 h = ht.hour
 mins = ht.minute
