@@ -156,7 +156,9 @@ ax[3].set_ylabel('Frequency (Hz)')
 
 prior_sigma = [10,30,500,30,80] #prior sigma values for f0, v0, l, t0, c
 m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=2)
-
+covm0 = np.sqrt(np.diag(covm0))
+print(covm0)
+print(np.sqrt(np.diag(covm)))
 f0 = m[0]
 v0 = m[1]
 l = m[2]
