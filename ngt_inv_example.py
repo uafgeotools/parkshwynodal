@@ -1,13 +1,11 @@
 import numpy as np
-import numpy.linalg as la
 import obspy
 from matplotlib import pyplot as plt
 from datetime import datetime, timezone
-from src.doppler_funcs import calc_ft, invert_f, speed_of_sound
+from src.doppler_funcs import calc_ft, invert_f
 from scipy.signal import spectrogram
 from src.main_inv_fig_functions import  remove_median
 
-generate_samples = False
 c = 320
 start_time = 1550158642.26246    
 ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
@@ -41,43 +39,41 @@ y = [140.02964002964, 188.29218829218826, 93.7170937170937, 153.9234039234039, 1
 
 coords = [(x[i], y[i]) for i in range(len(x))]
 coords_array = np.array(coords)
-if generate_samples:
-	fig_num = 6
-else:
-	fig_num = 5
+
+fig_num = 5
+
 # Create a subplot for the visualization
 fig, ax = plt.subplots(fig_num,1,figsize=(8/1.4, 14/1.4),sharex=False)
 cax = ax[0].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-ax[0].axhline(y=188.29218829218826, color='black', linestyle='--', linewidth=1)
-ax[0].axhline(y=93.7170937170937, color='black', linestyle='--', linewidth=1)
-ax[0].axhline(y=(188.29218829218826+93.7170937170937)/2, color='red', linestyle='--', linewidth=0.7)
-ax[0].axvline(x=112.48911983478979, color='red', linestyle='--', linewidth=0.7)
-slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
-#Create dashed line with the slope that is tangent to the first point
-x_values = [coords_array[3,0], coords_array[4,0]]
-y_values = [coords_array[3,1], coords_array[4,1]]
-# Plot the dashed line before scatter plots so it appears underneath
-ax[0].plot(x_values, y_values, color='blue', linestyle='--', linewidth=1, zorder=1)
+ax[0].axhline(y=coords_array[1,1], color='black', linestyle='--', linewidth=1)
+ax[0].axhline(y=coords_array[2,1], color='black', linestyle='--', linewidth=1)
+ax[0].axhline(y=(coords_array[1,1]+coords_array[2,1])/2, color='red', linestyle='--', linewidth=0.7)
+ax[0].axvline(x=coords_array[0,0], color='red', linestyle='--', linewidth=0.7)
+slope = (coords_array[3,1] - coords_array[4,1]) / (coords_array[3,0] - coords_array[4,0])
 
 # Add points at x=70 and x=150 using the slope
 y_70 = coords_array[3,1] + slope * (70 - coords_array[3,0])
 y_150 = coords_array[3,1] + slope * (150 - coords_array[3,0])
 ax[0].plot([70, 150], [y_70, y_150], color='blue', linestyle='--', linewidth=1, zorder=1)
+
 # Move scatter plots after all lines so they appear on top
 ax[0].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x', s=100, linewidths=3,label="f_initial + f_final")
 ax[0].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
 ax[0].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[0].set_ylabel('Frequency (Hz)')
-ax[0].set_title("(a) data picks with steps to get prior model", fontsize='small')
+ax[0].set_title("(a) data picks to get prior model", fontsize='small')
 
 cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 
 #insert method to get initial model here
-f0 = (coords_array[1,1]+coords_array[2,1])/2 - 20
+f0 = ((coords_array[1,1]+coords_array[2,1])/2) * 0.84
+ax[0].axhline(y=(f0), color='pink', linestyle='--', linewidth=0.7)
+
 t0 = coords_array[0,0] 
-v0 = c*abs(coords_array[1,1]-coords_array[2,1]) / (2 * f0)
-slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
-l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope #(c**2*f0*v0**2*np.sqrt(c**2 - v0**2)/(c**2 - v0**2)**2)/abs(slope)
+del_f = coords_array[1,1]-coords_array[2,1]
+v0 = (c/del_f)*(np.sqrt((f0**2+del_f**2)) - f0) 
+slope_t0prime = slope*((1-(v0/c)**2)**(-3/2))
+l = -(f0*v0**2/(c*slope_t0prime))
 
 m0 = [f0, v0, l, t0,c]
 prior_sigma = [50, 70, 2000, 30, 60] #initial prior sigma values for f0, v0, l, t0, c
@@ -90,14 +86,14 @@ ax[1].scatter(coords_array[1:3, 0], coords_array[1:3, 1], c='black', marker='x',
 ax[1].scatter(coords_array[0, 0], coords_array[0, 1], c='red', marker='x', s=100, linewidths=3, label="t'0 + f0")
 ax[1].scatter(coords_array[3:5, 0], coords_array[3:5, 1], c='blue', marker='x', s=100, linewidths=3, label="Slope of l")
 ax[1].set_ylabel('Frequency (Hz)')
-ax[1].set_title("(b) initial prior model", fontsize='small')
+ax[1].set_title("(b) prior model", fontsize='small')
 m, covm,_, F_m = invert_f(m0, prior_sigma, coords_array, num_iterations=5)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
 
 cax = ax[2].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[2].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[2].set_ylabel('Frequency (Hz)')
-ax[2].set_title("(c) inverted model => updated prior model", fontsize='small')
+ax[2].set_title("(c) measured model => prior model", fontsize='small')
 peaks = []
 coord_inv = []
 upper_array = []
@@ -127,7 +123,7 @@ coord_inv_array = np.array(coord_inv)
 cax = ax[3].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
-ax[3].set_title("(d) data extracted from model corridor (updated prior model \u00B1 10)", fontsize='small')
+ax[3].set_title("(d) data extracted from model corridor (prior model \u00B1 10)", fontsize='small')
 
 prior_sigma = [5,10,600,5,30] #prior sigma values for f0, v0, l, t0, c
 m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
@@ -169,32 +165,6 @@ ax[4].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1)
 ax[4].set_ylabel('Frequency (Hz)')
 ax[4].set_title("(e) posterior model", fontsize='small')
 
-if generate_samples:
-	nx,ny = covm0.shape
-	# initialize samples
-	covm_samples = np.empty((5,1000))
-	m_samples = np.zeros((5,1000))
-	ft_matrix = np.zeros((1000,len(times)))
-	# generate samples of the posterior
-	R = np.linalg.cholesky(covm0)
-	cax = ax[5].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-	for jj in range(1000):
-		covm_samples[:,jj] = (R @ np.random.randn(5,1)).flatten()
-		m_samples[:,jj] = covm_samples[:,jj] + m.flatten()
-		f0_s = m_samples[0,jj]
-		v0_s = m_samples[1,jj]
-		l_s = m_samples[2,jj]
-		t0_s = m_samples[3,jj]
-		c_s = m_samples[4,jj]
-		ft = calc_ft(times, t0_s, f0_s, v0_s, l_s, c_s)
-		ft_matrix[jj, :] = ft 
-	ax[5].set_ylim(0, 250)
-	std_samples  = np.std(ft_matrix,axis=0)
-	ft = calc_ft(times, t0, f0, v0, l, c)
-	ax[5].plot(times, ft+std_samples, color='red', linewidth=0.5)
-	ax[5].plot(times, ft-std_samples, color='red', linewidth=0.5)
-	ax[5].set_title("(f) standard deviation of posterior model samples", fontsize='small')
-
 #make all axis tick labels smaller
 for i in range(fig_num):
 	ax[i].tick_params(axis='both', which='major', labelsize='x-small')
@@ -203,99 +173,6 @@ for i in range(fig_num):
 plt.subplots_adjust(hspace=0.3)
 ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
+plt.show()
 fig.savefig("inversion_steps.jpg", dpi=600)
 plt.close()
-
-
-
-make_final_plot = False
-if make_final_plot:
-	covm = np.sqrt(np.diag(covm0))
-	fig, (ax1, ax2) = plt.subplots(2, 1, sharex=False, figsize=(8,6))     
-
-	ax1.plot(t_wf, data, 'k', linewidth=0.5)
-	ax1.set_title(title)
-
-	ax1.margins(x=0)
-	ax1.set_position([0.125, 0.6, 0.775, 0.3])  # Move ax1 plot upwards
-
-	# Plot spectrogram
-	cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)				
-	ax2.set_xlabel('Time (s)')
-
-	ax2.axvline(x=t0, c = '#377eb8', ls = '--', linewidth=0.7,label= "t\u2080' = " + "%.2f" % t0 +' s')
-
-	ft = calc_ft(times, t0, f0, v0, l, c)
-
-	ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7) 
-	tprime = t0
-	t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
-	ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-
-	ax2.scatter(t0, ft0p, color='black', marker='x', s=30) 
-
-	fss = 'x-small'
-
-	ax2.set_title("t\u2080'= "+ "%.2f" % t0 + ' \u00B1 ' + "%.2f" % covm[3] + ' s, v\u2080 = ' + "%.2f" % v0 +' \u00B1 ' + "%.2f" % covm[1] + ' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % covm[4] + ' m/s, l = '+ "%.2f" % l +' \u00B1 ' + "%.2f" % covm[2] + ' m, \n' + 'f\u2080 =' + "%.2f" % f0 + ' \u00B1 ' + "%.2f" % covm[0] +' Hz\nMisfit: ' + "%.4f" % F_m, fontsize=fss)
-
-
-	ax2.legend(loc='upper right',fontsize = 'small')
-	ax2.set_ylabel('Frequency (Hz)')
-
-	ax2.margins(x=0)
-	ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
-
-	plt.colorbar(mappable=cax, cax=ax3)
-	ax3.set_ylabel('Relative Amplitude (dB)')
-
-	ax2.margins(x=0)
-	ax2.set_xlim(0, 240)
-	ax2.set_ylim(0, int(fs/2))
-
-	# Plot overlay
-	spec2 = 10 * np.log10(MDF)
-	middle_column2 = spec2[:, middle_index]
-	vmin2 = np.min(middle_column2)
-	vmax2 = np.max(middle_column2)
-
-	# Create ax4 and plot on the same y-axis as ax2
-	ax4 = fig.add_axes([0.125, 0.11, 0.07, 0.35], sharey=ax2) 
-	ax4.plot(middle_column2, frequencies, c='#ff7f00')  
-	ax4.set_ylim(0, int(fs/2))
-	ax4.set_xlim(vmax2*1.1, vmin2) 
-	ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
-	ax4.grid(axis='y')
-	plt.show()
-	plt.close()
-
-	if generate_samples:
-		plt.figure()
-		plt.plot(times, 2*std_samples)
-		plt.ylim(0,2)
-		plt.show()
-		plt.close()
-
-	plot_posterior = False
-	if plot_posterior:
-		sigma = np.sqrt(np.diag(covm_norm))
-		outer_v = np.outer(sigma,sigma)
-		Crho = covm_norm / outer_v
-
-		Crho[covm_norm == 0] = 0
-
-		gridlines=False
-		colormap='seismic'
-		plt.figure(figsize=(10, 10))
-		plt.imshow(Crho,cmap=colormap)
-		plt.xticks(ticks=range(np.shape(Crho)[1]),labels=[str(val) for val in range(1,np.shape(Crho)[1]+1)])
-		plt.yticks(ticks=range(np.shape(Crho)[0]),labels=[str(val) for val in range(1,np.shape(Crho)[0]+1)])
-		if gridlines:
-			xgrid = np.array(range(np.shape(Crho)[1] + 1)) - 0.5
-			ygrid = np.array(range(np.shape(Crho)[0] + 1)) - 0.5
-			for gridline in xgrid:
-				plt.axvline(x=gridline,color='k',linewidth=1)
-			for gridline in ygrid:
-				plt.axhline(y=gridline,color='k',linewidth=1)
-		plt.colorbar()
-		plt.show()
-		plt.close()
