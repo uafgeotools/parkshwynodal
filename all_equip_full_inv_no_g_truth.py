@@ -34,7 +34,7 @@ for li in file_in.readlines():
 
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
-    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     if os.path.exists(DIR):
         continue
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
