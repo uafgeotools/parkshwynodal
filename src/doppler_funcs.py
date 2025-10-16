@@ -447,7 +447,7 @@ def calc_ft(times, t0, f0, v0, l, c):
 	"""
 	ft = []
 	for tprime in times:
-		t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
+		t = ((tprime - t0)- np.sqrt((tprime - t0)**2-(1-v0**2/c**2)*((tprime - t0)**2-l**2/c**2)))/(1-v0**2/c**2)
 		ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
 								
 		ft.append(ft0p)

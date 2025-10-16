@@ -209,7 +209,7 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
     else:
         type_inv = "[FH/NGT]"
     
-    closest_index = np.argmin(np.abs(t0prime - times))
+    closest_index = np.argmin(np.abs(t0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
         if arrive_time[i] < 0:
