@@ -3,8 +3,8 @@ import os
 import gc
 import concurrent.futures
 from scipy.signal import spectrogram
-from src.doppler_funcs import make_base_dir, invert_f, full_inversion, get_sta_elevation, load_waveform
-from src.main_inv_fig_functions import time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
+from src.doppler_funcs import make_base_dir, load_waveform
+from src.main_inv_fig_functions import remove_median, plot_spectrogram, plot_spectrum
 import psutil
 
 num_workers = os.cpu_count()
@@ -18,146 +18,44 @@ def inversion_process(line):
     closest_time = float(text[5])
     sta = text[9]
     equip = text[10]
-    alt = float(text[6]) 
-    speed_gt = float(text[7]) 
-    dist_m = float(text[4])   # Distance in meters
-    elev = get_sta_elevation(sta)
-    height_m = alt - elev
-    distance_gt = np.sqrt(dist_m**2 + (height_m)**2) 
+
+    input_file ='output/inv_results_ngt/' + equip + '_full_inv_results.txt'
+    if os.path.exists(input_file) == False:
+        return
+    input_file = open(input_file, 'r')
+    for inv_line in input_file.readlines():
+        inv_text = inv_line.split(',')
+        inv_flight_num = inv_text[1]
+        inv_sta = inv_text[2]
+        inv_closest_time = float(inv_text[3])
+        if flight_num == inv_flight_num and sta == inv_sta and closest_time == inv_closest_time:
+            v0 = float(inv_text[4])
+            l = float(inv_text[5])
+            t0 = float(inv_text[6])
+            start_time = float(inv_text[7]) - t0 
+            c = float(inv_text[8])
+            f0_array = str(inv_text[9])
+            f0_array = np.char.replace(f0_array, '[', '')
+            f0_array = np.char.replace(f0_array, ']', '')
+            f0_array = str(f0_array)
+            f0_array = np.array(f0_array.split(' '))
+            covm0 = inv_text[10]
+            F_m = inv_text[13]
+        else:
+            continue
+    input_file.close()
 
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
-
-    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
-    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
-    if not os.path.exists(file_name) and os.path.exists(DIR):
-        return 
-    else:
-        coords = []
-        with open(file_name, 'r') as file:
-            for line in file:
-                pick_data = line.split(',')
-                coords.append((float(pick_data[0]), float(pick_data[1])))
-            if len(pick_data) == 4:
-                start_time = float(pick_data[2])
-            else:
-                file.close() 
-                return 
-
-        file.close()  
-
-    coords_array = np.array(coords)
-    if len(coords_array) == 0:
-        return 
-
-    elif equip == 'C185':
-        start_time = start_time - 120
-    #method to get initial model    
-    c = 320 # Default speed of sound, average of dataset, m/s
-    fa = np.max(coords_array[:, 1]) 
-    fr = np.min(coords_array[:, 1])
-    fm = (fa+fr)/2 
-
-    #find the closest coordinate to t0
-    closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
-    f0 = coords_array[closest_index, 1] 
-    t0 = coords_array[closest_index, 0]  
-    t_hold = np.inf
-    for i,t in enumerate(coords_array[:, 0]):
-        if t != t0:
-            if (t - t0) < t_hold:
-                t_hold = abs(t - t0)
-                second_index = i
-
-    v0 = c*abs(fa-fr) / (2 * f0)
-    slope = (coords_array[closest_index,1] - coords_array[second_index,1]) / (coords_array[closest_index,0] - coords_array[second_index,0])
-    l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope 
-    m0 = [f0, v0, l, t0, c]
-    print('Initial model:', m0)
+    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spectrum + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+ '/'+str(sta)+'_' + str(closest_time) + '.png'
+    if os.path.exists(DIR):
+        return
 
     data, fs, t_wf, title = load_waveform(sta, start_time)
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
-    if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
-        return 
-    
+
     spec, MDF = remove_median(Sxx)
     middle_index =  len(times) // 2
-    middle_column = spec[:, middle_index]
-    vmin = 0  
-    vmax = np.max(middle_column) 
-  
-    m0 = [f0, v0, l, t0, c]
-    sigma_prior = [40, 1, 1, 200, 1]
-    m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=3)
-    m0[0] = m[0]
-    m0[3] = m[3]
-
-    tf = np.arange(0, 240, 1)
-
-    sigma_f0 = 150
-    sigma_v0 = 100
-    sigma_l = 10000
-    sigma_t0 = 200
-    sigma_c = 100
-
-    m0 = [f0, v0, l, t0, c]
-    sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c]
-    m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c], coords_array, num_iterations=3)
-    v0 = m[1]
-    l = m[2]
-    t0 = m[3]
-    c = m[4]
-    mprior = []
-    mprior.append(v0)
-    mprior.append(l)
-    mprior.append(t0)
-    mprior.append(c)
-
-    output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
-    if not os.path.exists(output2):
-        return 
-    else:
-        peaks = []
-        freqpeak = []
-        with open(output2, 'r') as file:
-            for line in file:
-                pick_data = line.split(',')
-                peaks.append(float(pick_data[1]))
-                freqpeak.append(float(pick_data[0]))
-        file.close()  
-    if len(peaks) <= 15:
-        corridor_width = 10
-    else:
-        corridor_width = 5
-    try:
-        tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax)
-    except:
-        return 
-
-    if len(fobs) == 0:
-        return 
-
-    for o in range(len(f0_array)):
-        mprior.append(float(f0_array[o]))
-
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=False)
-
-    if abs(slope) < 1:
-        sigma_prior = [10, 125, 15000, 30, 100]
-    else:
-        sigma_prior = [10, 30, 500, 30, 100]
-    if equip in ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']:
-        sigma_prior = [100, 300, 50000, 100, 100]
-
-    m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-
-    v0 = m[0]
-    l = m[1]
-    t0 = m[2]
-    c = m[3]
-
-    covm = np.sqrt(np.diag(covm))
-    covm0 = np.sqrt(np.diag(covm0))
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
@@ -171,22 +69,14 @@ def inversion_process(line):
     # Delete all variables and objects that may impact short-term memory
     del data, fs, t_wf, title
     del frequencies, times, Sxx, spec, MDF
-    del coords, coords_array
-    del m, covm0, covm, f0_array, F_m, BASE_DIR
-    del peaks, freqpeak, tobs, fobs, peaks_assos, mprior
+    del v0, l, t0, start_time, c, f0_array, covm0, F_m
     del date, month, day, flight_num, closest_time, sta, equip
-    del alt, speed_gt, dist_m, elev, height_m, distance_gt
-    del folder_spec, folder_spectrum, DIR, file_name
-    del start_time, c, fa, fr, fm, closest_index, f0, t0, t_hold, second_index
-    del v0, slope, l, m0, sigma_prior, tf
-    del sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c
-    del output2, corridor_width
+    del folder_spec, folder_spectrum, DIR, BASE_DIR
 
     gc.collect()
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage: {mem:.2f} MB")
-
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
