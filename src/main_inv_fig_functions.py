@@ -377,7 +377,8 @@ def plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time
     plt.grid()
 
     plt.plot(frequencies, spec[:,closest_index], c='#377eb8')
-        
+    freqp_hold = 0
+    ampp_hold = 0
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
         if fs/2 < f0:
@@ -399,11 +400,20 @@ def plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time
         ampp = np.max(tt)
         freqp = np.argmax(tt)+lower
         plt.scatter(freqp, ampp, color='black', marker='x', s=100, zorder=10)
-        if isinstance(sta, int):
-            plt.text(freqp - 5, ampp + 0.8, freqp, fontsize=17, fontweight='bold')
+        #Shift text a bit for better visibility
+        #Depends on sampling rate
+        if freqp > 235:
+            if abs(freqp - freqp_hold) < 10 and ampp - ampp_hold < 2:
+                plt.text(freqp - 5, ampp + vmax*0.08, freqp, fontsize=17, ha='center', fontweight='bold')
+            else:
+                plt.text(freqp - 5, ampp + vmax*0.03, freqp, fontsize=17, ha='center', fontweight='bold')
         else:
-            plt.text(freqp - 1, ampp + 0.8, freqp, fontsize=17, fontweight='bold')  
-
+            if abs(freqp - freqp_hold) < 10 and ampp - ampp_hold < 2:
+                plt.text(freqp, ampp + vmax*0.08, freqp, fontsize=17, ha='center', fontweight='bold')
+            else:
+                plt.text(freqp, ampp + vmax*0.03, freqp, fontsize=17, ha='center', fontweight='bold')
+        freqp_hold = freqp
+        ampp_hold = ampp
     plt.xlim(0, int(fs/2))
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)

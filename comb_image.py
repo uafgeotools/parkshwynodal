@@ -72,7 +72,7 @@ for line in file_in.readlines():
 			break
 		else:
 			continue
-	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
 			if not image.endswith('.png'):
@@ -214,7 +214,7 @@ for line in file_in.readlines():
 	map_img = load_pdf_as_image(image_path)
 	
 		
-	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_320_test/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 
 	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
 	if os.path.isfile(path):
@@ -266,7 +266,7 @@ for line in file_in.readlines():
 	draw.rectangle(bbox, fill="white")
 	draw.text((canvas_width - plane.width, 0), text3, fill='black', font=font)
 
-	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_present/'
+	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/'
 	make_base_dir(BASE_DIR)
 	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
