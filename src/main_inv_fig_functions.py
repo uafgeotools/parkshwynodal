@@ -233,7 +233,7 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
     ax2.axvline(x=t0, c = '#e41a1c', ls = '--', linewidth=0.7,label= "t\u2080 = " + "%.2f" % t0 +' s')
     for pp in range(len(f0_array)):
         f0 = f0_array[pp]
-        ft = calc_ft(times, t0prime, f0, v0, l, c)
+        ft = calc_ft(times, t0, f0, v0, l, c)
 
         ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7)
         ax2.scatter(t0prime, f0, color='black', marker='x', s=30, zorder=10)
