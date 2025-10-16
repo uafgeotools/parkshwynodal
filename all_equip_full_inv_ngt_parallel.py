@@ -10,10 +10,6 @@ import psutil
 num_workers = os.cpu_count()
 
 def inversion_process(line):
-    jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
-    rerun_fig = True #Flag rerun the figures without saving the inversion results = True
-    mk_picks = False
-    jj = 2
     text = line.split(',')
     date = text[0]
     month = int(date[4:6])
@@ -35,7 +31,7 @@ def inversion_process(line):
     DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
     if not os.path.exists(file_name) and os.path.exists(DIR):
-        return jj
+        return 
     else:
         coords = []
         with open(file_name, 'r') as file:
@@ -46,13 +42,13 @@ def inversion_process(line):
                 start_time = float(pick_data[2])
             else:
                 file.close() 
-                return jj
+                return 
 
         file.close()  
 
     coords_array = np.array(coords)
     if len(coords_array) == 0:
-        return jj
+        return 
 
     elif equip == 'C185':
         start_time = start_time - 120
@@ -82,7 +78,7 @@ def inversion_process(line):
     data, fs, t_wf, title = load_waveform(sta, start_time)
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
     if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
-        return jj
+        return 
     
     spec, MDF = remove_median(Sxx)
     middle_index =  len(times) // 2
@@ -119,7 +115,7 @@ def inversion_process(line):
 
     output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
     if not os.path.exists(output2):
-        return jj
+        return 
     else:
         peaks = []
         freqpeak = []
@@ -136,21 +132,21 @@ def inversion_process(line):
     try:
         tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks,freqpeak, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax)
     except:
-        return jj
+        return 
 
     if len(fobs) == 0:
-        return jj
+        return 
 
     for o in range(len(f0_array)):
         mprior.append(float(f0_array[o]))
 
-    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=mk_picks)
+    tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=False)
 
     if abs(slope) < 1:
         sigma_prior = [10, 125, 15000, 30, 100]
     else:
         sigma_prior = [10, 30, 500, 30, 100]
-    if equip in jet:
+    if equip in ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']:
         sigma_prior = [100, 300, 50000, 100, 100]
 
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
@@ -165,18 +161,12 @@ def inversion_process(line):
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, MDF, covm0, flight_num, middle_index, closest_time, BASE_DIR, plot_show=False, gt = False)
-    qnum = "__"
+    _ = plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, MDF, covm0, flight_num, middle_index, closest_time, BASE_DIR, plot_show=False, gt = False)
 
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time, sta, BASE_DIR)
 
-    if rerun_fig == False:
-        output = open('output/inv_results_ngt/' + equip + '_full_inv_results.csv', 'a')
-        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
-        output.close()
-    
     # Explicitly delete large variables and collect garbage to free memory
     # Delete all variables and objects that may impact short-term memory
     del data, fs, t_wf, title
@@ -190,18 +180,18 @@ def inversion_process(line):
     del start_time, c, fa, fr, fm, closest_index, f0, t0, t_hold, second_index
     del v0, slope, l, m0, sigma_prior, tf
     del sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c
-    del output2, corridor_width, qnum
+    del output2, corridor_width
 
     gc.collect()
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 ** 2) 
     print(f"Memory usage: {mem:.2f} MB")
 
-    return jj
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
 
 lines = file_in.readlines()
 with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
-   ok =  executor.map(inversion_process, lines)
+   executor.map(inversion_process, lines)
+
