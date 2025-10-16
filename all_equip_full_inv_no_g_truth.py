@@ -107,7 +107,6 @@ for li in file_in.readlines():
     sigma_t0 = 200
     sigma_c = 100
 
-
     m0 = [f0, v0, l, t0, c]
     sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c]
     m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c], coords_array, num_iterations=3)
