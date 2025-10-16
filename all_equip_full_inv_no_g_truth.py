@@ -1,15 +1,12 @@
 import numpy as np
 import os
 import gc
-from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
 from src.doppler_funcs import make_base_dir, invert_f, full_inversion, get_sta_elevation, load_waveform
 from src.main_inv_fig_functions import time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
 import psutil
 
 jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
-nrl = NRL()
-window = 120  # seconds before the arrival time to load the waveform
 rerun_fig = True #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
@@ -54,9 +51,7 @@ for li in file_in.readlines():
                 continue
 
         file.close()  
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage load: {mem:.2f} MB")
+
     coords_array = np.array(coords)
     if len(coords_array) == 0:
         continue
@@ -85,25 +80,19 @@ for li in file_in.readlines():
     slope = (coords_array[closest_index,1] - coords_array[second_index,1]) / (coords_array[closest_index,0] - coords_array[second_index,0])
     l = -((f0*v0**2/c)*(1-(v0/c)**2)**(-3/2))/slope 
     m0 = [f0, v0, l, t0, c]
+    print('Initial model:', m0)
 
     data, fs, t_wf, title = load_waveform(sta, start_time)
-    print(t_wf)
     frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant')
-    print(times)
     if len(times) == 0 or len(frequencies) == 0 or len(Sxx) == 0:
         continue
-    spec, MDF = remove_median(Sxx)
-    print('Initial model:', m0)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage load: {mem:.2f} MB")
 
+    spec, MDF = remove_median(Sxx)
     middle_index =  len(times) // 2
     middle_column = spec[:, middle_index]
     vmin = 0  
     vmax = np.max(middle_column) 
-
-        
+ 
     m0 = [f0, v0, l, t0, c]
     sigma_prior = [40, 1, 1, 200, 1]
     m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=3)
@@ -163,9 +152,7 @@ for li in file_in.readlines():
         mprior.append(float(f0_array[o]))
 
     tobs, fobs, peaks_assos = time_picks(month, day, flight_num, sta, equip, tobs, fobs, closest_time, start_time, spec, times, frequencies, vmin, vmax, len(peaks), peaks_assos, make_picks=mk_picks)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage: {mem:.2f} MB")
+
     if abs(slope) < 1:
         sigma_prior = [10, 125, 15000, 30, 100]
     else:
@@ -174,9 +161,7 @@ for li in file_in.readlines():
         sigma_prior = [100, 300, 50000, 100, 100]
 
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage: {mem:.2f} MB")
+
     v0 = m[0]
     l = m[1]
     t0 = m[2]
@@ -185,30 +170,20 @@ for li in file_in.readlines():
     covm = np.sqrt(np.diag(covm))
     covm0 = np.sqrt(np.diag(covm0))
 
-    print(slope)
-    print(speed_gt, distance_gt)
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     qnum = plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, MDF, covm0, flight_num, middle_index, closest_time, BASE_DIR, plot_show=False, gt = False)
     qnum = "__"
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage spec 1: {mem:.2f} MB")
+
     BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time, sta, BASE_DIR)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage spec 2: {mem:.2f} MB")
+
     if rerun_fig == False:
         output = open('output/inv_results_ngt/' + equip + '_full_inv_results.csv', 'a')
         output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(c)+','+str(F_m)+',\n') 
         output.close()
-    else:
-        continue  # Skip saving results if rerun_fig is True
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage post: {mem:.2f} MB")
+
     # Explicitly delete large variables and collect garbage to free memory
     # Delete all variables and objects that may impact short-term memory
     del data, fs, t_wf, title
