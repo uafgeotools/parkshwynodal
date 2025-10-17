@@ -5,8 +5,7 @@ from scipy.signal import spectrogram
 from src.doppler_funcs import make_base_dir, load_waveform
 from src.main_inv_fig_functions import remove_median, plot_spectrogram, plot_spectrum
 
-# Set max_workers to a reasonable default to avoid oversubscription, especially for I/O-bound tasks
-num_workers = min(4, os.cpu_count() or 1)
+num_workers = os.cpu_count()
 
 def parse_line(line):
     text = line.split(',')
