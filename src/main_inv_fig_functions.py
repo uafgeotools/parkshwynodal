@@ -179,27 +179,28 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
     Plot and save the waveform, unfiltered, and the spectrogram of the given data. Include the estimated curve using the final model parameters outputs from the inversions.
 
     Args:
-        data (array): The waveform data.
+        data (np.ndarray): The waveform data.
         fs (int): The sampling frequency.
-        t_wf (array): The time array for the spectrogram.
+        t_wf (np.ndarray): The time array for the waveform.
         title (str): The title of the plot.
-        spec (array): The spectrogram data.
-        times (array): The time array for the spectrogram.
-        frequencies (array): The frequency array for the spectrogram.
+        spec (np.ndarray): The spectrogram data (2D array).
+        times (np.ndarray): The time array for the spectrogram.
+        frequencies (np.ndarray): The frequency array for the spectrogram.
         t0 (float): The estimated time of aircraft closest approach to the station.
         v0 (float): The velocity.
         l (float): The distance.
         c (float): The speed of sound.
-        f0_array (array): The array of frequencies.
-        F_m (float): The data misfit value.
-        MDF (array): Median removed from spectrogram.
-        Cpost (array): The normalized posterior covariance matrix.
+        f0_array (np.ndarray): The array of frequencies.
+        F_m (float or str): The data misfit value.
+        MDF (np.ndarray): Median removed from spectrogram (2D array).
+        Cpost0 (np.ndarray): The normalized posterior covariance matrix.
         flight (int): The flight number.
         middle_index (int): The index of the middle column.
         closest_time (float): The time of closest approach of aircraft from flightradar, for saving the file.
         dir_name (str): The directory name.
         plot_show (bool): If True, show the plot and ask user to provide a quality number. If False, save the plot without showing it. 
-        gt (bool): If True, the ground truth is used for the intial model in the inversion.
+        gt (bool): If True, the ground truth is used for the initial model in the inversion.
+
     Returns:
         str: The user assigned quality number.
     """
@@ -208,7 +209,7 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
         type_inv = "[FH/GT]"
     else:
         type_inv = "[FH/NGT]"
-    
+    closest_index = np.argmin(np.abs(times - t0))
     closest_index = np.argmin(np.abs(t0 - times))
     arrive_time = spec[:,closest_index]
     for i in range(len(arrive_time)):
@@ -332,14 +333,9 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
         qnum = '__'
    
     fig.savefig(dir_name+'/'+str(closest_time)+'_'+str(flight)+'.png', dpi=600)
-
-    fig.clf()
     plt.close(fig)
     gc.collect()
 
-    del fig, f0lab, cax, ax1, ax2, ax3, ax4, spec2, middle_column2, frequencies, times, spec, MDF
-    gc.collect()
-    
     return qnum
 
 ################################################################################################################################################################################################################################################################################################################################
@@ -384,7 +380,7 @@ def plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time
         if fs/2 < f0:
             continue
 
-        if f0 == np.nan:
+        if np.isnan(f0):
             continue
         if f0 > 250:
             continue
@@ -423,9 +419,9 @@ def plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time
     plt.ylabel("Relative Amplitude at t' = {:.2f} s (dB)".format(t0prime), fontsize=17)
 
     fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.png', dpi=500)
-    fig.clf()
     plt.close(fig)
     gc.collect()
+    
 ##############################################################################################################################################################################################################
 
 def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta, equip, closest_time, tarrive, make_picks=True, spec_window = 120):
