@@ -33,17 +33,30 @@ def find_inv_params(input_file, flight_num, sta):
                 t0 = float(inv_text[6])
                 start_time = float(inv_text[7]) - t0 
                 c = float(inv_text[8])
-                f0_array = str(inv_text[9])
-                f0_array = np.char.replace(f0_array, '[', '')
-                f0_array = np.char.replace(f0_array, ']', '')
-                f0_array = str(f0_array)
-                f0_array = np.array(f0_array.split())
+                peaks = np.array(inv_text[9])
+                peaks = str(peaks)
+                peaks = peaks.replace('[', '').replace(']', '')
+                peaks = np.array(peaks.split(' '))
+                f0_array = []
+                for peak in peaks:
+                    if peak == '':
+                        continue
+                    peak = float(peak)
+                    f0_array.append(peak)
+                f0_array = np.array(f0_array)
+
                 covm0 = inv_text[10]
+                covm0 = str(covm0)
+                covm0 = covm0.replace('[', '').replace(']', '')
+                covm0 = np.array(covm0.split(' '))
+                covm0 = covm0[covm0 != '']
+                covm0 = covm0.astype(float)
                 F_m = inv_text[13]
                 return v0, l, t0, start_time, c, f0_array, covm0, F_m
     return None
 
 def plot_results(equip, month, day, flight_num, sta, closest_time, start_time, v0, l, t0, c, f0_array, covm0, F_m):
+
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
     DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt_parallel/' + folder_spectrum + '/20190'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+ '/'+str(sta)+'_' + str(closest_time) + '.png'
@@ -64,7 +77,8 @@ def plot_results(equip, month, day, flight_num, sta, closest_time, start_time, v
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time, sta, BASE_DIR)
 
-def inversion_process(line):
+def inversion_process(line, tracer):
+    print((tracer/len(lines))*100, '%')
     month, day, flight_num, closest_time, sta, equip = parse_line(line)
     input_file ='output/inv_results_ngt/' + equip + '_full_inv_results.txt'
     params = find_inv_params(input_file, flight_num, sta)
@@ -76,6 +90,6 @@ def inversion_process(line):
 # Loop through each station in text file that we already know comes within 2km of the nodes
 with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r') as file_in:
     lines = file_in.readlines()
+    tracer = [i for i in range(len(lines))]
     with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
-        executor.map(inversion_process, lines)
-
+        executor.map(inversion_process, lines, tracer)
