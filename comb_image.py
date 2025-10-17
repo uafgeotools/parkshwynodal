@@ -17,7 +17,6 @@ def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	else:
 		print("Not a PDF file for conversion:", pdf_path)
 
-paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
 seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
@@ -44,12 +43,10 @@ for line in file_in.readlines():
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
-	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_present/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
-	#if Path(file_check).exists():
-	#	continue
-	file_check = str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
-	if file_check not in paper_figures:
+	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	if Path(file_check).exists():
 		continue
+
 	index = None
 	for i, station in enumerate(stations):
 		if str(station) == str(sta):
