@@ -1,5 +1,5 @@
 import pandas as pd
-
+'''
 jets = True
 with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r') as infile:
 	infile_lines = infile.readlines()
@@ -145,6 +145,32 @@ index_active = 0
 for line in infile.readlines():
 	data = line.split(',')
 	equip = data[10]
+	if equip not in Equipment and equip not in Equipment_jet and str(equip) != 'nan':
+		print(equip)
+	index += 1
+	if str(equip) == 'nan':
+		equip = 'Unknown'
+		total_nan_crossings += 1
+	if equip  in Equipment:
+		prop_crossings += 1
+	elif equip in Equipment_jet:
+		total_jet_crossings += 1
+print('Total NaN Crossings: ' + str(total_nan_crossings))
+print('Total Prop Crossings: ' + str(prop_crossings))
+print('Total Jet Crossings: ' + str(total_jet_crossings))
+print('Total Crossings: ' + str(total_nan_crossings + prop_crossings + total_jet_crossings))
+'''
+infile = open('/home/irseppi/REPOSITORIES/parkshwynodal/NGT_flight_param_inv_DB.txt', 'r')
+Equipment = ['DH8A', 'B190','BE20','PC12','DH3T','C208','AT73','SW4','C441','B18T','B350','BE10','AS50','R44','C185','PA31','DHC2','GA8','C180','C182','C206','C172','PA32','PA46','CH7B','PA30','C46','BE35','PA18','PA34']
+Equipment_jet = ['B737','B738','B739','B77W','B772','B789','B788','B733','B763','A359','B77L','B744','E75S','B732','A332','B748','CRJ2']
+total_nan_crossings = 0
+prop_crossings = 0
+total_jet_crossings = 0
+index = 0
+index_active = 0
+for line in infile.readlines():
+	data = line.split(',')
+	equip = data[0]
 	if equip not in Equipment and equip not in Equipment_jet and str(equip) != 'nan':
 		print(equip)
 	index += 1
