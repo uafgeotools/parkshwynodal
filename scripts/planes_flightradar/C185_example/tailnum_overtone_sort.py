@@ -17,8 +17,8 @@ flight_num_hold = {}
 error_dict = {}
 sort_1 = []
 sort_2 = []
-count_id1 = 0
-count_id2 = 0
+sort_3 = []
+
 # Iterate over each line in the file
 for line in file.readlines():
     lines = line.split(',')
@@ -88,11 +88,7 @@ for line in file.readlines():
                 break
         else:
             continue
-    if tail_num == '10572742':
-        count_id1 += 1
-    elif tail_num == '10512184':
-        count_id2 += 1
-        
+
     peaks_dict[tail_num].extend(ppp)
     all_med[tail_num].extend([np.nanmedian(f1)])
     error_dict[tail_num].extend([mad_df])
@@ -102,8 +98,14 @@ for line in file.readlines():
         sort_1.append(mad_df)
     elif str(tail_num) == '10512184' and med_df > 20:
         sort_2.append(mad_df)
-print('Count for 10572742:', count_id1)
-print('Count for 10512184:', count_id2)
+    elif str(tail_num) == '10572742':
+        sort_3.append(mad_df)
+print('Count for 10572742:', len(peaks_dict[10572742]))
+print('Count for 10512184:', len(peaks_dict[10512184]))
+print('Flight num for 10572742:', len(flight_num_hold[10572742]))
+print('Flight num for 10512184:', len(flight_num_hold[10512184]))
+print('Crossings for 10512184:', len(sort_1+sort_2))
+print('Crossings for 10572742:', len(sort_3))
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
@@ -117,11 +119,11 @@ color_dict[10572742] = [0.0, 0.5, 1.0]  # Blue color in RGB
 for tail_num, peaks in peaks_dict.items():
     error_med = np.nanmedian(error_dict[tail_num])
     if str(tail_num) == '10512184':
-        print(sort_1, sort_2)
         sort_1 = np.nanmedian(np.array(sort_1))
         sort_2 = np.nanmedian(np.array(sort_2))
         print(f'Tail Number: {tail_num}, Median Error: {error_med}, Sort 1: {sort_1}, Sort 2: {sort_2}')
-    print(f'Tail Number: {tail_num}, Median Error: {error_med}')
+    elif str(tail_num) == '10572742':
+        print(f'Tail Number: {tail_num}, Median Error: {error_med}')
     color = color_dict[tail_num]
     med = all_med[tail_num]
     if str(tail_num) != '10572742' and str(tail_num) != '10512184':
