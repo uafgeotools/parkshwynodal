@@ -55,49 +55,86 @@ for i in range(0,2):
             # Define the directory where your files are located
             file = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/' + eq + '_full_inv_results.txt' 
 
-        else:
-            # Define the directory where your files are located
-            file = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/' + eq + '_full_inv_results.txt' 
-
-        with open(file, 'r') as f:
-            # Read the data from the file and append it to the list
-            data = []
-            fdiff = []
-            for line in f.readlines():
-                lines = line.split(',')
-                flight_n = lines[1]
-                for tt, flight_num in enumerate(flight_nums):
-                    if float(flight_n) == float(flight_num):
-                        tail_n = tail[tt]
-                        break
-                if lines[-2] == "Forward Model" or lines[-5] == "00":
-                    continue
-
-                count2 += 1
-                peaks = np.array(lines[9])
-                peaks = str(peaks) 
-                peaks = peaks.replace('[', '').replace(']', '')
-                peaks = np.array(peaks.split(' '))
-                peak_old = 0
-                for peak in peaks:
-                    if peak == '':
+            with open(file, 'r') as f:
+                # Read the data from the file and append it to the list
+                data = []
+                fdiff = []
+                for line in f.readlines():
+                    lines = line.split(',')
+                    flight_n = lines[1]
+                    for i, flight_num in enumerate(flight_nums):
+                        if float(flight_n) == float(flight_num):
+                            tail_n = tail[i]
+                            break
+                    if lines[-2] == "Forward Model" or lines[-5] == "00":
                         continue
-                    peak = float(peak)
-                    if len(peaks) == 0 or peak == peaks[0]:
+
+                    count2 += 1
+                    peaks = np.array(lines[9])
+                    peaks = str(peaks) 
+                    peaks = peaks.replace('[', '').replace(']', '')
+                    peaks = np.array(peaks.split(' '))
+                    peak_old = 0
+                    for peak in peaks:
+                        if peak == '':
+                            continue
+                        peak = float(peak)
+                        if len(peaks) == 0 or peak == peaks[0]:
+                            peak_old = float(peak)
+                            continue
+
+                        diff = float(peak) - float(peak_old)
+
+                        fdiff.append(diff)
                         peak_old = float(peak)
+                        data.append(peak)
+                    if tail_n not in tail_ums_inverted[eq]:
+                        tail_ums_inverted[eq].append([tail_n])
+                equip_overtone_dict[eq].extend(data)
+                equip_count_dict[eq].extend([count1, count2])
+        else:
+            file = '/home/irseppi/REPOSITORIES/parkshwynodal/NGT_flight_param_inv_DB.txt'
+            with open(file, 'r') as f:
+                # Read the data from the file and append it to the list
+                data = []
+                fdiff = []
+                for line in f.readlines():
+                    lines = line.split(',')
+                    if lines[0] != eq:
+                        continue
+                    flight_n = lines[2]
+                    for i, flight_num in enumerate(flight_nums):
+                        if float(flight_n) == float(flight_num):
+                            tail_n = tail[i]
+                            break
+                    if lines[-2] == "Forward Model" or lines[-5] == "00":
                         continue
 
-                    diff = float(peak) - float(peak_old)
+                    count2 += 1
+                    peaks = np.array(lines[10])
+                    peaks = str(peaks) 
+                    peaks = peaks.replace('[', '').replace(']', '')
+                    peaks = np.array(peaks.split(' '))
+                    peak_old = 0
+                    for peak in peaks:
+                        if peak == '':
+                            continue
+                        peak = float(peak)
+                        if len(peaks) == 0 or peak == peaks[0]:
+                            peak_old = float(peak)
+                            continue
 
-                    fdiff.append(diff)
-                    peak_old = float(peak)
-                    data.append(peak)
-                if tail_n not in tail_ums_inverted[eq]:
-                    tail_ums_inverted[eq].append([tail_n])
-            equip_overtone_dict[eq].extend(data)
-            equip_count_dict[eq].extend([count1, count2])
+                        diff = float(peak) - float(peak_old)
+
+                        fdiff.append(diff)
+                        peak_old = float(peak)
+                        data.append(peak)
+                    if tail_n not in tail_ums_inverted[eq]:
+                        tail_ums_inverted[eq].append([tail_n])
+                equip_overtone_dict[eq].extend(data)
+                equip_count_dict[eq].extend([count1, count2])
+    
         med = np.median(fdiff)
-
         if eq == 'B739':
             med = 35.5
             line_count = 8
