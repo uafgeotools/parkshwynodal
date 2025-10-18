@@ -15,3 +15,5 @@ E75S,EMBRAER,175 (short wing),Jet,2,M,1,0,9,0,1,0,9,0
 B732,BOEING,737-200,Jet,2,M,1,1,20,3,1,1,20,3
 A332,AIRBUS,A-330-200,Jet,2,H,1,0,5,0,1,0,5,0
 B748,BOEING,747-8,Jet,4,H,1,0,4,0,1,0,4,0
+Unkown,Unkown,Unkown,Unkown,Unkown,Unkown,189,1,3078,3,Unkown,Unkown,302,3
+CRJ2,CANADAIR,Challenger 800,Jet,2,M,1,1,31,7,1,1,31,7
