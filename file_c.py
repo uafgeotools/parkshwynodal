@@ -34,21 +34,7 @@ for file_name in os.listdir(input_dir):
 
 		print(equip, date, flight_num, time_stamp, sta)
 
-input_dir  = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/Bad_Fits/'
-
-for file_name in os.listdir(input_dir):
-	split_name = file_name.split("_")
-	equip = split_name[0]
-	date = split_name[1]
-	flight_num = split_name[2]
-	time_stamp = split_name[3]
-	sta = split_name[4]
-	if [equip, date, flight_num, time_stamp, sta] in list_list:
-		continue
-	else:
-
-		print(equip, date, flight_num, time_stamp, sta)
-
+'''
 main_dir = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/'
 bad_dir = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/Bad_Fits/'
 
@@ -81,3 +67,4 @@ input_files = []
 for file_name in os.listdir(input_dir):
     input_files.append(file_name)
 combine_text_files(input_files, output_file)
+'''
