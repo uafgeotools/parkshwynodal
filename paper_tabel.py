@@ -1,6 +1,6 @@
 import pandas as pd
 
-jets = True
+jets = False
 with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r') as infile:
 	infile_lines = infile.readlines()
 if not jets:	
@@ -130,7 +130,25 @@ for eq in Equipment:
 		final_table.write(str('Unkown') +',' + str('Unkown') + ',' + str('Unkown') + ',' + str('Unkown') + ',' + str('Unkown') + ',' + str('Unkown') + ',' + str(len(flight_nums[eq])) + ',' + str(len(flight_nums_inverted[eq])) + ',' + str(crossings[eq]) + ',' + str(crossings_inverted[eq]) + ',' + str('Unkown') + ',' + str('Unkown') + ',' + str(len(nodes_count[eq])) +  ',' + str(len(node_inverted[eq])) + '\n')
 	else:
 		final_table.write(eq +',' + str(man_dict[eq]) + ',' + str(type_name[eq]) + ',' + str(engine_type_dict[eq]) + ',' + str(engine_counts[eq]) + ',' + str(wake_turbs[eq]) + ',' + str(len(flight_nums[eq])) + ',' + str(len(flight_nums_inverted[eq])) + ',' + str(crossings[eq]) + ',' + str(crossings_inverted[eq]) + ',' + str(len(tail_numbers[eq])) + ',' + str(len(tail_numbers_inverted[eq])) + ',' + str(len(nodes_count[eq])) +  ',' + str(len(node_inverted[eq])) + '\n')
-
+#Make the last row totals of all the columns
+total_flights = 0
+total_inverted_flights = 0
+total_crossings = 0
+total_inverted_crossings = 0
+total_tail_numbers = 0
+total_inverted_tail_numbers = 0
+total_nodes = 0
+total_inverted_nodes = 0
+for eq in Equipment:	
+	total_flights += len(flight_nums[eq])
+	total_inverted_flights += len(flight_nums_inverted[eq])
+	total_crossings += crossings[eq]
+	total_inverted_crossings += crossings_inverted[eq]
+	total_tail_numbers += len(tail_numbers[eq])
+	total_inverted_tail_numbers += len(tail_numbers_inverted[eq])
+	total_nodes += len(nodes_count[eq])
+	total_inverted_nodes += len(node_inverted[eq])
+final_table.write('Totals,' + ',' + ',' + ',' + ',' + ',' + str(total_flights) + ',' + str(total_inverted_flights) + ',' + str(total_crossings) + ',' + str(total_inverted_crossings) + ',' + str(total_tail_numbers) + ',' + str(total_inverted_tail_numbers) + ',' + str(total_nodes) +  ',' + str(total_inverted_nodes) + '\n')
 final_table.close()
 #In dataset not only inverted
 infile = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
