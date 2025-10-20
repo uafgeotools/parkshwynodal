@@ -22,7 +22,7 @@ seismo_utm_x, seismo_utm_y = zip(*seismo_utm)
 seismo_utm_x_km = [x / 1000 for x in seismo_utm_x]
 seismo_utm_y_km = [y / 1000 for y in seismo_utm_y]
 
-file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_no_g_truth_320/C185_full_inv_results.txt', 'r')
+file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/C185_full_inv_results.txt', 'r')
 
 x_airport, y_airport = utm_proj(-150.1072713049972,62.30091781635389)
 
@@ -30,8 +30,6 @@ x_airport, y_airport = utm_proj(-150.1072713049972,62.30091781635389)
 all_med = {}
 points_lat = {}
 points_lon = {}
-flights = []
-tail = {}
 flight_lat = {}
 flight_lon = {}
 flight_alt = {}
@@ -47,7 +45,6 @@ tail_num = 10512184
 all_med[flight_num] = []
 points_lat[flight_num] = []
 points_lon[flight_num] = []
-tail[flight_num] = []
 flight_lat[flight_num] = []
 flight_lon[flight_num] = []
 flight_alt[flight_num] = []
@@ -56,21 +53,32 @@ UTM_km_y[flight_num] = []
 points_sta_lat[flight_num] = []
 points_sta_lon[flight_num] = []
 
+
+flight_latitudes = []
+flight_longitudes = []
+alt = []
+#flight_latitudes.extend([62.30091781635389])
+#flight_longitudes.extend([-150.1072713049972])
+#alt.extend([111.3])
+
 flight_file = '/scratch/irseppi/nodal_data/flightradar24/20190221_positions/20190221_529754214.csv'
 flight_data = pd.read_csv(flight_file, sep=",")
-flight_latitudes = flight_data['latitude'] 
-flight_longitudes = flight_data['longitude']
-alt = flight_data['altitude'] * 0.3048  # Convert altitude from feet to meters
+flight_latitudes.extend(list(flight_data['latitude']))
+flight_longitudes.extend(list(flight_data['longitude']))
+#flight_latitudes.extend([62.30091781635389])
+#flight_longitudes.extend([-150.1072713049972])
+alt_ft = list(flight_data['altitude'])
+alt_m = [a * 0.3048 for a in alt_ft] 
+alt.extend(alt_m)
+#alt.extend([111.3])
 
 # Convert flight latitude and longitude to UTM coordinates
 flight_utm = [utm_proj(lon, lat) for lat, lon in zip(flight_latitudes, flight_longitudes)]
 flight_utm_x, flight_utm_y = zip(*flight_utm)
-
 # Convert UTM coordinates to kilometers
 flight_utm_x_km = [x / 1000 for x in flight_utm_x]
 flight_utm_y_km = [y / 1000 for y in flight_utm_y]
 flight_path = [(x,y) for x, y in zip(flight_utm_x_km, flight_utm_y_km)]
-
 
 flight_lat[flight_num].extend(flight_latitudes)
 flight_lon[flight_num].extend(flight_longitudes)
@@ -159,22 +167,24 @@ elev_point = []
 #Create array of distance along path 
 dist_p = np.zeros(len(fxx))
 dist_hold = 0
-for i in range(len(fxx)-2): 
-    dist_p[i] = np.sqrt((np.array(fxx)[i+1] - np.array(fxx)[i]) ** 2 + (np.array(fyy)[i + 1] - np.array(fyy)[i]) ** 2) + dist_hold
+for i in range(1,len(fxx)): 
+    dist_p[i] = np.sqrt((np.array(fxx)[i] - np.array(fxx)[i-1]) ** 2 + (np.array(fyy)[i] - np.array(fyy)[i-1]) ** 2) + dist_hold
     dist_hold = dist_p[i]
+
+
 for j in range(len(P_utm_x_km)):
-    for i in range(len(fxx)):
+    for i in range(1,len(fxx)+1):
         # Check if the point (P_utm_x_km[j], P_utm_y_km[j]) lies between the two points (fxx[i], fyy[i]) and (fxx[i+1], fyy[i+1])
-        if min(np.array(fxx)[i], np.array(fxx)[i+1]) <= P_utm_x_km[j] <= max(np.array(fxx)[i], np.array(fxx)[i+1]) and \
-        min(np.array(fyy)[i], np.array(fyy)[i+1]) <= P_utm_y_km[j] <= max(np.array(fyy)[i], np.array(fyy)[i+1]):
+        if min(np.array(fxx)[i-1], np.array(fxx)[i]) <= P_utm_x_km[j] <= max(np.array(fxx)[i-1], np.array(fxx)[i]) and \
+        min(np.array(fyy)[i-1], np.array(fyy)[i]) <= P_utm_y_km[j] <= max(np.array(fyy)[i-1], np.array(fyy)[i]):
             # Calculate the distance along the path to the point (P_utm_x_km[j], P_utm_y_km[j])
-            segment_length = np.sqrt((np.array(fxx)[i+1] - np.array(fxx)[i]) ** 2 + (np.array(fyy)[i+1] - np.array(fyy)[i]) ** 2)
-            projection_factor = np.sqrt((P_utm_x_km[j] - np.array(fxx)[i]) ** 2 + (P_utm_y_km[j] - np.array(fyy)[i]) ** 2) / segment_length
-            projected_dist = dist_p[i] + projection_factor * segment_length
+            segment_length = np.sqrt((np.array(fxx)[i] - np.array(fxx)[i-1]) ** 2 + (np.array(fyy)[i] - np.array(fyy)[i-1]) ** 2)
+            projection_factor = np.sqrt((P_utm_x_km[j] - np.array(fxx)[i-1]) ** 2 + (P_utm_y_km[j] - np.array(fyy)[i-1]) ** 2) / segment_length
+            projected_dist = dist_p[i-1] + projection_factor * segment_length
             dist_point.append(projected_dist)
                 
             # Interpolate the altitude at the point (P_utm_x_km[j], P_utm_y_km[j])
-            interpolated_alt = alt_t[i] + projection_factor * (alt_t[i+1] - alt_t[i])
+            interpolated_alt = alt_t[i-1] + projection_factor * (alt_t[i] - alt_t[i-1])
             elev_point.append(interpolated_alt)
             break
 
@@ -196,7 +206,6 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                 fig.grdimage(grid=grid, projection=proj, frame="a", cmap="geo")
                 fig.colorbar(frame=["a1000", "x+lElevation, m"], position="JMR+o8c/6c+w11.5c/0.5c")
                 fig.plot(x=np.array(f_lon), y=np.array(f_lat), pen="1p,black", projection=proj)
-
                 for i in range(len(f_lat) - 1):
                     if i == 4:
                         angle = np.arctan2(np.array(f_lat)[i + 4] - np.array(f_lat)[i], np.array(f_lon)[i + 4] - np.array(f_lon)[i])
@@ -248,11 +257,11 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
                         angle = np.arctan2(np.array(f_lat)[i + 4] - np.array(f_lat)[i], np.array(f_lon)[i + 4] - np.array(f_lon)[i])
                         angle = np.degrees(angle)
                         fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.9c+e", direction=[[angle-21], [1]], fill='black', pen="1p,black", region=zoom_region,projection=proj)
-                    elif i == len(f_lat) - 10:
-                        angle = np.arctan2(np.array(f_lat)[i + 2] - np.array(f_lat)[i], np.array(f_lon)[i + 2] - np.array(f_lon)[i])
+                    elif i == len(f_lat) - 18:
+                        angle = np.arctan2(np.array(f_lat)[i + 10] - np.array(f_lat)[i], np.array(f_lon)[i + 10] - np.array(f_lon)[i])
                         angle = np.degrees(angle)
 
-                        fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.9c+e", direction=[[angle-10], [1]], fill='black', pen="1p,black", region=zoom_region,projection=proj)
+                        fig.plot(x=[np.array(f_lon)[i]], y=[np.array(f_lat)[i]], style="v0.9c+e", direction=[[angle-16], [1]], fill='black', pen="1p,black", region=zoom_region,projection=proj)
                     else:
                         continue
                 
@@ -279,9 +288,9 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
     with fig.subplot(nrows=1, ncols=1, figsize=("27c", "10c"), margins=["0.1c", "0.1c"],autolabel=False):
 
         points = pd.DataFrame({'longitude': [], 'latitude': []})
-        for i in range(len(f_lon[:-2]) - 1):
-            lon_segment = np.linspace(f_lon[i], f_lon[i + 1])  # 10 intermediate points + start and end
-            lat_segment = np.linspace(f_lat[i], f_lat[i + 1])
+        for i in range(1, len(f_lon)):
+            lon_segment = np.linspace(f_lon[i-1], f_lon[i], 4)  # 4 intermediate points + start and end
+            lat_segment = np.linspace(f_lat[i-1], f_lat[i], 4)
             points = pd.concat([points, pd.DataFrame({'longitude': lon_segment, 'latitude': lat_segment})], ignore_index=True)
 
         elevation_data = pygmt.grdtrack(
@@ -304,29 +313,38 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
 
         interpolated_dist_p = np.zeros(len(ev_utm_x_km))
         dist_hold = 0
-        for i in range(len(ev_utm_x_km)-2):
-            interpolated_dist_p[i] = np.sqrt((np.array(ev_utm_x_km)[i+1] - np.array(ev_utm_x_km)[i]) ** 2 + (np.array(ev_utm_y_km)[i + 1] - np.array(ev_utm_y_km)[i]) ** 2) + dist_hold
-            dist_hold = interpolated_dist_p[i] 
+        for i in range(1,len(ev_utm_x_km)):
+            interpolated_dist_p[i] = np.sqrt((np.array(ev_utm_x_km)[i] - np.array(ev_utm_x_km)[i-1]) ** 2 + (np.array(ev_utm_y_km)[i] - np.array(ev_utm_y_km)[i-1]) ** 2) + dist_hold
+            dist_hold = interpolated_dist_p[i]
+        # Interpolate elevation for every 1 km along the path
+        interp_km = np.arange(0, np.max(interpolated_dist_p), 0.1)
+        interp_elev = np.interp(interp_km, interpolated_dist_p, ev)
 
+        # Now interp_km contains every 1 km along the path, interp_elev contains the corresponding elevation
+        # You can use interp_km and interp_elev for further plotting or analysis
         distance_grid, elevation_grid = np.meshgrid(
-        interpolated_dist_p,
-        np.linspace(np.min(ev), np.max(alt_t) + 100, len(interpolated_dist_p))
+            interp_km,
+            np.linspace(0, np.max(alt_t) + 100, len(interp_km))
         )
+
         # Fill the mesh grid with elevation values for color mapping
         color_fill = np.full_like(distance_grid, 0)  # Initialize with NaN
         for row in range(len(elevation_grid)):
             for col in range(len(elevation_grid[row])):
-                if elevation_grid[row, col] <= float(ev[col]):
+                if elevation_grid[row, col] <= float(interp_elev[col]):
                     color_fill[row, col] = elevation_grid[row, col]
+                    if elevation_grid[row, col] <= np.min(interp_elev):
+                        color_fill[row, col] = np.min(interp_elev)
                 else:
                     color_fill[row, col] = np.nan  
+
 
         # Turn grids into 1D arrays
         distance_grid = distance_grid.flatten()
         elevation_grid = elevation_grid.flatten()
         color_fill = color_fill.flatten()
 
-        num_cells = 620  # between 600 and 650
+        num_cells = 600  # between 600 and 650
         space_x = (np.max(distance_grid) - np.min(distance_grid)) / num_cells
         space_y = (np.max(elevation_grid) - np.min(elevation_grid)) / num_cells
         grid_y_min, grid_y_max = np.min(elevation_grid), np.max(elevation_grid)
@@ -343,10 +361,11 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             projection=proj,
             frame=["WSrt", "xa20+lDistance, km", "ya1000+lElevation, m"], 
         )
-
+        print(dist_p)
+        print(alt_t)
         fig.plot(
             x=[0, np.max(dist_p), np.max(dist_p), 0],
-            y=[np.min(ev), np.min(ev), np.max(alt_t)+100, np.max(alt_t)+100],
+            y=[0, 0, np.max(alt_t)+100, np.max(alt_t)+100],
             fill="lightblue",
             projection=proj,
             close=True
@@ -365,9 +384,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
 
         # Apply the color palette table to the grid
         fig.grdimage(grid=c_fill, projection=proj, region=prof_region, cmap=True, nan_transparent=True)
-
-        fig.plot(x=np.array(dist_p[:-2]), y=np.array(alt_t[:-2]), pen="1p,black", region=prof_region, projection=proj)
-
+        fig.plot(x=np.array(dist_p), y=np.array(alt_t), pen="1p,black", region=prof_region, projection=proj)
         fig.plot(
             x=np.array(interpolated_dist_p),
             y=np.array(ev),
@@ -389,14 +406,13 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             region=prof_region,
         )
 
-        fig.image(imagefile="N125KT.png",
-        position="g65/1217+w2.7c+jCM",
+        fig.image(imagefile="input/N125KT.png",
+        position="g55/1100+w2.5c+jCM",
         box=False,
         region=prof_region,
         projection=proj,
         perspective=[199,90]
         )
-        #label a) b) and c) for the left upper corrner of the three plots
 
         fig.text(
             text="c)",
@@ -411,3 +427,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
 fig.savefig("flight_path_10512184.pdf", dpi=300)
 fig.show(verbose="i")
 
+plt.figure()
+plt.plot(dist_p, alt, color='black')
+plt.plot(np.array(interpolated_dist_p), np.array(ev), color='red', linewidth=2)
+plt.show()

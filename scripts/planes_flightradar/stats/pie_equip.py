@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from matplotlib.patches import Wedge
 import matplotlib.pyplot as plt
 
 infile = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
@@ -16,7 +17,6 @@ for line in infile:
 	flight_num = data[1]
 	if flight_num not in flight_nums:
 		flight_nums[flight_num] = []
-		#flight_nums[equip].extend([flight_num]) 
 		equip_counts[equip] = equip_counts.get(equip, 0) + 1  # move outside loop to get count of crossings instead of counts of flights
 
 print(equip_counts)
@@ -49,7 +49,7 @@ with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/colors.txt','r') as c_
 			colors.append(c)
 
 # Plot the two pie charts side by side
-fig, axes = plt.subplots(2, 1, figsize=(40, 50))
+fig, axes = plt.subplots(2, 1, figsize=(8, 14))
 # Plot the first pie chart with the 'Other' category as the last slice
 sorted_labels = list(equip_counts.keys())
 sorted_labels.remove('Other')
@@ -61,24 +61,107 @@ sorted_sizes = [equip_counts[label] for label in sorted_labels]
 modified_colors = colors[4:(len(equip_counts)+4)]
 modified_colors[-1] = 'magenta'  # Set the color for 'Other' slice to magenta
 
-# Plot the first pie chart with improved label spacing using 'autopct' and 'pctdistance'
-axes[0].pie(
+# After plotting, manually add labels at the center of each wedge
+wedges, _ = axes[0].pie(
 	sorted_sizes,
-	labels=[f"{label}: {size}" for label, size in zip(sorted_labels, sorted_sizes)],
 	colors=modified_colors,
-	textprops={'fontsize': 11},#, 'fontweight': 'bold'},
-	labeldistance=1 # Move labels closer to the center of the pie slices
+	textprops={'fontsize': 10},
 )
+
+for i, wedge in enumerate(wedges):
+	if sorted_labels[i] == 'B77W':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[0].text(
+			x * 1.2, y * 1.05,
+			f"{sorted_labels[i]}: {sorted_sizes[i]}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	elif sorted_labels[i] == 'DH3T':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[0].text(
+			x * 1.2, y * 1.11,
+			f"{sorted_labels[i]}: {sorted_sizes[i]}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	elif sorted_labels[i] == 'DH3T':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[0].text(
+			x * 1.15, y * 1.1,
+			f"{sorted_labels[i]}: {sorted_sizes[i]}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	elif sorted_labels[i] == 'AT73':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[0].text(
+			x * 1.5, y * 1.05,
+			f"{sorted_labels[i]}: {sorted_sizes[i]}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	elif sorted_labels[i] == 'Unknown':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[0].text(
+			x * 1.4, y * 1.05,
+			f"{sorted_labels[i]}: {sorted_sizes[i]}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	else:
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[0].text(
+			x * 1.2, y * 1.07,
+			f"{sorted_labels[i]}: {sorted_sizes[i]}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
 axes[0].axis('equal')
-# Plot the second pie chart for values less than 50 with improved label spacing
-axes[1].pie(
+# After plotting, manually add labels at the center of each wedge
+wedges, _ = axes[1].pie(
 	less_than_50.values(),
-	labels=[f"{label}: {size}" for label, size in less_than_50.items()],
 	colors=colors[(len(equip_counts)+10):((len(equip_counts)+10+len(less_than_50)))][::-1],
-	textprops={'fontsize': 11},#, 'fontweight': 'bold'},
-	labeldistance=1
+	textprops={'fontsize': 10},
 )
+
+for i, wedge in enumerate(wedges):
+	label = list(less_than_50.keys())[i]
+	size = list(less_than_50.values())[i]
+	if label == 'B18T':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[1].text(
+			x * 1.2, y * 1.07,
+			f"{label}: {size}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	elif label == 'R44':
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[1].text(
+			x * 1, y * 1.09,
+			f"{label}: {size}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
+	else:
+		angle = (wedge.theta2 + wedge.theta1) / 2
+		x = np.cos(np.deg2rad(angle))
+		y = np.sin(np.deg2rad(angle))
+		axes[1].text(
+			x * 1.15, y * 1.07,
+			f"{label}: {size}",
+			ha='center', va='center_baseline', fontsize=10,
+		)
 axes[1].axis('equal')
-plt.show()
-#plt.savefig('/home/irseppi/REPOSITORIES/parkshwynodal/output/pie_charts_equipment.png', dpi=650, bbox_inches='tight')
+plt.subplots_adjust(hspace=0.05)
+plt.savefig('/home/irseppi/REPOSITORIES/parkshwynodal/pie_charts_equipment.png', dpi=2500, bbox_inches='tight')
 
