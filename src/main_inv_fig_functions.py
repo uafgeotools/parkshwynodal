@@ -293,7 +293,8 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
 
     ax2.legend(loc='upper right',fontsize = 'small')
     ax2.set_ylabel('Frequency (Hz)')
-
+    ax1.set_xlim(0,max(t_wf))
+    ax2.set_xlim(0,max(t_wf))
     ax2.margins(x=0)
     ax3 = fig.add_axes([0.9, 0.11, 0.015, 0.35])
 
