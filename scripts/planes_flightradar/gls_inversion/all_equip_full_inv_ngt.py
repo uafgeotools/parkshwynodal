@@ -34,7 +34,7 @@ for li in file_in.readlines():
     DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     if os.path.exists(DIR):
         continue
-    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
+    file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
     if not os.path.exists(file_name):
         continue
 
@@ -123,7 +123,7 @@ for li in file_in.readlines():
     mprior[2] = t0
     mprior[3] = c
 
-    output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/input/Data_Picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
+    output2 = '/home/irseppi/REPOSITORIES/parkshwynodal/input/data_picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
     if not os.path.exists(output2):
         continue
     else:
