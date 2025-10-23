@@ -3,11 +3,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.patheffects as patheffects
 
-file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/C185_full_inv_results.txt', 'r')
+file = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/output/NGT_flight_param_inv_DB.txt', sep=",")
+equipment = file['Equipment']
+flight_nums = file['Flight_Number']
+freq_peaks = file['Meas_Source_Frequency_Array']
+error_dict = file['Variance']
 
-file2 = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_station_crossing_db_C185.csv', sep=",")
-tail_nums = file2['TAIL_NUM']
-flight = file2['FLIGHT_NUM']
+flight_num_dict = {'10512184': ['527958214', '529754214', '529970458', '530342801', '530489496', '530681886', '530893864', 
+                                '531043310', '531236830', '531254054', '533770152', '533950817', '534724516', '534738063', 
+                                '534699022', '534899218', '535316732', '535335862'], 
+                    '10572742': ['528502194', '528518474', '528510459', '528711629', '528698927', '529409728', 
+                                '529416700', '530144820', '530501643', '530672521', '530695031', '530706111', 
+                                '530842926', '531272879', '531417015', '531424585', '531583949', '531591863', 
+                                '531605202', '531901801', '531774192', '533421550']}
 
 # Create a dictionary to store the color for each tail number
 color_dict = {}
@@ -20,19 +28,13 @@ sort_2 = []
 sort_3 = []
 
 # Iterate over each line in the file
-for line in file.readlines():
-    lines = line.split(',')
-    flight_num = lines[1]
-    if lines[11] == '00':
+for i in range(len(equipment)):
+    flight_num = flight_nums[i]
+    if equipment[i] != 'C185':
         continue
-    peaks = np.array(lines[9])
-    peaks = str(peaks)
-    peaks = np.char.replace(peaks, '[', '')
-    peaks = np.char.replace(peaks, ']', '')
-    peaks = str(peaks)
-    peaks = np.array(peaks.split(' '))
+    peaks = np.array(freq_peaks[i].strip('[]').split(' '), dtype=float)
 
-    error_strs = [e for e in lines[10].strip('[]').split(' ') if e.strip() != '']
+    error_strs = [e for e in error_dict[i].strip('[]').split(' ')]
     Cpost0 = np.array(error_strs[3:], dtype=float)
 
     ppp = []
@@ -73,11 +75,10 @@ for line in file.readlines():
         med = np.nanmedian(f_hold)
         f_range.append(med)
     med_df = np.nanmedian(f_range)
-    mad_df = np.nanmedian(np.abs(f_range - med_df))
+    mad_df = np.nanmedian(np.abs(np.nanmedian(f_range) - med_df))
 
-    for lp in range(len(flight)):
-        if int(flight_num) == int(flight[lp]):
-            tail_num = tail_nums[lp]
+    for tail_num,flight in flight_num_dict.items():
+        if int(flight) == int(flight_num):
             # Assign a color to the tail number if it doesn't already have one
             if tail_num not in color_dict:
                 color_dict[tail_num] = []
