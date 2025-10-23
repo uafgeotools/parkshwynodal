@@ -62,13 +62,13 @@ sorted_sizes = [equip_counts[label] for label in sorted_labels]
 modified_colors = colors[4:(len(equip_counts)+4)]
 modified_colors[-1] = 'magenta'  # Set the color for 'Other' slice to magenta
 
-# After plotting, manually add labels at the center of each wedge
+# Label wedges of pie chart with equipment type and flight number counts
 wedges, _ = axes[0].pie(
 	sorted_sizes,
 	colors=modified_colors,
 	textprops={'fontsize': 10},
 )
-
+# Manually move overlapping labels
 for i, wedge in enumerate(wedges):
 	if sorted_labels[i] == 'B77W':
 		angle = (wedge.theta2 + wedge.theta1) / 2
@@ -125,13 +125,13 @@ for i, wedge in enumerate(wedges):
 			ha='center', va='center_baseline', fontsize=10,
 		)
 axes[0].axis('equal')
-# After plotting, manually add labels at the center of each wedge
+# Label wedges of pie chart with equipment type and flight number counts
 wedges, _ = axes[1].pie(
 	less_than_50.values(),
 	colors=colors[(len(equip_counts)+10):((len(equip_counts)+10+len(less_than_50)))][::-1],
 	textprops={'fontsize': 10},
 )
-
+# Manually move overlapping labels
 for i, wedge in enumerate(wedges):
 	label = list(less_than_50.keys())[i]
 	size = list(less_than_50.values())[i]
