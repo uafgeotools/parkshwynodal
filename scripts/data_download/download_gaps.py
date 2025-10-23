@@ -69,27 +69,4 @@ for gap in gaps_data:
         conn.execute(sql_str)
         conn.commit()
     i+=1
-"""
 
-end_date = earliest_termination_date
-print("downloading data from {} to {} for stations: ".format(start_date,end_date))
-for station in stations_to_download:
-    print("\t{}".format(station))
-
-
-
-for i in range(0, int(math.ceil(diff / DOWNLOAD_WINDOW))):
-    download_start = start_date + float(i) * DOWNLOAD_WINDOW
-    download_end = start_date + float(i+1) * DOWNLOAD_WINDOW
-    for station in stations_to_download:
-        save_name = BASE_DIR + "{}.{}.{}.mseed".format(download_start, download_end, station)
-        if not Path(save_name).exists():
-            print("downloading data from station {}, {} to {}".format(station,download_start,download_end))
-            try:
-                waveform = waveform_client.get_waveforms(network="ZE", location="*", station=station, channel="*", starttime=download_start,
-                            endtime=download_end)
-                print("\tsaving to file {}".format(save_name))
-                waveform.write(save_name)
-            except Exception as e:
-                print("download error for file {}: {}".format(save_name,e))
-"""

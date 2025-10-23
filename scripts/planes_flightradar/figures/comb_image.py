@@ -199,7 +199,7 @@ for line in file_in.readlines():
 	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 	text3 = 'Callsign: ' +  str(call) + ' (' + str(equip) + ')'
 
-	font2 = ImageFont.truetype('input/Arial.ttf', (25/96)*600)  # Adjust size for 600 DPI
+	font2 = ImageFont.truetype('input/fig_style/Arial.ttf', (25/96)*600)  # Adjust size for 600 DPI
 
 
 	# Get the path of the image file using a wildcard
@@ -243,11 +243,11 @@ for line in file_in.readlines():
 	canvas.paste(plane, (canvas_width - plane.width, 0))
 	# Draw text from files
 	draw = ImageDraw.Draw(canvas)
-	font = ImageFont.truetype('input/Arial.ttf', (15/96)*600)  # Adjust size for 600 DPI
+	font = ImageFont.truetype('input/fig_style/Arial.ttf', (15/96)*600)  # Adjust size for 600 DPI
 
 	# Label each image (adjust positions and font sizes for 600 DPI)
 	label_font_size = int((25/96)*600)
-	label_font = ImageFont.truetype('input/Arial.ttf', label_font_size)
+	label_font = ImageFont.truetype('input/fig_style/Arial.ttf', label_font_size)
 
 	# Example y-offsets for labels, scaled for DPI
 	draw.text((int(15/96*600), int(35/96*600)), '(a)', fill='black', font=label_font)

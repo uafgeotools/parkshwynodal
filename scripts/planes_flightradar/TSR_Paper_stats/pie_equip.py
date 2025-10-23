@@ -42,7 +42,7 @@ equip_counts = {k: v for k, v in sorted(equip_counts.items(), key=lambda item: i
 # Define a color dictionary
 colors=[]
 #Read in color text file to get different flights to be diffrent colors on map
-with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/colors.txt','r') as c_in:
+with open('/home/irseppi/REPOSITORIES/parkshwynodal/input/fig_style/colors.txt','r') as c_in:
 	for i, line in enumerate(c_in):
 		if (i + 1) % 9 == 0:
 			c = str(line[0:7])
