@@ -1,12 +1,19 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import pyproj
 import pygmt
-from src.doppler_funcs import *
+import sys
+import numpy as np
+import pandas as pd
+from pathlib import Path
 
+# Ensure repository root is on sys.path so local package 'src' can be imported
+repo_root = Path(__file__).resolve().parents[3]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+from src.doppler_funcs import find_closest_point
+
+folder_path = '/home/irseppi/REPOSITORIES/'
 #Load seismometer data
-seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/all_sta.txt', sep="|")
+seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 stations = seismo_data['Station']
@@ -22,8 +29,14 @@ seismo_utm_x, seismo_utm_y = zip(*seismo_utm)
 seismo_utm_x_km = [x / 1000 for x in seismo_utm_x]
 seismo_utm_y_km = [y / 1000 for y in seismo_utm_y]
 
-file = open('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/C185_full_inv_results.txt', 'r')
 
+flight_num = 529754214
+tail_num = 10512184
+
+file = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/output/NGT_flight_param_inv_DB.txt', sep=",")
+flight_nums = file['Flight_Number']
+freq_peaks = file['Meas_Source_Frequency_Array']
+nodes = file['Station']
 x_airport, y_airport = utm_proj(-150.1072713049972,62.30091781635389)
 
 # Create a dictionary to store the color for each tail number
@@ -38,9 +51,6 @@ UTM_km_y = {}
 points_sta_lat = {}
 points_sta_lon = {}
 
-
-flight_num = 529754214
-tail_num = 10512184
 
 all_med[flight_num] = []
 points_lat[flight_num] = []
@@ -57,24 +67,18 @@ points_sta_lon[flight_num] = []
 flight_latitudes = []
 flight_longitudes = []
 alt = []
-#flight_latitudes.extend([62.30091781635389])
-#flight_longitudes.extend([-150.1072713049972])
-#alt.extend([111.3])
 
 flight_file = '/scratch/irseppi/nodal_data/flightradar24/20190221_positions/20190221_529754214.csv'
 flight_data = pd.read_csv(flight_file, sep=",")
 flight_latitudes.extend(list(flight_data['latitude']))
 flight_longitudes.extend(list(flight_data['longitude']))
-#flight_latitudes.extend([62.30091781635389])
-#flight_longitudes.extend([-150.1072713049972])
 alt_ft = list(flight_data['altitude'])
-alt_m = [a * 0.3048 for a in alt_ft] 
-alt.extend(alt_m)
-#alt.extend([111.3])
+alt.extend([a * 0.3048 for a in alt_ft])
 
 # Convert flight latitude and longitude to UTM coordinates
 flight_utm = [utm_proj(lon, lat) for lat, lon in zip(flight_latitudes, flight_longitudes)]
 flight_utm_x, flight_utm_y = zip(*flight_utm)
+
 # Convert UTM coordinates to kilometers
 flight_utm_x_km = [x / 1000 for x in flight_utm_x]
 flight_utm_y_km = [y / 1000 for y in flight_utm_y]
@@ -86,35 +90,25 @@ UTM_km_x[flight_num].extend(flight_utm_x_km)
 UTM_km_y[flight_num].extend(flight_utm_y_km)
 flight_alt[flight_num].extend(alt)
 
-for line in file.readlines():
-    lines = line.split(',')
-    f_num = int(lines[1])
-    
+for i,f_num in enumerate(flight_nums):
     if int(f_num) != int(flight_num):
         continue
-    nodes = int(lines[2])
+    node = int(nodes[i])
     # Find find the data for the example station
     for s in range(len(seismo_data)):
-        if str(nodes) == str(stations[s]):
+        if str(node) == str(stations[s]):
             seismometer = (seismo_utm_x_km[s], seismo_utm_y_km[s]) 
-            closet_station_lat = seismo_latitudes[s]
-            closet_station_lon = seismo_longitudes[s]
+            closest_station_lat = seismo_latitudes[s]
+            closest_station_lon = seismo_longitudes[s]
             break
         else:
             continue
+    
+    peaks = np.array(freq_peaks[i].strip('[]').split(' '), dtype=float)
 
     closest_p, dist_km, index = find_closest_point(flight_path, seismometer)
     closest_x, closest_y = closest_p
     closest_lon, closest_lat = utm_proj(closest_x * 1000, closest_y * 1000, inverse=True)
-
-    peaks = np.array(lines[9])
-
-    peaks = str(peaks)
-    peaks = np.char.replace(peaks, '[', '')
-    peaks = np.char.replace(peaks, ']', '')
-
-    peaks = str(peaks)
-    peaks = sorted(np.array(peaks.split(' ')).astype(float))
 
     f1 = []
     peak_old = 0
@@ -133,13 +127,12 @@ for line in file.readlines():
         peak_old = float(peak)
     if len(f1) < 1:
         continue
-    if str(lines[11]) == '00':
-        continue
+
     all_med[flight_num].extend([np.nanmedian(f1)])
     points_lat[flight_num].extend([closest_lat])
     points_lon[flight_num].extend([closest_lon])
-    points_sta_lat[flight_num].extend([closet_station_lat])
-    points_sta_lon[flight_num].extend([closet_station_lon])
+    points_sta_lat[flight_num].extend([closest_station_lat])
+    points_sta_lon[flight_num].extend([closest_station_lon])
 
 
 f_lat = flight_lat[flight_num]
@@ -361,8 +354,7 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             projection=proj,
             frame=["WSrt", "xa20+lDistance, km", "ya1000+lElevation, m"], 
         )
-        print(dist_p)
-        print(alt_t)
+
         fig.plot(
             x=[0, np.max(dist_p), np.max(dist_p), 0],
             y=[0, 0, np.max(alt_t)+100, np.max(alt_t)+100],
@@ -406,14 +398,6 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             region=prof_region,
         )
 
-        fig.image(imagefile="input/N125KT.png",
-        position="g55/1100+w2.5c+jCM",
-        box=False,
-        region=prof_region,
-        projection=proj,
-        perspective=[199,90]
-        )
-
         fig.text(
             text="c)",
             x=1.5,
@@ -424,10 +408,5 @@ with pygmt.config(MAP_DEGREE_SYMBOL= "none"):
             projection=proj,
         )
 
-fig.savefig("flight_path_10512184.pdf", dpi=300)
+fig.savefig(folder_path + "flight_path_10512184.pdf", dpi=300)
 fig.show(verbose="i")
-
-plt.figure()
-plt.plot(dist_p, alt, color='black')
-plt.plot(np.array(interpolated_dist_p), np.array(ev), color='red', linewidth=2)
-plt.show()
