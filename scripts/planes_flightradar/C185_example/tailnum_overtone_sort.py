@@ -4,118 +4,102 @@ import pandas as pd
 import matplotlib.patheffects as patheffects
 
 file = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/output/NGT_flight_param_inv_DB.txt', sep=",")
-equipment = file['Equipment']
 flight_nums = file['Flight_Number']
 freq_peaks = file['Meas_Source_Frequency_Array']
-error_dict = file['Variance']
+varr_dict = file['Variance']
 
 flight_num_dict = {'10512184': ['527958214', '529754214', '529970458', '530342801', '530489496', '530681886', '530893864', 
-                                '531043310', '531236830', '531254054', '533770152', '533950817', '534724516', '534738063', 
-                                '534699022', '534899218', '535316732', '535335862'], 
+                                '531043310', '531236830', '531254054', '533770152', '533950817', 
+                                '534899218'], 
                     '10572742': ['528502194', '528518474', '528510459', '528711629', '528698927', '529409728', 
                                 '529416700', '530144820', '530501643', '530672521', '530695031', '530706111', 
-                                '530842926', '531272879', '531417015', '531424585', '531583949', '531591863', 
+                                '530842926', '531272879', '531417015', '531424585', '531583949', 
                                 '531605202', '531901801', '531774192', '533421550']}
 
 # Create a dictionary to store the color for each tail number
 color_dict = {}
 peaks_dict = {}
 all_med = {}
-flight_num_hold = {}
 error_dict = {}
 sort_1 = []
 sort_2 = []
 sort_3 = []
 
 # Iterate over each line in the file
-for i in range(len(equipment)):
-    flight_num = flight_nums[i]
-    if equipment[i] != 'C185':
+for i in range(len(flight_nums)):
+    flight_num = str(flight_nums[i])
+    if flight_num in flight_num_dict['10512184']:
+        tail_num = '10512184'
+    elif flight_num in flight_num_dict['10572742']:
+        tail_num = '10572742'
+    else:
         continue
+    if tail_num not in color_dict:
+        color_dict[tail_num] = []
+        peaks_dict[tail_num] = []
+        all_med[tail_num] = []
+        error_dict[tail_num] = []
+
     peaks = np.array(freq_peaks[i].strip('[]').split(' '), dtype=float)
+    Cpost0 = np.array(varr_dict[i].strip('[]').split(' '), dtype=float)
 
-    error_strs = [e for e in error_dict[i].strip('[]').split(' ')]
-    Cpost0 = np.array(error_strs[3:], dtype=float)
-
-    ppp = []
     f1 = []
     peak_old = 0
     for tt, peak in enumerate(peaks):
-        if np.abs(float(peak) - float(peak_old))< 10:
-            continue
-        ppp.append(float(peak))
-
         if len(peaks) == 0 or peak == peaks[0]:
             peak_old = float(peak)
             continue
-
         diff = float(peak) - float(peak_old)
         f1.append(diff)
         peak_old = float(peak)
+    peaks_dict[tail_num].extend(peaks.tolist())
+    all_med[tail_num].extend([np.nanmedian(f1)])
     #Generate random samples of f0 values withing their sigma from the covariance matrix 
     #Calculate the median of the differences and MAD to obtain error
     f_range = []
-
     NTRY = 1000
     for N in range(NTRY):
         ftry = []
         for c_index  in range(4, len(Cpost0)):
-            xmin = ppp[c_index-4] - (Cpost0[c_index]/len(error_strs))
-            xmax = ppp[c_index-4] + (Cpost0[c_index]/len(error_strs))
+            xmin = peaks[c_index-4] - Cpost0[c_index]
+            xmax = peaks[c_index-4] + Cpost0[c_index]
             xtry = xmin + (xmax-xmin)*np.random.rand()
             ftry.append(xtry)
 
         ftry = np.sort(ftry)
-        f_hold = []
+        f1 = []
         for g in range(len(ftry)):
             if g == 0:
                 continue
             diff = ftry[g] - ftry[g - 1]
-            f_hold.append(diff)
-        med = np.nanmedian(f_hold)
-        f_range.append(med)
+            f1.append(diff)
+        f_range.append(np.nanmedian(f1))
     med_df = np.nanmedian(f_range)
-    mad_df = np.nanmedian(np.abs(np.nanmedian(f_range) - med_df))
+    mad_df = np.nanmedian(np.abs(f_range - med_df))
 
-    for tail_num,flight in flight_num_dict.items():
-        if int(flight) == int(flight_num):
-            # Assign a color to the tail number if it doesn't already have one
-            if tail_num not in color_dict:
-                color_dict[tail_num] = []
-                peaks_dict[tail_num] = []
-                all_med[tail_num] = []
-                flight_num_hold[tail_num] = []
-                error_dict[tail_num] = []
-                break
-        else:
-            continue
-
-    peaks_dict[tail_num].extend(ppp)
-    all_med[tail_num].extend([np.nanmedian(f1)])
     error_dict[tail_num].extend([mad_df])
-    if flight_num not in flight_num_hold[tail_num]:
-        flight_num_hold[tail_num].append(flight_num)
+
     if str(tail_num) == '10512184' and med_df < 20:
         sort_1.append(mad_df)
     elif str(tail_num) == '10512184' and med_df > 20:
         sort_2.append(mad_df)
     elif str(tail_num) == '10572742':
         sort_3.append(mad_df)
-print('Count for 10572742:', len(peaks_dict[10572742]))
-print('Count for 10512184:', len(peaks_dict[10512184]))
-print('Flight num for 10572742:', len(flight_num_hold[10572742]))
-print('Flight num for 10512184:', len(flight_num_hold[10512184]))
+
+print('Count for 10572742:', len(peaks_dict['10572742']))
+print('Count for 10512184:', len(peaks_dict['10512184']))
+print('Flight num for 10572742:', len(flight_num_dict['10572742']))
+print('Flight num for 10512184:', len(flight_num_dict['10512184']))
 print('Crossings for 10512184:', len(sort_1+sort_2))
 print('Crossings for 10572742:', len(sort_3))
+
 fig,ax1 = plt.subplots(1, 1, sharex=False, figsize = (50,20)) #figsize=(50,20))     
 
 ax1.margins(x=0)
 ax2 = fig.add_axes([0.87, 0.072, 0.125, 0.904], sharey=ax1)
 
-pos = 1
-tail_num_hold = 0
-color_dict[10512184] = [1.0, 0.5, 0.0]  # Orange color in RGB 
-color_dict[10572742] = [0.0, 0.5, 1.0]  # Blue color in RGB
+color_dict['10512184'] = [1.0, 0.5, 0.0]  # Orange color in RGB
+color_dict['10572742'] = [0.0, 0.5, 1.0]  # Blue color in RGB
 
 for tail_num, peaks in peaks_dict.items():
     error_med = np.nanmedian(error_dict[tail_num])
@@ -127,8 +111,7 @@ for tail_num, peaks in peaks_dict.items():
         print(f'Tail Number: {tail_num}, Median Error: {error_med}')
     color = color_dict[tail_num]
     med = all_med[tail_num]
-    if str(tail_num) != '10572742' and str(tail_num) != '10512184':
-        continue
+
     ax1.hist(peaks, bins=270, color=color, alpha=0.8, label=tail_num, zorder = 10)  
     ax2.hist(med, bins=270, color=color, alpha=0.8, zorder = 10)  
     ax1.hist(peaks, bins=270, color=color, histtype='step',zorder = 15)  
