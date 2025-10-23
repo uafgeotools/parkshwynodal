@@ -87,7 +87,8 @@ def dist_less(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km
 
 def get_speed_of_sound(alt, closest_time, UTM_x_m, UTM_y_m):
 	"""
-	Calculate the speed of sound at a given altitude using atmospheric data.
+	Calculate the speed of sound at a given altitude using atmospheric data. 
+	If you want the average between a station and aircraft this function needs to be updated.
 
 	Args:
 		alt (float): Altitude in meters.
