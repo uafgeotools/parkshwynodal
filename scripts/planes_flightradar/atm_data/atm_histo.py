@@ -1,16 +1,21 @@
 import numpy as np
 import pandas as pd
 import os
-from matplotlib import pyplot as plt
+import sys
 import json
-import datetime
+from matplotlib import pyplot as plt
 from datetime import datetime, timezone
 from pyproj import Proj
+from pathlib import Path
+# Ensure repository root is on sys.path so local package 'src' can be imported
+repo_root = Path(__file__).resolve().parents[3]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 from src.doppler_funcs import speed_of_sound, add_wind_vector
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
+seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 sensor_elevations = seismo_data['Elevation']

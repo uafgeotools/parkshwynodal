@@ -17,7 +17,7 @@ def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	else:
 		print("Not a PDF file for conversion:", pdf_path)
 
-seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/nodes_stations.txt', sep="|")
+seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 station_elevations = seismo_data['Elevation']
