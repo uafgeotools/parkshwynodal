@@ -1,0 +1,690 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     25005,        682]
+NotebookOptionsPosition[     24657,        668]
+NotebookOutlinePosition[     25049,        684]
+CellTagsIndexPosition[     25006,        681]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"===", "===", "===", "===", "===", "===", 
+     RowBox[{
+     "Airplane", " ", "scaled", " ", "in", " ", "diameter", " ", "by", " ", 
+      "1.5"}]}], ",", 
+    RowBox[{
+     RowBox[{"four", " ", "examples"}], "===", "===", "===", "===", "===", 
+     "==="}]}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", 
+     RowBox[{
+     "thickPlateXY", ",", "thickPlateXZThickY", ",", "planeModel3D", ",", 
+      "planePoseTransform", ",", "planeGlyph3D", ",", "safeNormalize"}], 
+     "]"}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+     "Extrude", " ", "a", " ", "2", "D", " ", "polygon", " ", "in", " ", 
+      "x"}], "\[Dash]", 
+     RowBox[{
+      RowBox[{
+      "y", " ", "to", " ", "thickness", " ", "t", " ", "about", " ", "z"}], 
+      "=", 
+      RowBox[{"0", " ", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"for", " ", "wings"}], ",", 
+         RowBox[{"h", "-", "stab"}]}], ")"}]}]}]}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"thickPlateXY", "[", 
+      RowBox[{
+       RowBox[{"poly2D", ":", 
+        RowBox[{"{", "__List", "}"}]}], ",", 
+       RowBox[{"t_", ":", "0.04"}]}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"z", "=", 
+          RowBox[{"t", "/", "2."}]}], ",", "top", ",", "bot", ",", "sides", 
+         ",", 
+         RowBox[{"n", "=", 
+          RowBox[{"Length", "[", "poly2D", "]"}]}], ",", "i1", ",", "i2"}], 
+        "}"}], ",", 
+       RowBox[{
+        RowBox[{"top", "=", 
+         RowBox[{"poly2D", "/.", " ", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"x_", ",", "y_"}], "}"}], ":>", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", "y", ",", "z"}], "}"}]}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"bot", "=", 
+         RowBox[{
+          RowBox[{"Reverse", "[", "poly2D", "]"}], "/.", " ", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"x_", ",", "y_"}], "}"}], ":>", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", "y", ",", 
+             RowBox[{"-", "z"}]}], "}"}]}]}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"sides", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"i1", "=", "i"}], ";", 
+            RowBox[{"i2", "=", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{"i", ",", "n"}], "]"}], "+", "1"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"Polygon", "[", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "1"}], "]"}], "]"}], ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "2"}], "]"}], "]"}], ",", 
+                 RowBox[{"-", "z"}]}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "1"}], "]"}], "]"}], ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "2"}], "]"}], "]"}], ",", "z"}], "}"}], 
+               ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "1"}], "]"}], "]"}], ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "2"}], "]"}], "]"}], ",", "z"}], "}"}], 
+               ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "1"}], "]"}], "]"}], ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "2"}], "]"}], "]"}], ",", 
+                 RowBox[{"-", "z"}]}], "}"}]}], "}"}], "]"}]}], ",", 
+           RowBox[{"{", 
+            RowBox[{"i", ",", "1", ",", "n"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Polygon", "[", "top", "]"}], ",", 
+          RowBox[{"Polygon", "[", "bot", "]"}], ",", "sides"}], "}"}]}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+     "Extrude", " ", "a", " ", "2", "D", " ", "polygon", " ", "in", " ", 
+      "x"}], "\[Dash]", 
+     RowBox[{
+      RowBox[{
+      "z", " ", "to", " ", "thickness", " ", "ty", " ", "about", " ", "y"}], 
+      "=", 
+      RowBox[{"0", " ", 
+       RowBox[{"(", 
+        RowBox[{"for", " ", "vertical", " ", "fin"}], ")"}]}]}]}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"thickPlateXZThickY", "[", 
+      RowBox[{
+       RowBox[{"poly2D", ":", 
+        RowBox[{"{", "__List", "}"}]}], ",", 
+       RowBox[{"ty_", ":", "0.06"}]}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"y", "=", 
+          RowBox[{"ty", "/", "2."}]}], ",", "top", ",", "bot", ",", "sides", 
+         ",", 
+         RowBox[{"n", "=", 
+          RowBox[{"Length", "[", "poly2D", "]"}]}], ",", "i1", ",", "i2"}], 
+        "}"}], ",", 
+       RowBox[{
+        RowBox[{"top", "=", 
+         RowBox[{"poly2D", "/.", " ", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"x_", ",", "z_"}], "}"}], ":>", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", "y", ",", "z"}], "}"}]}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"bot", "=", 
+         RowBox[{
+          RowBox[{"Reverse", "[", "poly2D", "]"}], "/.", " ", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"x_", ",", "z_"}], "}"}], ":>", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", 
+             RowBox[{"-", "y"}], ",", "z"}], "}"}]}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"sides", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"i1", "=", "i"}], ";", 
+            RowBox[{"i2", "=", 
+             RowBox[{
+              RowBox[{"Mod", "[", 
+               RowBox[{"i", ",", "n"}], "]"}], "+", "1"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"Polygon", "[", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "1"}], "]"}], "]"}], ",", "y", ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "2"}], "]"}], "]"}]}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "1"}], "]"}], "]"}], ",", 
+                 RowBox[{"-", "y"}], ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i1", ",", "2"}], "]"}], "]"}]}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "1"}], "]"}], "]"}], ",", 
+                 RowBox[{"-", "y"}], ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "2"}], "]"}], "]"}]}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "1"}], "]"}], "]"}], ",", "y", ",", 
+                 RowBox[{"poly2D", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i2", ",", "2"}], "]"}], "]"}]}], "}"}]}], "}"}], 
+             "]"}]}], ",", 
+           RowBox[{"{", 
+            RowBox[{"i", ",", "1", ",", "n"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Polygon", "[", "top", "]"}], ",", 
+          RowBox[{"Polygon", "[", "bot", "]"}], ",", "sides"}], "}"}]}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Guard", " ", "against", " ", "degenerate", " ", "inputs"}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"safeNormalize", "[", "v_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"n", "=", 
+          RowBox[{"N", "@", "v"}]}], ",", 
+         RowBox[{"m", "=", 
+          RowBox[{"Norm", "@", 
+           RowBox[{"N", "@", "v"}]}]}]}], "}"}], ",", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"m", "==", "0."}], "||", 
+          RowBox[{"Not", "[", 
+           RowBox[{"VectorQ", "[", 
+            RowBox[{"n", ",", "NumericQ"}], "]"}], "]"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1.", ",", "0.", ",", "0."}], "}"}], ",", 
+         RowBox[{"n", "/", "m"}]}], "]"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+    "===", "===", "===", "===", "===", "===", "Geometry", "===", "===", "===",
+      "===", "===", "==="}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"planeModel3D", "[", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"(*", "fuselage", "*)"}], 
+        RowBox[{
+         RowBox[{"xBack", "=", 
+          RowBox[{"-", "0.70"}]}], ",", 
+         RowBox[{"xNose", "=", "0.60"}], ",", 
+         RowBox[{"fuselageR", "=", 
+          RowBox[{"0.08", "*", "1.5"}]}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"scaled", " ", "diameter"}], "*)"}], 
+         RowBox[{"(*", 
+          RowBox[{"wings", " ", "and", " ", "tails"}], "*)"}], 
+         RowBox[{"wingShift", "=", 
+          RowBox[{"-", "0.10"}]}], ",", 
+         RowBox[{"wingT", "=", 
+          RowBox[{"0.06", "*", "1.5"}]}], ",", 
+         RowBox[{"hstabT", "=", 
+          RowBox[{"0.05", "*", "1.5"}]}], ",", 
+         RowBox[{"vfinThickY", "=", 
+          RowBox[{"0.08", "*", "1.5"}]}], ",", 
+         RowBox[{"vfinTopZ", "=", 
+          RowBox[{"0.30", "*", "1.5"}]}]}], "}"}], ",", 
+       RowBox[{"With", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"(*", 
+           RowBox[{
+            RowBox[{"Main", " ", "wing", " ", "planform", " ", 
+             RowBox[{"(", 
+              RowBox[{"x", "\[Dash]", "y"}], ")"}]}], ",", 
+            RowBox[{"shifted", " ", "aft"}]}], "*)"}], 
+          RowBox[{
+           RowBox[{"wing2D", "=", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0.00", ",", 
+                 RowBox[{"-", "0.80"}]}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0.38", ",", 
+                 RowBox[{"-", "0.12"}]}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0.38", ",", "0.12"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0.00", ",", "0.80"}], "}"}]}], "}"}], "/.", " ", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"x_", ",", "y_"}], "}"}], ":>", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"x", "+", "wingShift"}], ",", "y"}], "}"}]}]}]}], ",", 
+           RowBox[{"(*", 
+            RowBox[{
+             RowBox[{"Horizontal", " ", "stabilizer", " ", "planform", " ", 
+              RowBox[{"(", 
+               RowBox[{"x", "\[Dash]", "y"}], ")"}]}], ",", 
+             RowBox[{
+             "trailing", " ", "edge", " ", "flush", " ", "at", " ", 
+              "xBack"}]}], "*)"}], 
+           RowBox[{"hstab2D", "=", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"xBack", ",", 
+                RowBox[{"-", "0.40"}]}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"xBack", "+", "0.20"}], ",", 
+                RowBox[{"-", "0.12"}]}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"xBack", "+", "0.20"}], ",", "0.12"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"xBack", ",", "0.40"}], "}"}]}], "}"}]}], ",", 
+           RowBox[{"(*", 
+            RowBox[{
+             RowBox[{"Vertical", " ", "stabilizer", " ", "planform", " ", 
+              RowBox[{"(", 
+               RowBox[{"x", "\[Dash]", "z"}], ")"}]}], ",", 
+             RowBox[{
+             "trailing", " ", "edge", " ", "flush", " ", "at", " ", "xBack"}],
+              ",", 
+             RowBox[{
+              RowBox[{"taller", "."}], "\[IndentingNewLine]", ">>>", 
+              RowBox[{
+               RowBox[{
+               "Extended", " ", "the", " ", "FRONT", " ", "ROOT", " ", 
+                "forward", " ", "for", " ", "a", " ", "longer", " ", 
+                RowBox[{"chord", ".", "<<"}]}], "<"}]}]}], "*)"}], 
+           RowBox[{"vfinXZ", "=", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"xBack", ",", "0.00"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"xBack", "+", "0.22"}], ",", "0.00"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"xBack", "-", "0.02"}], ",", "vfinTopZ"}], "}"}]}], 
+             "}"}]}]}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"(*", 
+           RowBox[{"Fuselage", " ", "body"}], "*)"}], 
+          RowBox[{
+           RowBox[{"Cylinder", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"xBack", ",", "0.", ",", "0."}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"xNose", ",", "0.", ",", "0."}], "}"}]}], "}"}], ",", 
+             "fuselageR"}], "]"}], ",", 
+           RowBox[{"Sphere", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"xNose", ",", "0.", ",", "0."}], "}"}], ",", 
+             "fuselageR"}], "]"}], ",", 
+           RowBox[{"(*", 
+            RowBox[{"Thick", " ", "main", " ", "wing"}], "*)"}], 
+           RowBox[{"thickPlateXY", "[", 
+            RowBox[{"wing2D", ",", "wingT"}], "]"}], ",", 
+           RowBox[{"(*", 
+            RowBox[{"Thick", " ", "horizontal", " ", "stabilizer"}], "*)"}], 
+           RowBox[{"thickPlateXY", "[", 
+            RowBox[{"hstab2D", ",", "hstabT"}], "]"}], ",", 
+           RowBox[{"(*", 
+            RowBox[{"Thicker", ",", 
+             RowBox[{"taller", " ", "vertical", " ", "stabilizer"}], ",", 
+             RowBox[{"with", " ", "longer", " ", "forward", " ", "root"}]}], 
+            "*)"}], 
+           RowBox[{"thickPlateXZThickY", "[", 
+            RowBox[{"vfinXZ", ",", "vfinThickY"}], "]"}]}], "}"}]}], "]"}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+    "===", "===", "===", "===", "===", "===", "Posing", "===", "===", "===", "===",
+      "===", "==="}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"planePoseTransform", "[", 
+      RowBox[{
+       RowBox[{"pos_", ":", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0", ",", "0"}], "}"}]}], ",", 
+       RowBox[{"dir_", ":", 
+        RowBox[{"{", 
+         RowBox[{"1", ",", "0", ",", "0"}], "}"}]}], ",", 
+       RowBox[{"up_", ":", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0", ",", "1"}], "}"}]}], ",", 
+       RowBox[{"s_", ":", "1"}]}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"d", ",", "upProj", ",", "u", ",", "r", ",", "M"}], "}"}], 
+       ",", 
+       RowBox[{
+        RowBox[{"d", "=", 
+         RowBox[{"safeNormalize", "@", "dir"}]}], ";", "\[IndentingNewLine]", 
+        
+        RowBox[{"upProj", "=", 
+         RowBox[{"up", "-", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"up", ".", "d"}], ")"}], " ", "d"}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"u", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Norm", "@", 
+             RowBox[{"N", "@", "upProj"}]}], "<", 
+            RowBox[{"10.", "^", 
+             RowBox[{"-", "9"}]}]}], ",", 
+           RowBox[{"safeNormalize", "@", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"0", ",", "0", ",", "1"}], "}"}], "-", 
+              RowBox[{
+               RowBox[{"(", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0", ",", "1"}], "}"}], ".", "d"}], ")"}],
+                " ", "d"}]}], ")"}]}], ",", 
+           RowBox[{"safeNormalize", "@", "upProj"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"r", "=", 
+         RowBox[{"safeNormalize", "@", 
+          RowBox[{"Cross", "[", 
+           RowBox[{"d", ",", "u"}], "]"}]}]}], ";", 
+        RowBox[{"u", "=", 
+         RowBox[{"Cross", "[", 
+          RowBox[{"r", ",", "d"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"M", "=", 
+         RowBox[{"N", "@", 
+          RowBox[{"Transpose", "[", 
+           RowBox[{"{", 
+            RowBox[{"d", ",", "r", ",", "u"}], "}"}], "]"}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"AffineTransform", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"s", "*", "M"}], ",", 
+           RowBox[{"N", "@", "pos"}]}], "}"}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"planeGlyph3D", "[", 
+      RowBox[{
+       RowBox[{"pos_", ":", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0", ",", "0"}], "}"}]}], ",", 
+       RowBox[{"dir_", ":", 
+        RowBox[{"{", 
+         RowBox[{"1", ",", "0", ",", "0"}], "}"}]}], ",", 
+       RowBox[{"up_", ":", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0", ",", "1"}], "}"}]}], ",", 
+       RowBox[{"s_", ":", "1"}], ",", 
+       RowBox[{"style_", ":", 
+        RowBox[{"Directive", "[", 
+         RowBox[{
+          RowBox[{"GrayLevel", "[", "0.2", "]"}], ",", 
+          RowBox[{"Specularity", "[", 
+           RowBox[{"White", ",", "25"}], "]"}]}], "]"}]}]}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"tf", "=", 
+         RowBox[{"planePoseTransform", "[", 
+          RowBox[{"pos", ",", "dir", ",", "up", ",", "s"}], "]"}]}], "}"}], 
+       ",", 
+       RowBox[{"{", 
+        RowBox[{"style", ",", 
+         RowBox[{"GeometricTransformation", "[", 
+          RowBox[{
+           RowBox[{"planeModel3D", "[", "]"}], ",", "tf"}], "]"}]}], "}"}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"--", 
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", 
+           RowBox[{"--", 
+            RowBox[{"--", "Four"}]}]}]}]}]}]}]}], " ", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{"Examples", "--"}], "--"}], "--"}], "--"}], "--"}], 
+        "--"}], "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{"With", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"g1", "=", 
+        RowBox[{"planeGlyph3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0.2", ",", "0.1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}], ",", "1.0", ",", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"Blue", ",", 
+            RowBox[{"Specularity", "[", 
+             RowBox[{"White", ",", "40"}], "]"}]}], "]"}]}], "]"}]}], ",", 
+       RowBox[{"g2", "=", 
+        RowBox[{"planeGlyph3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1.6", ",", 
+            RowBox[{"-", "0.6"}], ",", "0.4"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0.2"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}], ",", "0.75", ",", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"Red", ",", 
+            RowBox[{"Specularity", "[", 
+             RowBox[{"White", ",", "40"}], "]"}]}], "]"}]}], "]"}]}], ",", 
+       RowBox[{"g3", "=", 
+        RowBox[{"planeGlyph3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "1.4"}], ",", "0.8", ",", "0.6"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0.6", ",", "0.6", ",", "0.1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}], ",", "0.55", ",", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"Black", ",", 
+            RowBox[{"Opacity", "[", "0.95", "]"}]}], "]"}]}], "]"}]}], ",", 
+       RowBox[{"g4", "=", 
+        RowBox[{"planeGlyph3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"0.4", ",", 
+            RowBox[{"-", "1.2"}], ",", 
+            RowBox[{"-", "0.1"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}], ",", "1.2", ",", 
+          RowBox[{"Directive", "[", 
+           RowBox[{
+            RowBox[{"GrayLevel", "[", "0.35", "]"}], ",", 
+            RowBox[{"Specularity", "[", 
+             RowBox[{"White", ",", "30"}], "]"}]}], "]"}]}], "]"}]}]}], "}"}],
+      ",", 
+     RowBox[{"Graphics3D", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Lighting", "->", "\"\<Neutral\>\""}], ",", "g1", ",", "g2", 
+         ",", "g3", ",", "g4", ",", 
+         RowBox[{"(*", 
+          RowBox[{"Ground", " ", "grid", " ", "for", " ", "context"}], "*)"}], 
+         RowBox[{"Directive", "[", 
+          RowBox[{"Gray", ",", 
+           RowBox[{"Opacity", "[", "0.3", "]"}]}], "]"}], ",", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Line", "[", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"x", ",", 
+                RowBox[{"-", "2"}], ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"x", ",", "2", ",", "0"}], "}"}]}], "}"}], "]"}], ",", 
+           
+           RowBox[{"{", 
+            RowBox[{"x", ",", 
+             RowBox[{"-", "2"}], ",", "2", ",", "0.5"}], "}"}]}], "]"}], ",", 
+         
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Line", "[", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "2"}], ",", "y", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"2", ",", "y", ",", "0"}], "}"}]}], "}"}], "]"}], ",", 
+           
+           RowBox[{"{", 
+            RowBox[{"y", ",", 
+             RowBox[{"-", "2"}], ",", "2", ",", "0.5"}], "}"}]}], "]"}]}], 
+        "}"}], ",", 
+       RowBox[{"PlotRange", "->", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "2.4"}], ",", "2.4"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "2.4"}], ",", "2.4"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "0.6"}], ",", "1.6"}], "}"}]}], "}"}]}], ",", 
+       RowBox[{"Boxed", "->", "False"}], ",", 
+       RowBox[{"Axes", "->", "True"}], ",", 
+       RowBox[{"ImageSize", "->", "540"}], ",", 
+       RowBox[{"SphericalRegion", "->", "True"}]}], "]"}]}], "]"}], 
+   "\n"}]}]], "Input",
+ CellChangeTimes->{{3.967835235656266*^9, 3.967835235659484*^9}},
+ CellLabel->"In[22]:=",ExpressionUUID->"ff06cc63-086d-4132-88ff-287c9bb0ad52"]
+},
+WindowSize->{1148, 852},
+WindowMargins->{{28, Automatic}, {0, Automatic}},
+FrontEndVersion->"13.3 for Mac OS X ARM (64-bit) (June 3, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"9c53351b-e9e4-4d15-822b-0428b68c6ee8"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 24095, 646, 1249, "Input",ExpressionUUID->"ff06cc63-086d-4132-88ff-287c9bb0ad52"]
+}
+]
+*)
+
