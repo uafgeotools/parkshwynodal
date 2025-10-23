@@ -3,6 +3,9 @@ import os
 import pandas as pd
 from pyproj import Proj
 
+#Created using NCPAG2S Command-Line Client: https://github.com/chetzer-ncpa/ncpag2s-clc
+#Root directory of the repository must be in your PATH
+
 output_folder_path = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/'
 
 seismo_data = pd.read_csv('input/parkshwy_nodes.txt', sep="|")
