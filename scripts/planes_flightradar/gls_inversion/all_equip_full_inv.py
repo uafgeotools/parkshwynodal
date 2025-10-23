@@ -1,21 +1,31 @@
-import numpy as np
+import sys
 import os
 import psutil
 import gc
+import numpy as np
 from datetime import datetime, timezone
-from obspy.clients.nrl import NRL
 from scipy.signal import spectrogram
+from pathlib import Path
+
+# Ensure repository root is on sys.path so local package 'src' can be imported
+repo_root = Path(__file__).resolve().parents[3]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 from src.doppler_funcs import calc_time, make_base_dir, invert_f, full_inversion, get_speed_of_sound, get_sta_elevation, load_waveform
 from src.main_inv_fig_functions import doppler_picks, overtone_picks, time_picks, remove_median, plot_spectrogram, plot_spectrum, get_auto_picks_full
+
 jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', 'B744', 'B748', 'B77L', 'CRJ2', 'B732', 'A332', 'A359', 'E75S']
-paper_figures = ['C185_20190221_529754214_1550781331.5739982_1011_C185', 'B190_20190227_530696852_1551228121.0402486_1049_B190', 'B737_20190225_530339730_1551061570.9016998_1126_B737', 'B737_20190304_531697514_1551714047.0320563_1122_B737', 'B737_20190304_531711629_1551719807.3910785_1072_B737','B763_20190214_528407493_1550165581.4383187_1284_B763','C46_20190222_529805251_1550803683.768247_1007_C46', 'C185_20190221_529754214_1550777713.1677284_1020_C185', 'DH8A_20190214_528445164_1550158750.7401662_1173_DH8A', 'R44_20190213_528293430_1550089022.9259548_1007_R44']
-nrl = NRL()
+
 window = 120  # seconds before the arrival time to load the waveform
 rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
+repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+fig_path = '/scratch/irseppi/nodal_data/plane_info/inversion_results/'
+
 # Loop through each station in text file that we already know comes within 2km of the nodes
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
+file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 
 for li in file_in.readlines():
     text = li.split(',')
@@ -36,14 +46,11 @@ for li in file_in.readlines():
     folder_spec = equip + '_spec_c'
     folder_spectrum = equip + '_spectrum_c'
 
-    file_check = str(equip)+'_'+ str(date) +'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)
-    if file_check not in paper_figures:
-        continue
     if mk_picks == False:
-        file_name = '/home/irseppi/REPOSITORIES/parkshwynodal/input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
+        file_name = repo_path + 'input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight_num) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight_num) + '.csv'
         if not os.path.exists(file_name):
             continue
-    DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.pdf'
+    DIR = fig_path + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'+str(closest_time)+'_'+str(flight_num)+'.pdf'
     if os.path.exists(DIR):
         if os.path.isfile(DIR):
             continue
@@ -63,7 +70,7 @@ for li in file_in.readlines():
     except Exception as e:
         if rerun_fig == True:
             continue
-        error_file = open('output/inv_results/error_log.txt', 'a')
+        error_file = open(repo_path + 'output/inv_results/error_log.txt', 'a')
         error_file.write(f"Error loading waveform for {sta} on {date} at flight {flight_num}: {str(e)}\n")
         error_file.close()
         continue
@@ -120,13 +127,12 @@ for li in file_in.readlines():
 
     m0 = [f0, v0, l, t0, c]
     sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c]
-    m,_,_, F_m = invert_f(m0,[sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c], coords_array, num_iterations=8)
+    m,_,_, F_m = invert_f(m0,sigma_prior, coords_array, num_iterations=8)
     v0 = m[1]
     l = m[2]
     t0 = m[3]
     c = m[4]
-    mprior[2] = t0
-    mprior[3] = c
+
     peaks, freqpeak =  overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight_num, sta, equip, closest_time, start_time, t0, tarrive, make_picks=mk_picks)
 
     corridor_width = 8
@@ -145,7 +151,7 @@ for li in file_in.readlines():
         sigma_prior = [10, 10, 200, 10, 80]
     else:
         sigma_prior = [5, 10, 200, 30, 80]
-    print('mprior:', mprior)
+
     m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=4, sigma=3, off_diagonal=False)
 
     v0 = m[0]
@@ -162,43 +168,24 @@ for li in file_in.readlines():
         if arrive_time[i] < 0:
             arrive_time[i] = 0
 
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    BASE_DIR = fig_path + folder_spec + '/2019-0'+str(month)+'-'+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
-    qnum = plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, MDF, covm0, flight_num, middle_index, closest_time, BASE_DIR, plot_show=False, gt = True)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage spec 2: {mem:.2f} MB")
-    qnum = "__"
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inversion_results/' + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
+    qnum = plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l, c, f0_array, F_m, MDF, covm0, flight_num, middle_index, closest_time, BASE_DIR, plot_show=False, gt = False)
+
+    BASE_DIR = fig_path + folder_spectrum + '/20190'+str(month)+str(day)+'/'+str(flight_num)+'/'+str(sta)+'/'
     make_base_dir(BASE_DIR)
     plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time, sta, BASE_DIR)
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage spec 2: {mem:.2f} MB")
+
     if rerun_fig == False:
-        output = open('output/inv_results/' + equip + '_full_inv_results.csv', 'a')
-        output.write(str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(qnum)+','+str(Tc)+','+str(c)+','+str(F_m)+',\n') 
+        output = open(repo_path + 'output/inv_results_gt.txt', 'a')
+        output.write(str(equip)+','+str(date)+','+str(flight_num)+','+str(sta)+','+str(closest_time)+','+str(v0)+','+str(l)+','+str(t0)+','+ str(start_time + t0) + ','+str(c)+','+str(f0_array)+','+str(covm0)+','+str(F_m)+',\n') 
         output.close()
     else:
         continue  # Skip saving results if rerun_fig is True
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info().rss / (1024 ** 2) 
-    print(f"Memory usage post: {mem:.2f} MB")
-    # Explicitly delete large variables and collect garbage to free memory
+
     # Delete all variables and objects that may impact short-term memory
-    del data, fs, t_wf, title
-    del frequencies, times, Sxx, spec, MDF
-    del coords, coords_array
-    del m, covm0, covm, f0_array, F_m, arrive_time, BASE_DIR
-    del peaks, freqpeak, tobs, fobs, peaks_assos, mprior
-    del date, month, day, flight_num, closest_time, sta, equip
-    del alt,  dist_m, elev, height_m
-    del folder_spec, folder_spectrum, file_name
-    del start_time, c, closest_index, f0, t0, 
-    del v0, l, m0, sigma_prior, tf
-    del sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c
-    del corridor_width, qnum
-    del tarrive, ht, speed_mps
+    del data, t_wf, frequencies, times, Sxx, spec, MDF
+    del peaks, freqpeak, tobs, fobs, peaks_assos
 
     gc.collect()
     process = psutil.Process(os.getpid())
