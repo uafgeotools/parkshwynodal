@@ -7,11 +7,14 @@ title_size = 20
 tick_size = 12
 text_size = 12
 
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
+repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
+
 col_equip = []
 flight_nums = []
 tail = []
 tail_num_dict = {}
+
 for text in file_in.readlines():
     lines = text.split(',')
     equip = lines[10]
@@ -47,7 +50,6 @@ equip_count_dict = {}
 equip_diff_dict = {}
 tail_ums_inverted = {}
 line_count_dict = {}
-bc_dict = {}
 for eq in jet + Turboprop + piston + Heli:
     count1 = 0
     count2 = 0
@@ -61,51 +63,35 @@ for eq in jet + Turboprop + piston + Heli:
             count1 += 1
     if eq in jet:
         # Define the directory where your files are located
-        file = '/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results/' + eq + '_full_inv_results.txt' 
-
+        file = repo_path + 'output/GT_flight_param_inv_DB.txt'
         with open(file, 'r') as f:
             # Read the data from the file and append it to the list
             data = []
-            fdiff = []
+
             for line in f.readlines():
                 lines = line.split(',')
                 flight_n = lines[1]
-                for i, flight_num in enumerate(flight_nums):
-                    if float(flight_n) == float(flight_num):
-                        tail_n = tail[i]
-                        break
-                if lines[-2] == "Forward Model" or lines[-5] == "00":
-                    continue
+                for i, equip in enumerate(col_equip):
+                    if equip == eq:
+                        if float(flight_n) == float(flight_nums[i]):
+                                tail_n = tail[i]
+                                break
+                        if lines[-2] == "Forward Model":
+                            continue
 
-                count2 += 1
-                peaks = np.array(lines[9])
-                peaks = str(peaks) 
-                peaks = peaks.replace('[', '').replace(']', '')
-                peaks = np.array(peaks.split(' '))
-                peak_old = 0
-                for peak in peaks:
-                    if peak == '':
-                        continue
-                    peak = float(peak)
-                    if len(peaks) == 0 or peak == peaks[0]:
-                        peak_old = float(peak)
-                        continue
-
-                    diff = float(peak) - float(peak_old)
-
-                    fdiff.append(diff)
-                    peak_old = float(peak)
-                    data.append(peak)
-                if tail_n not in tail_ums_inverted[eq]:
-                    tail_ums_inverted[eq].append([tail_n])
-            equip_overtone_dict[eq].extend(data)
-            equip_count_dict[eq].extend([count1, count2])
+                        count2 += 1
+                        data = np.array(lines[9].strip('[]').split(' '), dtype=float)
+                        if tail_n not in tail_ums_inverted[eq]:
+                            tail_ums_inverted[eq].append([tail_n])
+                        
+                        equip_overtone_dict[eq].extend(data)
+                        equip_count_dict[eq].extend([count1, count2])
+                
     else:
-        file = '/home/irseppi/REPOSITORIES/parkshwynodal/NGT_flight_param_inv_DB.txt'
+        file = repo_path + 'output/NGT_flight_param_inv_DB.txt'
         with open(file, 'r') as f:
             # Read the data from the file and append it to the list
             data = []
-            fdiff = []
             for line in f.readlines():
                 lines = line.split(',')
                 if lines[0] != eq:
@@ -117,168 +103,89 @@ for eq in jet + Turboprop + piston + Heli:
                         break
                 if lines[-2] == "Forward Model" or lines[-5] == "00":
                     continue
-
                 count2 += 1
-                peaks = np.array(lines[10])
-                peaks = str(peaks) 
-                peaks = peaks.replace('[', '').replace(']', '')
-                peaks = np.array(peaks.split(' '))
-                peak_old = 0
-                for peak in peaks:
-                    if peak == '':
-                        continue
-                    peak = float(peak)
-                    if len(peaks) == 0 or peak == peaks[0]:
-                        peak_old = float(peak)
-                        continue
 
-                    diff = float(peak) - float(peak_old)
-
-                    fdiff.append(diff)
-                    peak_old = float(peak)
-                    data.append(peak)
+                np.array(lines[10].strip('[]').split(' '), dtype=float)
                 if tail_n not in tail_ums_inverted[eq]:
                     tail_ums_inverted[eq].append([tail_n])
             equip_overtone_dict[eq].extend(data)
             equip_count_dict[eq].extend([count1, count2])
    
-    med = np.median(fdiff)
     if main_text == True:
         if eq == 'C185':
             med = 19.5
             line_count = 13
-            blade_count = '2/3'
         elif eq == 'C182':
             med = 36
             line_count = 7
-            blade_count = '2/3'
         elif eq == 'C206':
             med = 18.7
             line_count = 14
-            blade_count = '2/3/5'
         elif eq == 'DHC2':
             med = 17.5
             line_count = 15
-            blade_count = '2/3'
         elif eq == 'GA8':
             med = 20
             line_count = 13
-            blade_count = '2/3'
         elif eq == 'PA31':
             med = 18.5
             line_count = 15
-            blade_count = '2/3/4'
         elif eq == 'DH8A':
             med = 60 
             line_count = 16
-            blade_count = '4'
         elif eq == 'B190':
             med = 24.5
             line_count = 8
-            blade_count = '4/5'
         elif eq == 'BE20':
             med = 27.5
             line_count = 8
-            blade_count = '3/4/5'
         elif eq == 'C208':
             med = 85 
             line_count = 9
-            blade_count = '3/4/5'
         elif eq == 'PC12':
             med = 28
             line_count = 8
-            blade_count = '4/5/7'
         elif eq == 'DH3T':
             med = 26
             line_count = 9
-            blade_count = '4'
         elif eq == 'R44':
             med = 13.35
             line_count = 20
-            blade_count = '2'
-        elif eq == 'B739':
-            med = 35.5
-            line_count = 8
-            blade_count = '24'
-        elif eq == 'B738':
-            med = 73
-            line_count = 3
-            blade_count = '24'
-        elif eq == 'B737':
-            med = 68
-            line_count = 3
-            blade_count = '18/24'
         line_count_dict[eq] = line_count
-        bc_dict[eq] = blade_count
         equip_diff_dict[eq] = med
     if main_text == False:
         if eq == 'CH7B':
             med = 19.5
             line_count = 13
-            blade_count = '2'
         elif eq == 'PA30':
             med = 20.3
             line_count = 13
-            blade_count = '2/3'
         elif eq == 'PA32':
             med = 20
             line_count = 14
-            blade_count = '2/3'
         elif eq == 'C172':
             med = 19.5
             line_count = 13
-            blade_count = '2/3'
         elif eq == 'C180':
             med = 20
             line_count = 12
-            blade_count = '2/3'
         elif eq == 'B18T':
             med = 32.3
             line_count = 15
-            blade_count = '3'
         elif eq == 'C441':
             med = 32
             line_count = 8
-            blade_count = '3/4/5'
         elif eq == 'AT73':
             med = 68.6
             line_count = 15
-            blade_count = '6'
         elif eq == 'SW4':
             med = 25.7
             line_count = 10
-            blade_count = '3/4/5'
-        elif eq == 'B733':
-            med = 76
-            line_count = 3
-            blade_count = '18/24/36'
-        elif eq == 'B763':
-            med = 35
-            line_count = 3
-            blade_count = '33/38'
-        elif eq == 'B772':
-            med = 30
-            line_count = 9
-            blade_count = '22/26'
-        elif eq == 'B77W':
-            med = 13.35
-            line_count = 20
-            blade_count = '22'
-        elif eq == 'B788':
-            med = 35.5
-            line_count = 8
-            blade_count = '18'
-        elif eq == 'B789':
-            med = 35
-            line_count = 3
-            blade_count = '18/22'
 
         line_count_dict[eq] = line_count
-        bc_dict[eq] = blade_count
         equip_diff_dict[eq] = med
 if main_text == True:
     fig, ax = plt.subplots(6, 3, figsize=(20, 24), sharex=True)
-
     # Track which axes have data
     axes_with_data = set()
 
@@ -286,7 +193,7 @@ if main_text == True:
         equip_count = equip_count_dict[equip]
         med = equip_diff_dict[equip]
         line_count = line_count_dict[equip]
-        blade_count = bc_dict[equip]
+
         if i ==  len(jet) + len(Turboprop):
             label_count = 'crossings: ' + str(equip_count[1]) + '/' + str(equip_count[0])
             label_tail = 'tail numbers: '+ str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
@@ -395,7 +302,6 @@ if main_text == True:
 
 
 if main_text == False:
-
     fig, ax = plt.subplots(6, 3, figsize=(20, 24), sharex=True)
 
     # Track which axes have data
@@ -405,7 +311,6 @@ if main_text == False:
         equip_count = equip_count_dict[equip]
         med = equip_diff_dict[equip]
         line_count = line_count_dict[equip]
-        blade_count = bc_dict[equip]
         label_count = str(equip_count[1]) + '/' + str(equip_count[0])
         label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
@@ -447,7 +352,6 @@ if main_text == False:
             idx = i - len(jet) - len(Turboprop)
             if i == len(jet) + len(Turboprop):
                 ax[idx, 0].set_title('Piston Aircraft', fontsize=title_size, fontweight='bold')
-
 
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
             ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
