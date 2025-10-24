@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from src.doppler_funcs import *
-import glob
 
-approach_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', sep=",")
+repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+approach_data = pd.read_csv(repo_path + 'input/node_crossings_db_UTM.txt', sep=",")
 flight_id = approach_data.iloc[:, 1]
 dist_m = approach_data.iloc[:, 4]
 alt = approach_data.iloc[:, 6]
@@ -12,10 +11,19 @@ speeds = approach_data.iloc[:, 7]
 sta_loc = approach_data.iloc[:, 9]
 time_in = approach_data.iloc[:, 5]
 
-seismo_data = pd.read_csv('input/all_sta.txt', sep="|")
+seismo_data = pd.read_csv(repo_path + 'input/parkshwy_nodes.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
-file_list = glob.glob('/home/irseppi/REPOSITORIES/parkshwynodal/output/inv_results_ngt/*.txt')
+
+inversion_results = pd.read_csv(repo_path + 'output/NGT_flight_param_inv_DB.txt', sep=",")
+equipment = inversion_results['Equipment']
+closest_times = inversion_results['Closest_Approach_Timestamp']
+flight_numbers = inversion_results['Flight_Number']
+sensors = inversion_results['Station']
+meas_absolute_times = inversion_results['Meas_Closest_Approach_Timestamp']
+data_misfit = inversion_results['Data_Misfit_Value']
+meas_speeds = inversion_results['Meas_Speed']
+meas_dists = inversion_results['Meas_Distance']
 
 fr_dists = []
 fr_speeds = []
@@ -24,42 +32,33 @@ fr_times = []
 inverse_dists = []
 inverse_speeds = []
 inverse_times = []
-for file_name in file_list:
-    with open(file_name, 'r') as file:
-        equip = file_name.split('/')[-1].split('_')[0]
-        if equip in ['B737', 'B738', 'B739', 'B77W', 'B772', 'B788', 'B789', 'B763', 'B744','B733','B732','B77L','B748','CRJ2', 'A332', 'A359', 'E75S']:
-            continue
-        for line in file.readlines():
-            lines = line.split(',')
-            date = lines[0]
-            month = int(date[4:6])
-            day = date[6:8]
-            closest_time = float(lines[3])
-            comp_time = lines[3]
-            flight_num = lines[1]
-            sta = lines[2]
-            abs_time = float(lines[7])
-            if lines[13] == "Forward Model":
-                continue
-            ins = stations[stations == sta].index[0]
-            elev = float(elevations[ins])
-            closest_index = None
 
-            for ii, ss in enumerate(sta_loc):
-                if float(ss) == float(sta) and int(flight_id[ii]) == int(flight_num):
+for idx, equip in enumerate(equipment):
+    if equip in ['B737', 'B738', 'B739', 'B77W', 'B772', 'B788', 'B789', 'B763', 'B744','B733','B732','B77L','B748','CRJ2', 'A332', 'A359', 'E75S']:
+        continue
+    closest_time = float(closest_times[idx])
+    flight_num = flight_numbers[idx]
+    sta = sensors[idx]
+    abs_time = float(meas_absolute_times[idx])
+    if data_misfit[idx] == "Forward Model":
+        continue
+    ins = stations[stations == sta].index[0]
+    elev = float(elevations[ins])
+    closest_index = None
+    for ii, ss in enumerate(sta_loc):
+        if float(ss) == float(sta) and int(flight_id[ii]) == int(flight_num):
+            closest_index = ii
+            fr_dists.append(abs(np.sqrt(float(dist_m[closest_index])**2 + (float(alt[closest_index])-elev)**2)))
+            fr_speeds.append(float(speeds[closest_index]))
+            fr_times.append(closest_time) 
 
-                    closest_index = ii
-                    fr_dists.append(abs(np.sqrt(float(dist_m[closest_index])**2 + (float(alt[closest_index])-elev)**2)))
-                    fr_speeds.append(float(speeds[closest_index]))
-                    fr_times.append(closest_time) 
-
-                    inverse_dists.append(abs(float(lines[5])))
-                    inverse_speeds.append(abs(float(lines[4])))
-                    inverse_times.append(abs_time) 
-                    break
-            if closest_index is None:
-                print(f"Closest time not found for flight {flight_num} at station {sta}")
-                continue
+            inverse_dists.append(abs(float(meas_dists[idx])))
+            inverse_speeds.append(abs(float(meas_speeds[idx])))
+            inverse_times.append(abs_time)
+            break
+    if closest_index is None:
+        print(f"Closest time not found for flight {flight_num} at station {sta}")
+        continue
 inverse_dists = np.array(inverse_dists)
 inverse_speeds = np.array(inverse_speeds)
 inverse_times = np.array(inverse_times)
