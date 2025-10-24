@@ -3,37 +3,9 @@ import numpy as np
 import pandas as pd
 
 main_text = True
-title_size = 20
-tick_size = 12
-text_size = 12
-
 repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
 file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 
-col_equip = []
-flight_nums = []
-tail = []
-tail_num_dict = {}
-
-for text in file_in.readlines():
-    lines = text.split(',')
-    equip = lines[10]
-    date = lines[0]
-    flight_num = lines[1]
-    col_equip.append(equip)
-    flight_nums.append(flight_num)
-    flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
-    flight = flight_data['flight_id']
-    tailnumber = flight_data['aircraft_id']
-    if equip not in tail_num_dict:
-        tail_num_dict[equip] = []
-    for i,fly in enumerate(flight):
-        if float(fly) == float(flight_num):
-            tail.append(tailnumber[i])
-            if tailnumber[i] not in tail_num_dict[equip]:
-                tail_num_dict[equip].append(tailnumber[i])
-            break
-file_in.close()
 if main_text == True:
     jet = ['B737', 'B738', 'B739']
     Turboprop = ['DH8A','B190','BE20','C208','PC12','DH3T']
@@ -45,6 +17,37 @@ else:
     Turboprop = ['B18T','C441','AT73','SW4']
     jet = ['B733', 'B763', 'B772', 'B77W', 'B788', 'B789']
     Heli = []
+
+col_equip = []
+flight_numbers_check = []
+tail = []
+tail_num_dict = {}
+flight_num_dict = {}
+for text in file_in.readlines():
+    lines = text.split(',')
+    equip = lines[10]
+    if equip not in jet + Turboprop + piston + Heli:
+        continue
+    date = lines[0]
+    flight_num = lines[1]
+    col_equip.append(equip)
+    flight_numbers_check.append(flight_num)
+    flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
+    flight = flight_data['flight_id']
+    tailnumber = flight_data['aircraft_id']
+    if equip not in tail_num_dict:
+        tail_num_dict[equip] = []
+        flight_num_dict[equip] = []
+    for i,fly in enumerate(flight):
+        if float(fly) == float(flight_num):
+            tail.append(tailnumber[i])
+            if tailnumber[i] not in tail_num_dict[equip]:
+                tail_num_dict[equip].append(tailnumber[i])
+            if flight_num not in flight_num_dict[equip]:
+                flight_num_dict[equip].append(flight_num)
+            break
+file_in.close()
+
 equip_overtone_dict = {}
 equip_count_dict = {}
 equip_diff_dict = {}
@@ -64,16 +67,18 @@ for eq in jet + Turboprop + piston + Heli:
     if eq in jet:
         # Define the directory where your files are located
         file = repo_path + 'output/GT_flight_param_inv_DB.txt'
-        with open(file, 'r') as f:
-            # Read the data from the file and append it to the list
-            data = []
-
-            for line in f.readlines():
-                lines = line.split(',')
-                flight_n = lines[1]
-                for i, equip in enumerate(col_equip):
-                    if equip == eq:
-                        if float(flight_n) == float(flight_nums[i]):
+        for equip, flight_nums in flight_num_dict.items():
+            tail_nums = tail_num_dict[equip]
+            if equip != eq:
+                continue
+            for i, flight_num in enumerate(flight_nums):
+                with open(file, 'r') as f:
+                    # Read the data from the file and append it to the list
+                    for line in f.readlines():
+                        lines = line.split(',')
+                        flight_n = lines[1]
+                        for i, flight_n in enumerate(flight_numbers_check):
+                            if float(flight_n) == float(flight_num):
                                 tail_n = tail[i]
                                 break
                         if lines[-2] == "Forward Model":
@@ -83,15 +88,14 @@ for eq in jet + Turboprop + piston + Heli:
                         data = np.array(lines[9].strip('[]').split(' '), dtype=float)
                         if tail_n not in tail_ums_inverted[eq]:
                             tail_ums_inverted[eq].append([tail_n])
-                        
-                        equip_overtone_dict[eq].extend(data)
-                        equip_count_dict[eq].extend([count1, count2])
+                                
+                    equip_overtone_dict[eq].extend(data)
+                    equip_count_dict[eq].extend([count1, count2])
                 
     else:
         file = repo_path + 'output/NGT_flight_param_inv_DB.txt'
         with open(file, 'r') as f:
             # Read the data from the file and append it to the list
-            data = []
             for line in f.readlines():
                 lines = line.split(',')
                 if lines[0] != eq:
@@ -101,11 +105,10 @@ for eq in jet + Turboprop + piston + Heli:
                     if float(flight_n) == float(flight_num):
                         tail_n = tail[i]
                         break
-                if lines[-2] == "Forward Model" or lines[-5] == "00":
+                if lines[-2] == "Forward Model":
                     continue
                 count2 += 1
-
-                np.array(lines[10].strip('[]').split(' '), dtype=float)
+                data = np.array(lines[10].strip('[]').split(' '), dtype=float)
                 if tail_n not in tail_ums_inverted[eq]:
                     tail_ums_inverted[eq].append([tail_n])
             equip_overtone_dict[eq].extend(data)
@@ -184,6 +187,11 @@ for eq in jet + Turboprop + piston + Heli:
 
         line_count_dict[eq] = line_count
         equip_diff_dict[eq] = med
+
+title_size = 20
+tick_size = 12
+text_size = 12
+
 if main_text == True:
     fig, ax = plt.subplots(6, 3, figsize=(20, 24), sharex=True)
     # Track which axes have data
