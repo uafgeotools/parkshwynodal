@@ -1,14 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
-from sympy import symbols, sqrt as sympy_sqrt
+from sympy import sqrt as sympy_sqrt
 import matplotlib as mpl
-f0, v0, tprime, tprime0, l, c = sp.symbols('f0 v0 tprime tprime0 l c')
-f = f0/(1+(v0/c)*(v0* ((tprime - tprime0 + l/c)- sympy_sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2))/(sympy_sqrt(l**2+(v0* ((tprime - tprime0 + l/c)- sympy_sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
-f = f0/(1+(v0/c)*(v0* ((tprime - tprime0)- sympy_sqrt((tprime - tprime0)**2-(1-v0**2/c**2)*((tprime - tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(sympy_sqrt(l**2+(v0* ((tprime - tprime0)- sympy_sqrt((tprime - tprime0)**2-(1-v0**2/c**2)*((tprime - tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
 
-df = sp.diff(f, c)
-print(df)
+taken_derivative = False
+if taken_derivative == True:
+	f0, v0, tprime, tprime0, l, c = sp.symbols('f0 v0 tprime tprime0 l c')
+	f = f0/(1+(v0/c)*(v0* ((tprime - tprime0 + l/c)- sympy_sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2))/(sympy_sqrt(l**2+(v0* ((tprime - tprime0 + l/c)- sympy_sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+	f = f0/(1+(v0/c)*(v0* ((tprime - tprime0)- sympy_sqrt((tprime - tprime0)**2-(1-v0**2/c**2)*((tprime - tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(sympy_sqrt(l**2+(v0* ((tprime - tprime0)- sympy_sqrt((tprime - tprime0)**2-(1-v0**2/c**2)*((tprime - tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
+	# Take the derivative of f with respect to each variable
+	for variable in [f0, v0, tprime0, l, c]:
+		df = sp.diff(f, variable)
+		print(f"Derivative of f with respect to {variable}:")
+		sp.pprint(df)
+		print("\n")
+
 def get_t(v0,l,c,tprime0,tpr):
 	t_array = []	
 	for tprime in tpr:

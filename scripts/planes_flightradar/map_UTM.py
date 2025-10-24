@@ -1,7 +1,15 @@
-import pandas as pd
+import os
+import sys
 import pyproj
 import concurrent.futures
-import os
+import pandas as pd
+from pathlib import Path
+
+# Ensure repository root is on sys.path so local package 'src' can be imported
+repo_root = Path(__file__).resolve().parents[2]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 from src.doppler_funcs import flight_list, dist_less, time_check, find_closest_point, get_equip, closest_time_calc, load_flight_file, avg_return
 from src.main_inv_fig_functions import plot_map
 
