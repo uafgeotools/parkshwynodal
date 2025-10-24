@@ -1,13 +1,21 @@
-import pandas as pd
 import os
-from PIL import Image, ImageDraw, ImageFont
 import glob
-import numpy as np
 import json
+import sys
+import pandas as pd
+import numpy as np
+
+from PIL import Image, ImageDraw, ImageFont
 from pyproj import Proj, Geod
 from pathlib import Path
-from src.doppler_funcs import speed_of_sound, add_wind_vector, make_base_dir
 from pdf2image import convert_from_path
+
+# Ensure repository root is on sys.path so local package 'src' can be imported
+repo_root = Path(__file__).resolve().parents[2]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
+from src.doppler_funcs import speed_of_sound, add_wind_vector, make_base_dir
 
 def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	# Convert first page of PDF to PIL Image if it's a PDF, otherwise open as image
@@ -17,7 +25,10 @@ def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	else:
 		print("Not a PDF file for conversion:", pdf_path)
 
-seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
+repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+fig_file_path = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_test/'
+
+seismo_data = pd.read_csv(repo_path + 'input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 station_elevations = seismo_data['Elevation']
@@ -25,8 +36,8 @@ stations = seismo_data['Station']
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 geod = Geod(ellps='WGS84')
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
 
+file_in = open(repo_path + '/input/node_crossings_db_UTM.txt', 'r')
 for line in file_in.readlines():
 	text = line.split(',')
 	date = text[0]
@@ -43,7 +54,7 @@ for line in file_in.readlines():
 	equip = text[10]
 	day = str(date[6:8])
 	month = str(date[4:6])
-	file_check = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/' + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	file_check = fig_file_path + str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 	if Path(file_check).exists():
 		continue
 
@@ -79,15 +90,11 @@ for line in file_in.readlines():
 			plot_time = split_array[0]
 	else:
 		continue
-	input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
-	
-	try:
-		file = open(input_files, 'r')
-		data = json.load(file)
 
-		# Extract metadata
-		metadata = data['metadata']
-		parameters = metadata['parameters']
+	atm_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/aircraft_loc/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+	try:
+		file = open(atm_files, 'r')
+		data = json.load(file)
 
 		# Extract data
 		data_list = data['data']
@@ -112,14 +119,14 @@ for line in file_in.readlines():
 			if item['parameter'] == 'V':
 				meridional_wind_air = float(item['values'][z_index])
 		c_air = speed_of_sound(Tc_air)
+		wind, az = add_wind_vector(zonal_wind_air, meridional_wind_air)
+		wind = round(wind, 2)
+		az = round(az, 2)
 		file.close()
-		input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data_nodes/' + str(closest_time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat'
-		file = open(input_files, 'r')
-		data = json.load(file)
 
-		# Extract metadata
-		metadata = data['metadata']
-		parameters = metadata['parameters']
+		atm_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/nodes_loc/' + str(closest_time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat'
+		file = open(atm_files, 'r')
+		data = json.load(file)
 
 		# Extract data
 		data_list = data['data']
@@ -145,20 +152,19 @@ for line in file_in.readlines():
 			for item in data_list:
 				if item['parameter'] == 'T':
 					Tc_sta = - 273.15 + float(item['values'][z_index])
-				if item['parameter'] == 'V':
-					meridional_wind_sta = float(item['values'][z_index])
-				if item['parameter'] == 'U':
-					zonal_wind_sta = float(item['values'][z_index])
-		wind_sta, az_sta = add_wind_vector(zonal_wind_sta, meridional_wind_sta)
+
 		c_sta = speed_of_sound(Tc_sta)
 		file.close()
-		c = (c_air + c_sta) / 2
-		Tc = (Tc_air + Tc_sta) / 2
-		zonal_wind = zonal_wind_air #(zonal_wind_air + zonal_wind_sta) / 2
-		meridional_wind = meridional_wind_air #(meridional_wind_air + meridional_wind_sta) / 2
-		wind, az = add_wind_vector(zonal_wind, meridional_wind)
+
+		sound = (c_air + c_sta) / 2
+		temp = (Tc_air + Tc_sta) / 2
 	except:
-		c = 320  # Default speed of sound in m/s if no data is available
+		temp = -19.4  # Default temperature in Celsius if no data is available
+		sound = 320  # Default speed of sound in m/s if no data is available
+		# if the wind variable does not exist, set wind to __
+		if 'wind' not in locals():
+			wind = '__'
+			az = '__'
 	diff = np.inf
 
 	flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
@@ -189,52 +195,41 @@ for line in file_in.readlines():
 	if alt_m == 0:
 		dist = "--"
 		alt = "--"
-	temp = Tc
-	sound = c
-	
 
 	_, backazimuth, _ = geod.inv(lon, lat, seismo_longitudes[index], seismo_latitudes[index])
 
 	text1 = 'Altitude: '+str(alt)+' m\nDistance: '+str(dist)+' m\n               at '+str(round(backazimuth,2))+ '\N{DEGREE SIGN}\nVelocity: '+str(round(speed_mps,2))+' m/s\n               at '+str(round(deg,2))+ '\N{DEGREE SIGN}'
-	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(round(wind,2))+' m/s\n         at '+str(round(az,2))+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
+	text2 = 'Temperature: '+str(round(temp,1))+'\N{DEGREE SIGN}'+'C\nWind: '+str(wind)+' m/s\n         at '+str(az)+ '\N{DEGREE SIGN}\nSound Speed:\n         '+str(round(sound,2))+' m/s'
 	text3 = 'Callsign: ' +  str(call) + ' (' + str(equip) + ')'
 
-	font2 = ImageFont.truetype('input/fig_style/Arial.ttf', (25/96)*600)  # Adjust size for 600 DPI
-
+	font2 = ImageFont.truetype(repo_path + 'input/fig_style/Arial.ttf', (25/96)*600)  # Adjust size for 600 DPI
 
 	# Get the path of the image file using a wildcard
-	image_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
- 
-		
+	map_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
+	map_img = load_pdf_as_image(map_path)
 	spectrogram = Image.open(im)
-
-	map_img = load_pdf_as_image(image_path)
-	
-		
 	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 
-	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
-	if os.path.isfile(path):
-		plane_img = Image.open(path)
-	else:
-		plane_img = Image.open('/home/irseppi/REPOSITORIES/parkshwynodal/input/hold.png')
 		
 	# Resize images
 	google_slide_width = 1280  # Width of a Google Slide in pixels
 	google_slide_height = 720  # Height of a Google Slide in pixels
 
 	# For example, for an 8x5 inch PDF at 600 DPI:
-	canvas_width = 8000  # 1280/96 * 600
-	canvas_height = 4500 # 720/96 * 600
+	canvas_width = int(google_slide_width/96 * 600)
+	canvas_height = int(google_slide_height/96 * 600)
 
 	canvas = Image.new('RGB', (canvas_width, canvas_height), 'white')
 
+	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
+	if os.path.isfile(path):
+		plane_img = Image.open(path)
+		plane = plane_img.resize((int(canvas_width * 0.26), int(canvas_height * 0.26)), Image.LANCZOS)
+	
 	# Resize images to fit the new canvas, keeping their quality
-	plane = plane_img.resize((int(canvas_width * 0.26), int(canvas_height * 0.26)), Image.LANCZOS)
 	spec = spec_img.resize((int(canvas_width * 0.31), int(canvas_height * 0.35)), Image.LANCZOS)
 	maps = map_img.resize((int(canvas_width *  0.28), int(canvas_width *0.28* map_img.height / map_img.width)), Image.LANCZOS)
 	spectrogram = spectrogram.resize((int(canvas_width * 0.73), int(canvas_height)), Image.LANCZOS)
-
 
 	# Paste images onto canvas (positions and sizes adjusted for 600 DPI)
 	canvas.paste(spectrogram, (-int(20 / 96 * 600), 0))  # -20 px at 96 DPI scaled to 600 DPI
@@ -243,11 +238,11 @@ for line in file_in.readlines():
 	canvas.paste(plane, (canvas_width - plane.width, 0))
 	# Draw text from files
 	draw = ImageDraw.Draw(canvas)
-	font = ImageFont.truetype('input/fig_style/Arial.ttf', (15/96)*600)  # Adjust size for 600 DPI
+	font = ImageFont.truetype(repo_path + 'input/fig_style/Arial.ttf', (15/96)*600)  # Adjust size for 600 DPI
 
 	# Label each image (adjust positions and font sizes for 600 DPI)
 	label_font_size = int((25/96)*600)
-	label_font = ImageFont.truetype('input/fig_style/Arial.ttf', label_font_size)
+	label_font = ImageFont.truetype(repo_path + 'input/fig_style/Arial.ttf', label_font_size)
 
 	# Example y-offsets for labels, scaled for DPI
 	draw.text((int(15/96*600), int(35/96*600)), '(a)', fill='black', font=label_font)
@@ -263,9 +258,8 @@ for line in file_in.readlines():
 	draw.rectangle(bbox, fill="white")
 	draw.text((canvas_width - plane.width, 0), text3, fill='black', font=font)
 
-	BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT/'
-	make_base_dir(BASE_DIR)
-	name= BASE_DIR +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
+	make_base_dir(fig_file_path)
+	name= fig_file_path +str(equip)+'_'+ '2019'+month+day+'_'+str(flight_num)+'_' + str(closest_time) + '_' + str(sta) + '_' + str(equip)+'.pdf'
 
 	# Save as PDF
 	canvas.save(name, "PDF", resolution=700.0)
