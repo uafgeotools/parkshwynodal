@@ -26,6 +26,10 @@ To enter this environment, type:
 
 ```conda activate denalinodal```
 
+Once this is all done try running the sample script by typing:
+
+```python sample_inversion_script.py```
+
 ## Example Data product
 ![stations](/input/sample_image.png)
 
