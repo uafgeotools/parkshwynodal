@@ -1,4 +1,4 @@
-# Denali Nodal Seismic Data along the Parks Highway (Feb-March 2019)
+# Code to analyze Nodal Seismic Data collected along the Parks Highway in Feb-March of 2019
 ## Bella Seppi
 
 ## University of Alaska Fairbanks
