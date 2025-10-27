@@ -7,7 +7,7 @@ Between Febuary 11th and March 26th of 2019 a set of 303 Fairfield Nodal 3C 5Hz 
 
 ## Code Organization
 
-Most of the code is contained inside jupyter notebooks aside from prelude.py which contains shared functions usefull for looking at the data.
+Most of the code is scripts that read in functions from doppler_funcs.py, containing tools to run the inverisons, and main_inv_fig_functions.py, containing tools to plot and display flight crossings in the nodal seismic data. The input folder contains our database of plane that come within a 2km horizontal distance of one of the nodes along with other information used to classify aircrafts in the data. The output folder contains the inversion results. Dtabase information can also be found on [Zenodo](https://zenodo.org/records/16997158).
 
 ## Installation
 To download the parkshwynodal project code, type this:
