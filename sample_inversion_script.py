@@ -173,15 +173,16 @@ ax1.set_ylabel('Counts')
 # Plot spectrogram and inversion results
 cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax2.set_xlabel('Time (s)')
-ax2.axvline(x=t0, c='#377eb8', ls='--', linewidth=0.7, label=f"t\u2080' = {t0:.2f} s")
+t0prime = t0 + l/c
+ax2.axvline(x=t0prime, c = '#377eb8', ls = '--',linewidth=0.5,label= "t\u2080' = " + "%.2f" % t0prime +' s')
+ax2.axvline(x=t0, c = '#e41a1c', ls = '--', linewidth=0.7,label= "t\u2080 = " + "%.2f" % t0 +' s')
 f0lab = sorted(f0_array)
-for f0 in f0lab:
+for pp in range(len(f0_array)):
+    f0 = f0_array[pp]
     ft = calc_ft(times, t0, f0, v0, l, c)
-    ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
-    tprime = t0
-    t = ((tprime - t0)- np.sqrt((tprime-t0)**2-(1-v0**2/c**2)*((tprime-t0)**2-l**2/c**2)))/(1-v0**2/c**2)
-    ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))
-    ax2.scatter(t0, ft0p, color='black', marker='x', s=30)
+
+    ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7)
+    ax2.scatter(t0prime, f0, color='black', marker='x', s=30, zorder=10)
 fss = 'x-small'
 
 # Estimate overtone frequency spacing and uncertainty
