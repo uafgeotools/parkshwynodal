@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-main_text = True
+main_text = False
 repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+flightradar_path = '/scratch/irseppi/nodal_data/flightradar24/'
 file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 
 if main_text == True:
@@ -19,102 +20,111 @@ else:
     Heli = []
 
 col_equip = []
-flight_numbers_check = []
 tail = []
+
 tail_num_dict = {}
 flight_num_dict = {}
+tail_flight_dict = {}
+
 for text in file_in.readlines():
     lines = text.split(',')
+    date = lines[0]
+    flight_num = int(lines[1])
     equip = lines[10]
     if equip not in jet + Turboprop + piston + Heli:
         continue
-    date = lines[0]
-    flight_num = lines[1]
-    col_equip.append(equip)
-    flight_numbers_check.append(flight_num)
-    flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/' + date + '_flights.csv', sep=",")
-    flight = flight_data['flight_id']
-    tailnumber = flight_data['aircraft_id']
     if equip not in tail_num_dict:
         tail_num_dict[equip] = []
+    if equip not in flight_num_dict:
         flight_num_dict[equip] = []
+    if flight_num not in flight_num_dict[equip]:
+        flight_num_dict[equip].extend([flight_num])
+
+    flight_data = pd.read_csv(flightradar_path + date + '_flights.csv', sep=",")
+    flight = flight_data['flight_id']
+    tailnumber = flight_data['aircraft_id']
     for i,fly in enumerate(flight):
         if float(fly) == float(flight_num):
-            tail.append(tailnumber[i])
-            if tailnumber[i] not in tail_num_dict[equip]:
-                tail_num_dict[equip].append(tailnumber[i])
-            if flight_num not in flight_num_dict[equip]:
-                flight_num_dict[equip].append(flight_num)
+            col_equip.append(equip)
+            if int(tailnumber[i]) not in tail_num_dict[equip]:
+                tail_num_dict[equip].extend([int(tailnumber[i])])
+            if int(tailnumber[i]) not in tail_flight_dict:
+                tail_flight_dict[int(tailnumber[i])] = []
+            tail_flight_dict[int(tailnumber[i])].extend([int(flight_num)])
             break
 file_in.close()
+
+file_jets = open(repo_path + 'output/GT_flight_param_inv_DB.txt', 'r')
+file_nonjets = open(repo_path + 'output/NGT_flight_param_inv_DB.txt', 'r')
 
 equip_overtone_dict = {}
 equip_count_dict = {}
 equip_diff_dict = {}
-tail_ums_inverted = {}
+tail_nums_inverted = {}
 line_count_dict = {}
+
 for eq in jet + Turboprop + piston + Heli:
     count1 = 0
     count2 = 0
-    if eq not in equip_overtone_dict:
-        equip_overtone_dict[eq] = []
-        equip_count_dict[eq] = []
-        tail_ums_inverted[eq] = []
+    equip_overtone_dict[eq] = []
+    equip_count_dict[eq] = []
+    tail_nums_inverted[eq] = []
 
-    for equip in col_equip:
-        if equip == eq:
+    for tt in col_equip:
+        if tt == eq:
             count1 += 1
+        
     if eq in jet:
-        # Define the directory where your files are located
-        file = repo_path + 'output/GT_flight_param_inv_DB.txt'
-        for equip, flight_nums in flight_num_dict.items():
-            tail_nums = tail_num_dict[equip]
-            if equip != eq:
+        file_jets = open(repo_path + 'output/GT_flight_param_inv_DB.txt', 'r')
+        for line in file_jets:
+            lines = line.split(',')
+            flight_n = int(lines[1])
+            if flight_n not in flight_num_dict[eq] or lines[-2] == "Forward Model":
                 continue
-            for i, flight_num in enumerate(flight_nums):
-                with open(file, 'r') as f:
-                    # Read the data from the file and append it to the list
-                    for line in f.readlines():
-                        lines = line.split(',')
-                        flight_n = lines[1]
-                        for i, flight_n in enumerate(flight_numbers_check):
-                            if float(flight_n) == float(flight_num):
-                                tail_n = tail[i]
-                                break
-                        if lines[-2] == "Forward Model":
-                            continue
 
-                        count2 += 1
-                        data = np.array(lines[9].strip('[]').split(' '), dtype=float)
-                        if tail_n not in tail_ums_inverted[eq]:
-                            tail_ums_inverted[eq].append([tail_n])
-                                
-                    equip_overtone_dict[eq].extend(data)
-                    equip_count_dict[eq].extend([count1, count2])
-                
-    else:
-        file = repo_path + 'output/NGT_flight_param_inv_DB.txt'
-        with open(file, 'r') as f:
-            # Read the data from the file and append it to the list
-            for line in f.readlines():
-                lines = line.split(',')
-                if lines[0] != eq:
-                    continue
-                flight_n = lines[2]
-                for i, flight_num in enumerate(flight_nums):
-                    if float(flight_n) == float(flight_num):
-                        tail_n = tail[i]
-                        break
-                if lines[-2] == "Forward Model":
-                    continue
-                count2 += 1
-                data = np.array(lines[10].strip('[]').split(' '), dtype=float)
-                if tail_n not in tail_ums_inverted[eq]:
-                    tail_ums_inverted[eq].append([tail_n])
+            for tail_n, flight_numbers in  tail_flight_dict.items():
+                if int(flight_n) in flight_numbers:
+                    break
+                else:
+                    tail_n = None
+            if tail_n is None:
+                continue
+
+            count2 += 1
+            data = np.array(lines[9].strip('[]').split(' '), dtype=float)
+
+            if tail_n not in tail_nums_inverted[eq]:
+                tail_nums_inverted[eq].extend([tail_n])
             equip_overtone_dict[eq].extend(data)
-            equip_count_dict[eq].extend([count1, count2])
-   
-    if main_text == True:
+        equip_count_dict[eq].extend([count1, count2])
+        file_jets.close()
+
+    else:
+        file_nonjets = open(repo_path + 'output/NGT_flight_param_inv_DB.txt', 'r')
+        for line in file_nonjets:
+            lines = line.split(',')
+            if lines[0] != eq or lines[-2] == "Forward Model":
+                continue
+            flight_n = int(lines[2])
+
+            for tail_n, flight_numbers in  tail_flight_dict.items():
+                if flight_n in flight_numbers:
+                    break
+                else:
+                    tail_n = None
+            if tail_n is None:
+                continue
+
+            count2 += 1
+            data = np.array(lines[10].strip('[]').split(' '), dtype=float)
+
+            if tail_n not in tail_nums_inverted[eq]:
+                tail_nums_inverted[eq].extend([tail_n])
+            equip_overtone_dict[eq].extend(data)
+        equip_count_dict[eq].extend([count1, count2])
+        file_nonjets.close()
+
+    if main_text == True and eq not in jet:
         if eq == 'C185':
             med = 19.5
             line_count = 13
@@ -156,7 +166,8 @@ for eq in jet + Turboprop + piston + Heli:
             line_count = 20
         line_count_dict[eq] = line_count
         equip_diff_dict[eq] = med
-    if main_text == False:
+
+    if main_text == False and eq not in jet:
         if eq == 'CH7B':
             med = 19.5
             line_count = 13
@@ -184,7 +195,6 @@ for eq in jet + Turboprop + piston + Heli:
         elif eq == 'SW4':
             med = 25.7
             line_count = 10
-
         line_count_dict[eq] = line_count
         equip_diff_dict[eq] = med
 
@@ -199,15 +209,16 @@ if main_text == True:
 
     for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
         equip_count = equip_count_dict[equip]
-        med = equip_diff_dict[equip]
-        line_count = line_count_dict[equip]
+        if equip not in jet:
+            med = equip_diff_dict[equip]
+            line_count = line_count_dict[equip]
 
         if i ==  len(jet) + len(Turboprop):
             label_count = 'crossings: ' + str(equip_count[1]) + '/' + str(equip_count[0])
-            label_tail = 'tail numbers: '+ str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
+            label_tail = 'tail numbers: '+ str(len(tail_nums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
         else:
             label_count = str(equip_count[1]) + '/' + str(equip_count[0])
-            label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
+            label_tail = str(len(tail_nums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
             if i == 0:
                 ax[i, 2].set_title('Jet Aircraft', fontsize=title_size, fontweight='bold')
@@ -286,7 +297,6 @@ if main_text == True:
             ax[-2, 2].tick_params(axis='y', labelsize=tick_size)
             axes_with_data.add((4, 2))
 
-
     # Remove outline for axes with no data
     for row in range(ax.shape[0]):
         for col in range(ax.shape[1]):
@@ -308,7 +318,6 @@ if main_text == True:
     plt.xlim(5, 300)
     plt.tight_layout(pad=2.7, w_pad=0.5, h_pad=0)
 
-
 if main_text == False:
     fig, ax = plt.subplots(6, 3, figsize=(20, 24), sharex=True)
 
@@ -317,10 +326,11 @@ if main_text == False:
 
     for i, (equip, peaks) in enumerate(equip_overtone_dict.items()):
         equip_count = equip_count_dict[equip]
-        med = equip_diff_dict[equip]
-        line_count = line_count_dict[equip]
+        if equip not in jet:
+            med = equip_diff_dict[equip]
+            line_count = line_count_dict[equip]
         label_count = str(equip_count[1]) + '/' + str(equip_count[0])
-        label_tail = str(len(tail_ums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
+        label_tail = str(len(tail_nums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
             if i == 0:
                 ax[i, 2].set_title('Jet Aircraft', fontsize=title_size, fontweight='bold')
