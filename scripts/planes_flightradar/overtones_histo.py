@@ -26,6 +26,7 @@ tail_num_dict = {}
 flight_num_dict = {}
 tail_flight_dict = {}
 
+#Get data from crossings database
 for text in file_in.readlines():
     lines = text.split(',')
     date = lines[0]
@@ -40,6 +41,7 @@ for text in file_in.readlines():
     if flight_num not in flight_num_dict[equip]:
         flight_num_dict[equip].extend([flight_num])
 
+    #Extract tailnumber for flightradar24 data
     flight_data = pd.read_csv(flightradar_path + date + '_flights.csv', sep=",")
     flight = flight_data['flight_id']
     tailnumber = flight_data['aircraft_id']
@@ -74,6 +76,7 @@ for eq in jet + Turboprop + piston + Heli:
         if tt == eq:
             count1 += 1
         
+    #Get overtone data for jets from the inversion database with the initial model calculated from groundtruth flight parameters
     if eq in jet:
         file_jets = open(repo_path + 'output/GT_flight_param_inv_DB.txt', 'r')
         for line in file_jets:
@@ -99,6 +102,7 @@ for eq in jet + Turboprop + piston + Heli:
         equip_count_dict[eq].extend([count1, count2])
         file_jets.close()
 
+    #Get overtone data for non-jets from the inversion database with the initial model calculated only from the spectrograms
     else:
         file_nonjets = open(repo_path + 'output/NGT_flight_param_inv_DB.txt', 'r')
         for line in file_nonjets:
