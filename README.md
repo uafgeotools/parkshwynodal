@@ -1,5 +1,9 @@
-# Code to analyze Nodal Seismic Data collected along the Parks Highway in Feb-March of 2019
+# Analysis of Nodal Seismic Data collected along the Parks Highway in Feb-March of 2019
 ## University of Alaska Fairbanks
+
+## Reference
+
+Seppi, I., C. Tape, and D. Fee, 2025, [Classification of aircraft types using seismic data in Alaska](https://pubs.geoscienceworld.org/ssa/tsr/article/5/4/330/688104/Classification-of-Aircraft-Types-Using-Seismic), *The Seismic Record*.
 
 ## Data
 
