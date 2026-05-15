@@ -35,7 +35,7 @@ def thread_task(id):
 def download_waveforms(download_start_time, download_end_time, download_window,thread_id):
     waveform_client = Client("http://service.iris.edu",
                              service_mappings={"dataselect": "http://service.iris.edu/ph5ws/dataselect/1"},
-                             user="ctape@alaska.edu", password="dln3mjKtap3m9")
+                             user="", password="")
     diff = download_end_time - download_start_time
     for i in range(0, int(math.ceil(diff / download_window))):
         download_start = download_start_time + float(i) * download_window
