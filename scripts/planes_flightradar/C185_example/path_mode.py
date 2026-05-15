@@ -68,7 +68,7 @@ flight_latitudes = []
 flight_longitudes = []
 alt = []
 
-flight_file = '/scratch/irseppi/nodal_data/flightradar24/20190221_positions/20190221_529754214.csv'
+flight_file = '/../nodal_data/flightradar24/20190221_positions/20190221_529754214.csv'
 flight_data = pd.read_csv(flight_file, sep=",")
 flight_latitudes.extend(list(flight_data['latitude']))
 flight_longitudes.extend(list(flight_data['longitude']))

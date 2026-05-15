@@ -104,7 +104,7 @@ def get_speed_of_sound(alt, closest_time, UTM_x_m, UTM_y_m):
 	# Convert UTM coordinates to latitude and longitude
 	lon, lat = utm_proj(UTM_x_m, UTM_y_m, inverse=True)
 
-	input_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+	input_files = '/../nodal_data/plane_info/atmosphere_data/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
 
 	if Path(input_files).exists():
 		with open(input_files, 'r') as file:
@@ -878,7 +878,7 @@ def flight_list(month1, month2, first_day, last_day):
 				month = '02'
 				for day in range(first_day, 29):
 					day = str(day)
-					directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
+					directory = '/../nodal_data/flightradar24/2019' + month + day + '_positions'
 					for filename in os.listdir(directory):
 						filenames.append(filename)
 						f = os.path.join(directory, filename)
@@ -889,7 +889,7 @@ def flight_list(month1, month2, first_day, last_day):
 				for day in range(1, last_day):
 					if day < 10:
 						day = '0' + str(day)
-						directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
+						directory = '/../nodal_data/flightradar24/2019' + month + day + '_positions'
 						for filename in os.listdir(directory):
 							filenames.append(filename)
 							f = os.path.join(directory, filename)
@@ -897,7 +897,7 @@ def flight_list(month1, month2, first_day, last_day):
 								flight_files.append(f)
 					else:
 						day = str(day)
-						directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
+						directory = '/../nodal_data/flightradar24/2019' + month + day + '_positions'
 						for filename in os.listdir(directory):
 							filenames.append(filename)
 							f = os.path.join(directory, filename)
@@ -907,7 +907,7 @@ def flight_list(month1, month2, first_day, last_day):
 			month = '02'
 			for day in range(first_day, last_day):
 				day = str(day)
-				directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
+				directory = '/../nodal_data/flightradar24/2019' + month + day + '_positions'
 				for filename in os.listdir(directory):
 					filenames.append(filename)
 					f = os.path.join(directory, filename)
@@ -918,7 +918,7 @@ def flight_list(month1, month2, first_day, last_day):
 			for day in range(first_day, last_day):
 				if day < 10:
 					day = '0' + str(day)
-					directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
+					directory = '/../nodal_data/flightradar24/2019' + month + day + '_positions'
 					for filename in os.listdir(directory):
 						filenames.append(filename)
 						f = os.path.join(directory, filename)
@@ -926,7 +926,7 @@ def flight_list(month1, month2, first_day, last_day):
 							flight_files.append(f)
 				else:
 					day = str(day)
-					directory = '/scratch/irseppi/nodal_data/flightradar24/2019' + month + day + '_positions'
+					directory = '/../nodal_data/flightradar24/2019' + month + day + '_positions'
 					for filename in os.listdir(directory):
 						filenames.append(filename)
 						f = os.path.join(directory, filename)
@@ -986,7 +986,7 @@ def get_equip(date, flight_num):
 		str: Equipment type associated with the flight number.
 	"""
 
-	equip_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_flights.csv'
+	equip_file = '/../nodal_data/flightradar24/' + str(date) + '_flights.csv'
 	equip_data = pd.read_csv(equip_file, sep=",")
 	equip_list = equip_data['equip']
 	flight_list = equip_data['flight_id']
@@ -1037,7 +1037,7 @@ def load_waveform(sta, start_time, spec_window=120):
 		day2 = day
 
 	waveform1 = "/scratch/naalexeev/NODAL/2019-0" + str(month) + "-" + str(day) + "T" + str(h) + ":00:00.000000Z.2019-0" + str(month) + "-" + str(day2) + "T" + str(h_u) + ":00:00.000000Z." + str(sta) + ".mseed"
-	waveform2 = "/scratch/irseppi/500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
+	waveform2 = "/../500sps/2019_0" + str(month) + "_" + str(day) + "/ZE_" + str(sta) + "_DPZ.msd"
 	
 	if Path(waveform1).exists():
 		tr = obspy.read(waveform1)

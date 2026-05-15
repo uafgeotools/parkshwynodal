@@ -138,9 +138,9 @@ def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km,
     fig.add_artist(con)
     plt.tight_layout(pad=0.2, rect=[0, 0, 1, 1])
 
-    BASE_DIR = '/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/'+ str(flight_num) + '/' + str(station) + '/'
+    BASE_DIR = '/../nodal_data/plane_info/map_all_UTM/' + str(date) + '/'+ str(flight_num) + '/' + str(station) + '/'
     make_base_dir(BASE_DIR)
-    plt.savefig('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(station) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.pdf', bbox_inches='tight',dpi=500)
+    plt.savefig('/../nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(station) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.pdf', bbox_inches='tight',dpi=500)
     plt.close()
 
 

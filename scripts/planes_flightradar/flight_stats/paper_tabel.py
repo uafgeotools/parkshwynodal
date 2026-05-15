@@ -1,7 +1,7 @@
 import pandas as pd
 
 repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
-flightradar24_data_path = '/scratch/irseppi/nodal_data/flightradar24/'
+flightradar24_data_path = '/../nodal_data/flightradar24/'
 
 jets = False
 with open(repo_path + 'input/node_crossings_db_UTM.txt', 'r') as infile:

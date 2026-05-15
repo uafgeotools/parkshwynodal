@@ -26,7 +26,7 @@ def load_pdf_as_image(pdf_path, page=0, dpi=600):
 		print("Not a PDF file for conversion:", pdf_path)
 
 repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
-fig_file_path = '/scratch/irseppi/nodal_data/plane_info/inverse_final_database_NGT_test/'
+fig_file_path = '/../nodal_data/plane_info/inverse_final_database_NGT_test/'
 
 seismo_data = pd.read_csv(repo_path + 'input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
@@ -69,7 +69,7 @@ for line in file_in.readlines():
 	# Convert UTM coordinates to latitude and longitude
 	lon, lat = utm_proj(x_m, y_m, inverse=True)
 
-	flight_data = pd.read_csv('/scratch/irseppi/nodal_data/flightradar24/2019'+month+day+'_flights.csv', sep=",")
+	flight_data = pd.read_csv('/../nodal_data/flightradar24/2019'+month+day+'_flights.csv', sep=",")
 	flight = flight_data['flight_id']
 	callsign = flight_data['callsign'] 
 	aircraft_id = flight_data['aircraft_id']
@@ -80,7 +80,7 @@ for line in file_in.readlines():
 			break
 		else:
 			continue
-	spec_dir = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
+	spec_dir = '/../nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spec_c/2019-'+month+'-'+day + '/' + str(flight_num) + '/' + str(sta) + '/'
 	if os.path.exists(spec_dir):
 		for image in os.listdir(spec_dir):
 			if not image.endswith('.png'):
@@ -91,7 +91,7 @@ for line in file_in.readlines():
 	else:
 		continue
 
-	atm_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/aircraft_loc/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
+	atm_files = '/../nodal_data/plane_info/atmosphere_data/aircraft_loc/' + str(closest_time) + '_' + str(lat) + '_' + str(lon) + '.dat'
 	try:
 		file = open(atm_files, 'r')
 		data = json.load(file)
@@ -124,7 +124,7 @@ for line in file_in.readlines():
 		az = round(az, 2)
 		file.close()
 
-		atm_files = '/scratch/irseppi/nodal_data/plane_info/atmosphere_data/nodes_loc/' + str(closest_time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat'
+		atm_files = '/../nodal_data/plane_info/atmosphere_data/nodes_loc/' + str(closest_time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat'
 		file = open(atm_files, 'r')
 		data = json.load(file)
 
@@ -167,7 +167,7 @@ for line in file_in.readlines():
 			az = '__'
 	diff = np.inf
 
-	flight_file = '/scratch/irseppi/nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
+	flight_file = '/../nodal_data/flightradar24/' + str(date) + '_positions/' + str(date) + '_' + str(flight_num) + '.csv'
 	flight_data = pd.read_csv(flight_file, sep=",")
 	flight_latitudes = flight_data['latitude']
 	flight_longitudes = flight_data['longitude']
@@ -205,10 +205,10 @@ for line in file_in.readlines():
 	font2 = ImageFont.truetype(repo_path + 'input/fig_style/Arial.ttf', (25/96)*600)  # Adjust size for 600 DPI
 
 	# Get the path of the image file using a wildcard
-	map_path = glob.glob('/scratch/irseppi/nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
+	map_path = glob.glob('/../nodal_data/plane_info/map_all_UTM/2019'+month+day+'/'+flight_num+'/'+sta+'/map_'+flight_num+'_*.pdf')[0]
 	map_img = load_pdf_as_image(map_path)
 	spectrogram = Image.open(im)
-	spec_img = Image.open('/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
+	spec_img = Image.open('/../nodal_data/plane_info/inversion_results_ngt/' + str(equip) + '_spectrum_c/2019'+month+day+'/'+flight_num+'/'+sta+'/'+sta+'_' + str(plot_time) + '.png')
 
 		
 	# Resize images
@@ -221,7 +221,7 @@ for line in file_in.readlines():
 
 	canvas = Image.new('RGB', (canvas_width, canvas_height), 'white')
 
-	path = '/scratch/irseppi/nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
+	path = '/../nodal_data/plane_info/plane_images/'+str(equip)+'.jpg'
 	if os.path.isfile(path):
 		plane_img = Image.open(path)
 		plane = plane_img.resize((int(canvas_width * 0.26), int(canvas_height * 0.26)), Image.LANCZOS)

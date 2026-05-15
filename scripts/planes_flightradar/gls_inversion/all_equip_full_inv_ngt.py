@@ -18,7 +18,7 @@ rerun_fig = True #Flag rerun the figures without saving the inversion results = 
 mk_picks = False
 
 repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
-fig_path = '/scratch/irseppi/nodal_data/plane_info/inversion_results_ngt/'
+fig_path = '/../nodal_data/plane_info/inversion_results_ngt/'
 
 # Loop through each station in text file that we already know comes within 2km of the nodes
 file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')

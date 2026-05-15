@@ -4,7 +4,7 @@ import pandas as pd
 
 main_text = False
 repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
-flightradar_path = '/scratch/irseppi/nodal_data/flightradar24/'
+flightradar_path = '/../nodal_data/flightradar24/'
 file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 
 if main_text == True:

@@ -57,7 +57,7 @@ for li in file_in.readlines():
     # Convert UTM coordinates to latitude and longitude
     lon, lat = utm_proj(x, y, inverse=True)
 
-    input_files = ['/scratch/irseppi/nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat','/scratch/irseppi/nodal_data/plane_info/atmosphere_data_nodes/' + str(time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat']
+    input_files = ['/../nodal_data/plane_info/atmosphere_data/' + str(time) + '_' + str(lat) + '_' + str(lon) + '.dat','/../nodal_data/plane_info/atmosphere_data_nodes/' + str(time) + '_' + str(sta_lat) + '_' + str(sta_lon) + '.dat']
 
     if os.path.exists(input_files[0]):
         if os.path.exists(input_files[1]):
