@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 main_text = False
-repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+repo_path = '/..//parkshwynodal/'
 flightradar_path = '/../nodal_data/flightradar24/'
 file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 

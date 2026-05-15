@@ -15,7 +15,7 @@ stations = seismo_data['Station']
 
 # Define the UTM projection
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
-sta_f = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
+sta_f = open('/..//parkshwynodal/input/node_crossings_db_UTM.txt','r')
 
 # Loop through each crossing decteted by nodes that is not a jet
 for line in sta_f.readlines():

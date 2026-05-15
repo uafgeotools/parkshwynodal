@@ -21,7 +21,7 @@ window = 120  # seconds before the arrival time to load the waveform
 rerun_fig = False #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
-repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+repo_path = '/..//parkshwynodal/'
 fig_path = '/../nodal_data/plane_info/inversion_results/'
 
 # Loop through each station in text file that we already know comes within 2km of the nodes

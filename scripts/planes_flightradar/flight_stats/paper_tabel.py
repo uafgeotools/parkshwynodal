@@ -1,6 +1,6 @@
 import pandas as pd
 
-repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+repo_path = '/..//parkshwynodal/'
 flightradar24_data_path = '/../nodal_data/flightradar24/'
 
 jets = False
@@ -152,7 +152,7 @@ final_table.write('Totals,' + ',' + ',' + ',' + ',' + ',' + str(total_flights) +
 final_table.close()
 
 #In dataset not only inverted
-infile = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
+infile = open('/..//parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
 Equipment = ['DH8A', 'B190','BE20','PC12','DH3T','C208','AT73','SW4','C441','B18T','B350','BE10','AS50','R44','C185','PA31','DHC2','GA8','C180','C182','C206','C172','PA32','PA46','CH7B','PA30','C46','BE35','PA18','PA34']
 Equipment_jet = ['B737','B738','B739','B77W','B772','B789','B788','B733','B763','A359','B77L','B744','E75S','B732','A332','B748','CRJ2']
 total_nan_crossings = 0

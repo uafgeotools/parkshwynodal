@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+repo_path = '/..//parkshwynodal/'
 approach_data = pd.read_csv(repo_path + 'input/node_crossings_db_UTM.txt', sep=",")
 flight_id = approach_data.iloc[:, 1]
 dist_m = approach_data.iloc[:, 4]

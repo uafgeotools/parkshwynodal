@@ -17,7 +17,7 @@ jet = ['B737', 'B738', 'B739', 'B733', 'B763', 'B772', 'B77W', 'B788', 'B789', '
 rerun_fig = True #Flag rerun the figures without saving the inversion results = True
 mk_picks = False
 
-repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+repo_path = '/..//parkshwynodal/'
 fig_path = '/../nodal_data/plane_info/inversion_results_ngt/'
 
 # Loop through each station in text file that we already know comes within 2km of the nodes

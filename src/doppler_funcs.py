@@ -179,7 +179,7 @@ def get_sta_elevation(sta):
 	"""
 
 	elev = 0
-	seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
+	seismo_data = pd.read_csv('/..//parkshwynodal/input/parkshwy_nodes.txt', sep="|")
 	stations = seismo_data['Station']
 	elevations = seismo_data['Elevation']
 

@@ -25,7 +25,7 @@ def load_pdf_as_image(pdf_path, page=0, dpi=600):
 	else:
 		print("Not a PDF file for conversion:", pdf_path)
 
-repo_path = '/home/irseppi/REPOSITORIES/parkshwynodal/'
+repo_path = '/..//parkshwynodal/'
 fig_file_path = '/../nodal_data/plane_info/inverse_final_database_NGT_test/'
 
 seismo_data = pd.read_csv(repo_path + 'input/parkshwy_nodes.txt', sep="|")

@@ -11,9 +11,9 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 from src.doppler_funcs import find_closest_point
 
-folder_path = '/home/irseppi/REPOSITORIES/'
+folder_path = '/..//'
 #Load seismometer data
-seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
+seismo_data = pd.read_csv('/..//parkshwynodal/input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 stations = seismo_data['Station']
@@ -33,7 +33,7 @@ seismo_utm_y_km = [y / 1000 for y in seismo_utm_y]
 flight_num = 529754214
 tail_num = 10512184
 
-file = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/output/NGT_flight_param_inv_DB.txt', sep=",")
+file = pd.read_csv('/..//parkshwynodal/output/NGT_flight_param_inv_DB.txt', sep=",")
 flight_nums = file['Flight_Number']
 freq_peaks = file['Meas_Source_Frequency_Array']
 nodes = file['Station']

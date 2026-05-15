@@ -15,7 +15,7 @@ from src.doppler_funcs import speed_of_sound, add_wind_vector
 
 utm_proj = Proj(proj='utm', zone='6', ellps='WGS84')
 
-seismo_data = pd.read_csv('/home/irseppi/REPOSITORIES/parkshwynodal/input/parkshwy_nodes.txt', sep="|")
+seismo_data = pd.read_csv('/..//parkshwynodal/input/parkshwy_nodes.txt', sep="|")
 seismo_latitudes = seismo_data['Latitude']
 seismo_longitudes = seismo_data['Longitude']
 sensor_elevations = seismo_data['Elevation']
@@ -27,7 +27,7 @@ air_c_array = []
 sta_temp_array = []
 sta_wind_array = []
 sta_c_array = []
-file_in = open('/home/irseppi/REPOSITORIES/parkshwynodal/input/node_crossings_db_UTM.txt','r')
+file_in = open('/..//parkshwynodal/input/node_crossings_db_UTM.txt','r')
 for li in file_in.readlines():
     text = li.split(',')
     flight_num = text[1]

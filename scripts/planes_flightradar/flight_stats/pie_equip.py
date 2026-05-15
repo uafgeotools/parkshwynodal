@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-file_path = '/home/irseppi/REPOSITORIES/'
+file_path = '/..//'
 infile = open(file_path + 'parkshwynodal/input/node_crossings_db_UTM.txt', 'r')
 
 equip_counts = {}  
