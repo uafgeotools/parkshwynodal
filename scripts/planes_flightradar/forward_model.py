@@ -1,160 +1,130 @@
+"""
+This script calculates and visualizes results from changing variables in 
+the Doppler effect equation. It shows the frequency signals perceived by a 
+receiver from a moving source (aircraft). The varying parameters include 
+velocity, altitude, wave propagation speed, time of closest approach, and 
+emitted frequency. It generates subplots to show the impact of each parameter 
+on the observed frequency over time.
+"""
+
 import numpy as np
-import matplotlib.pyplot as plt
 import sympy as sp
-from sympy import sqrt as sympy_sqrt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 
-taken_derivative = False
-if taken_derivative == True:
-	f0, v0, tprime, tprime0, l, c = sp.symbols('f0 v0 tprime tprime0 l c')
-	f = f0/(1+(v0/c)*(v0* ((tprime - tprime0 + l/c)- sympy_sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2))/(sympy_sqrt(l**2+(v0* ((tprime - tprime0 + l/c)- sympy_sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
-	f = f0/(1+(v0/c)*(v0* ((tprime - tprime0)- sympy_sqrt((tprime - tprime0)**2-(1-v0**2/c**2)*((tprime - tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))/(sympy_sqrt(l**2+(v0* ((tprime - tprime0)- sympy_sqrt((tprime - tprime0)**2-(1-v0**2/c**2)*((tprime - tprime0)**2-l**2/c**2)))/(1-v0**2/c**2))**2)))
-	# Take the derivative of f with respect to each variable
-	for variable in [f0, v0, tprime0, l, c]:
-		df = sp.diff(f, variable)
-		print(f"Derivative of f with respect to {variable}:")
-		sp.pprint(df)
-		print("\n")
+# Default doppler shift parameters
+DEFAULTS = {
+    'f0': 150,
+    'tprime0': 120,
+    'c': 320,
+    'v0': 80,
+    'L': 4000,
+}
 
-def get_t(v0,l,c,tprime0,tpr):
-	t_array = []	
-	for tprime in tpr:
-		t = ((tprime - tprime0 + l/c)- np.sqrt((tprime - tprime0 + l/c)**2-(1-v0**2/c**2)*((tprime - tprime0 + l/c)**2-l**2/c**2)))/(1-v0**2/c**2)
-		t_array.append(t)
-	return t_array
+# Variables ranges for plotting differing results for changes in each variable
+VAR_RANGES = {
+    'base': np.arange(0, 241, 1),
+    'v0': np.arange(0, 200, 20),
+    'L': np.arange(0, 5000, 200),
+    'c': np.arange(200, 500, 5),
+    'tprime0': np.arange(0, 240, 20),
+    'f0': np.arange(0, 250, 20),
+}
 
-def get_t_org(v0,l,c,tprime0,tpr):
-	t_array = []	
-	for tprime in tpr:
-		t = ((tprime - tprime0)- np.sqrt((tprime-tprime0)**2-(1-v0**2/c**2)*((tprime-tprime0)**2-l**2/c**2)))/(1-v0**2/c**2)
-		t_array.append(t)
-	return t_array
-
-def get_f(v0,l,c,t_array,f0):
-	ft = []
-	for t in t_array:
-		ft0p = f0/(1+(v0/c)*(v0*t)/(np.sqrt(l**2+(v0*t)**2)))	
-		ft.append(ft0p)
-	return ft
-
-tpr = np.arange(0, 241, 1)
-
-f0_vary = np.arange(0, 250, 20)
-v0_vary = np.arange(0, 200, 20)
-tprime0_vary = np.arange(0, 240, 20)
-l_vary = np.arange(0, 5000, 200)
-c_vary = np.arange(295, 355, 5)
-c_vary = np.arange(200, 500, 5)
-f0 = 150
-tprime0 = 120
-c = 320
-v0 = 80
-l = 4000
-n = 1
-test = False
-if test:
-	plt.figure(figsize=(10, 6))
-
-	tprime = get_t(v0,l,c,tprime0,tpr)
-	ft = get_f(v0,l,c,tprime, f0)
-
-	plt.plot(tpr, ft, 'blue', linewidth=0.5, zorder=10)
-	plt.axvline(tprime0, c='blue', linewidth=0.5, zorder=10)
+# Time array for plotting
+time_receiver = VAR_RANGES['base']
 
 
-	tprime = get_t_org(v0,l,c,tprime0,tpr)
-	ft = get_f(v0,l,c,tprime, f0)
+def get_t(v0, L, c, tprime0, time_receiver, org=False):
+    """Calculate time in aircraft reference frame from 
+    spectrogram reference frame.
 
-	plt.plot(tpr, ft, 'red', linewidth=0.5, zorder=10)
-	plt.axvline(tprime0, c ='red', linewidth=0.5, zorder=10)
+    :type v0: numpy.int64 float
+    :param v0: Velocity of the aircraft
+    :type L: numpy.int64 float
+    :param L: Altitude of the aircraft
+    :type c: numpy.int64 float
+    :param c: Velocity of the wave propagation
+    :type tprime0: numpy.int64 float
+    :param tprime0: Time of closest approach in spectrogram reference frame
+    :type time_receiver: np.array float
+    :param time_receiver: Time array in spectrogram reference frame
+    :rtype: np.array
+    :return: Time array in aircraft reference frame
+    """
+    beta = v0/c
+    if org:
+        arg = time_receiver - tprime0
+    else:
+        arg = time_receiver - tprime0 + L/c
+    discriminant = arg**2 - (1 - beta**2) * (arg**2 - (L/c)**2)
+    return (arg - np.sqrt(discriminant)) / (1 - beta**2)
 
-	plt.show()
 
-fig, axs = plt.subplots(2, 3, figsize=(14, 10))
+def get_f(v0, L, c, t_array, f0):
+    """Calculate observed frequency (Doppler effect).
+
+    :type v0: numpy.int64 float
+    :param v0: Velocity of the aircraft
+    :type L: numpy.int64 float
+    :param L: Altitude of the aircraft
+    :type c: numpy.int64 float
+    :param c: Velocity of the wave propagation
+    :type t_array: np.array
+    :param t_array: Time array in aircraft reference frame
+    :type f0: numpy.int64 float
+    :param f0: Emitted frequency from aircraft
+    :rtype: np.array
+    :return: Frequency array of received frequency at seonsors corresponding 
+    to t_array
+    """
+    base = np.sqrt(L**2 + (v0 * t_array)**2)
+    base_checked = np.where(base != 0, base, 1e-10)
+    return f0 / (1 + (v0/c) * (v0*t_array) / base_checked)
+
+
+# Create subplots
+fig, axs = plt.subplots(2, 3, figsize=(11, 7), sharex=True, sharey=True)
 axs = axs.flatten()
-for n in range(6):
-	f0 = 150
-	tprime0 = 120 
-	c =  320
-	v0 = 80
-	l = 4000
-	t0 = tprime0 - l/c
-	tprime = get_t(v0, l, c, tprime0, tpr)
-	ft = get_f(v0, l, c, tprime, f0)
-	axs[n].plot(tpr, ft, 'k', linewidth=0.5, zorder=10)
-	axs[n].axvline(tprime0, c='k', linewidth=0.5, zorder=10)
-	if n == 0:
-		axs[n].set_title('Base case')
+cm = plt.cm.rainbow
 
-	elif n == 1:
-		axs[n].set_title('Varying v0')
-		norm = plt.Normalize(np.min(v0_vary), np.max(v0_vary))
-		cm = plt.cm.rainbow
-		for v0_val in v0_vary:
-			tprime = get_t(v0_val, l, c, tprime0, tpr)
-			ft = get_f(v0_val, l, c, tprime, f0)
-			axs[n].plot(tpr, ft, color=cm(norm(v0_val)), linewidth=0.5)
-			t0 = tprime0 - l/c
-			axs[n].axvline(t0, color=cm(norm(v0_val)), ls = '--', linewidth=0.5, zorder=10)
-		sm = mpl.cm.ScalarMappable(cmap=cm, norm=norm)
-		sm.set_array([])
-		cbar = plt.colorbar(sm, ax=axs[n], orientation='vertical', pad=0.02)
+# Plot for each variable
+var_names = list(VAR_RANGES.keys())
+for n, var_name in enumerate(var_names):
+    params = DEFAULTS.copy()
 
-	elif n == 2:
-		axs[n].set_title('Varying l')
-		norm = plt.Normalize(np.min(l_vary), np.max(l_vary))
-		cm = plt.cm.rainbow
-		for l_val in l_vary:
-			tprime = get_t(v0, l_val, c, tprime0, tpr)
-			ft = get_f(v0, l_val, c, tprime, f0)
-			axs[n].plot(tpr, ft, color=cm(norm(l_val)), linewidth=0.5)
-			
-		sm = mpl.cm.ScalarMappable(cmap=cm, norm=norm)
-		sm.set_array([])
-		cbar = plt.colorbar(sm, ax=axs[n], orientation='vertical', pad=0.02)
+    # Base plot with default parameters
+    tprime = get_t(params['v0'], params['L'], params['c'], 
+                params['tprime0'], time_receiver)
+    ft = get_f(params['v0'], params['L'], params['c'], tprime, params['f0'])
 
-	elif n == 3:
-		axs[n].set_title('Varying c')
-		norm = plt.Normalize(np.min(c_vary), np.max(c_vary))
-		cm = plt.cm.rainbow
-		for c_val in c_vary:
-			tprime = get_t(v0, l, c_val, tprime0, tpr)
-			ft = get_f(v0, l, c_val, tprime, f0)
-			t0 = tprime0 - l/c_val
-			axs[n].plot(tpr, ft, color=cm(norm(c_val)), linewidth=0.5)
-		sm = mpl.cm.ScalarMappable(cmap=cm, norm=norm)
-		sm.set_array([])
-		cbar = plt.colorbar(sm, ax=axs[n], orientation='vertical', pad=0.02)
+    axs[n].plot(time_receiver, ft, c='k', linewidth=0.5, zorder=10)
+    axs[n].axvline(params['tprime0'], c='k', linewidth=0.5, zorder=10)
+    axs[n].set_title(f'Varying {var_name}')
+    axs[n].set_ylim(100, 225)
+    axs[n].set_xlim(0, 240)
 
-	elif n == 4:
-		axs[n].set_title("Varying t0'")
-		norm = plt.Normalize(np.min(tprime0_vary), np.max(tprime0_vary))
-		cm = plt.cm.rainbow
-		for t0_val in tprime0_vary:
-			tprime = get_t(v0, l, c, t0_val, tpr)
-			ft = get_f(v0, l, c, tprime, f0)
-			axs[n].plot(tpr, ft, color=cm(norm(t0_val)), linewidth=0.5)
-		sm = mpl.cm.ScalarMappable(cmap=cm, norm=norm)
-		sm.set_array([])
-		cbar = plt.colorbar(sm, ax=axs[n], orientation='vertical', pad=0.02)
-		
-	elif n == 5:
-		axs[n].set_title('Varying f0')
-		norm = plt.Normalize(np.min(f0_vary), np.max(f0_vary))
-		cm = plt.cm.rainbow
-		for f0_val in f0_vary:
-			tprime = get_t(v0, l, c, tprime0, tpr)
-			ft = get_f(v0, l, c, tprime, f0_val)
-			axs[n].plot(tpr, ft, color=cm(norm(f0_val)), linewidth=0.5)
-		sm = mpl.cm.ScalarMappable(cmap=cm, norm=norm)
-		sm.set_array([])
-		cbar = plt.colorbar(sm, ax=axs[n], orientation='vertical', pad=0.02)
-	axs[n].set_ylim(50, 250)
-	axs[n].set_xlim(0, 240)
-	if n == 0 or n == 3:
-		axs[n].set_ylabel('Frequency (Hz)')
-	if n == 3 or n == 4 or n == 5:
-		axs[n].set_xlabel('Time (s)')
+    # Set labels
+    if n in [0, 3]:
+        axs[n].set_ylabel('Frequency (Hz)')
+    if n in [3, 4, 5]:
+        axs[n].set_xlabel('Time (s)')
 
+    # Skip variable plotting for base case
+    if n != 0:
+        # Add colorbar for each subplot except the first
+        var_values = VAR_RANGES[var_name]
+        norm = plt.Normalize(var_values.min(), var_values.max())
+        sm = mpl.cm.ScalarMappable(cmap=cm, norm=norm)
+        plt.colorbar(sm, ax=axs[n], orientation='vertical', pad=0.01, aspect=30)
+
+        # Plot for varying parameters 
+        for val in var_values:
+            params[var_name] = val
+            tprime = get_t(params['v0'], params['L'], params['c'], 
+                        params['tprime0'], time_receiver)
+            ft = get_f(params['v0'], params['L'], params['c'], tprime, 
+                    params['f0'])
+            axs[n].plot(time_receiver, ft, color=cm(norm(val)), linewidth=0.5)
 plt.tight_layout()
 plt.show()
