@@ -28,7 +28,7 @@ Next, to enter the repository:
 
 To create the conda environment and install dependencies:
 
-```conda env create environment.yml```
+```conda env create -f environment.yml```
 
 To enter this environment:
 
