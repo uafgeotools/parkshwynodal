@@ -23,10 +23,10 @@ from src.get_save_data import load_waveform
 from src.doppler_funcs import DopplerInversion as DI
 from src.fig_func import SpecPlot, GetPicks
 
-arrive_time = (UTCDateTime("2019-02-21T20:33:34") + 120).timestamp
 
-data, sample_rate, t_wf, title = load_waveform('1011', arrive_time, 
-                                               spec_window=120, component="Z")
+arrive_time = (UTCDateTime(2019, 2, 22, 19, 40, 0) + 1740).timestamp
+
+data, sample_rate, t_wf, title = load_waveform(1245, arrive_time, 40)
 
 # Compute spectrogram
 WIN_LEN = 1  # window length, in s
@@ -101,7 +101,8 @@ tobs, fobs, peaks_assos, fs_array = spec_load.auto_picks_full(
 
 mprior += [float(f) for f in fs_array]
 
-tobs, fobs, peaks_assos = spec_load.final_data(tobs, fobs, fs_array, peaks_assos)
+tobs, fobs, peaks_assos = spec_load.final_data(
+    tobs, fobs, fs_array, peaks_assos)
 
 # Final inversion using filtered picks
 sigma_prior = (

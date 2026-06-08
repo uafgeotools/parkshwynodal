@@ -1,10 +1,16 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+from pathlib import Path
+
+# --- Fix sys.path ---
+repo_path = Path(__file__).resolve().parents[2]
+if str(repo_path) not in sys.path:
+    sys.path.insert(0, str(repo_path))
+
+file_in = open(f'{repo_path}/input/node_crossings_db_UTM.txt','r')
 main_text = False
-#Update with path to your repository
-repo_path = './denali_parks_hwy_nodal/EXAMPLES/planes_flightradar/'
-file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 
 if main_text == True:
     jet = ['B737', 'B738', 'B739']
@@ -54,7 +60,7 @@ for eq in jet + Turboprop + piston + Heli:
     #Get overtone data for jets from the inversion database with the initial 
     # model calculated from groundtruth flight parameters
     if eq in jet:
-        file_jets = open(repo_path + 'output/GT_flight_param_inv_DB.txt', 'r')
+        file_jets = open(f'{repo_path}/output/Seppi_2025_results/GT_flight_param_inv_DB.txt', 'r')
         for line in file_jets:
             lines = line.split(',')
             flight_n = int(lines[1])
@@ -71,7 +77,7 @@ for eq in jet + Turboprop + piston + Heli:
     #Get overtone data for non-jets from the inversion database with the initial
     # model calculated only from the spectrograms
     else:
-        file_nonjets = open(repo_path + 'output/NGT_flight_param_inv_DB.txt', 'r')
+        file_nonjets = open(f'{repo_path}/output/Seppi_2025_results/NGT_flight_param_inv_DB.txt', 'r')
         for line in file_nonjets:
             lines = line.split(',')
             if lines[0] != eq or lines[-2] == "Forward Model":

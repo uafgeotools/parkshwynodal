@@ -1,10 +1,16 @@
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-repo_path = './denali_parks_hwy_nodal/EXAMPLES/planes_flightradar/'
-repo_path ="/Users/irseppi/REPOSITORIES/denali_parks_hwy_nodal/EXAMPLES/planes_flightradar/"
-approach_data = pd.read_csv(repo_path + 'input/node_crossings_db_UTM.txt', sep=",")
+from pathlib import Path
+
+# --- Fix sys.path ---
+repo_path = Path(__file__).resolve().parents[2]
+if str(repo_path) not in sys.path:
+    sys.path.insert(0, str(repo_path))
+
+approach_data = pd.read_csv(f'{repo_path}/input/node_crossings_db_UTM.txt', sep=",")
 flight_id = approach_data.iloc[:, 1]
 dist_m = approach_data.iloc[:, 4]
 alt = approach_data.iloc[:, 6]
@@ -12,11 +18,11 @@ speeds = approach_data.iloc[:, 7]
 sta_loc = approach_data.iloc[:, 9]
 time_in = approach_data.iloc[:, 5]
 
-seismo_data = pd.read_csv(repo_path + 'input/parkshwy_nodes.txt', sep="|")
+seismo_data = pd.read_csv(f'{repo_path}/input/parkshwy_nodes.txt', sep="|")
 stations = seismo_data['Station']
 elevations = seismo_data['Elevation']
 
-inversion_results = pd.read_csv(repo_path + 'output/NGT_flight_param_inv_DB.txt', sep=",")
+inversion_results = pd.read_csv(f'{repo_path}/output/Seppi_2025_results/NGT_flight_param_inv_DB.txt', sep=",")
 equipment = inversion_results['Equipment']
 closest_times = inversion_results['Closest_Approach_Timestamp']
 flight_numbers = inversion_results['Flight_Number']

@@ -1,9 +1,16 @@
-import matplotlib.pyplot as plt
+import sys
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import matplotlib.patheffects as patheffects
 
-file = pd.read_csv('./REPOSITORIES/denali_parks_hwy_nodal/output/NGT_flight_param_inv_DB.txt', sep=",")
+from pathlib import Path
+
+# --- Fix sys.path ---
+repo_path = Path(__file__).resolve().parents[3]
+if str(repo_path) not in sys.path:
+    sys.path.insert(0, str(repo_path))
+file = pd.read_csv(f'{repo_path}/output/Seppi_2025_results/NGT_flight_param_inv_DB.txt', sep=",")
 flight_nums = file['Flight_Number']
 freq_peaks = file['Meas_Source_Frequency_Array']
 varr_dict = file['Variance']
