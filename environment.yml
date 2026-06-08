@@ -1,4 +1,4 @@
-name: denalinodal
+name: doppler
 channels:
   - conda-forge
   - defaults
