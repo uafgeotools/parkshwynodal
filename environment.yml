@@ -5,19 +5,6 @@ channels:
 dependencies:
   - python=3.9
   - obspy
-  - jupyterlab
   - numpy
   - matplotlib
-  - cartopy
   - scipy
-  - tqdm
-  - pygmt
-  - geopandas
-  - mpmath 
-  - sympy
-  - ipywidgets
-  - jupyterlab_widgets
-  - fiona
-
-
-
