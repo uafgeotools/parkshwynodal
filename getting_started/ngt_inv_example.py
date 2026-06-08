@@ -1,61 +1,44 @@
-import obspy
-import sys
 import numpy as np
-from matplotlib import pyplot as plt
-from datetime import datetime, timezone
-from scipy.signal import spectrogram
+import sys
 from pathlib import Path
+from matplotlib import pyplot as plt
+from scipy.signal import spectrogram
 
-# Ensure repository root is on sys.path so local package 'src' can be imported
-repo_root = Path(__file__).resolve().parents[3]
+
+# --- Fix sys.path ---
+repo_root = Path(__file__).resolve().parents[2]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
-from src.doppler_funcs import calc_ft, invert_f
-from src.main_inv_fig_functions import  remove_median
 
-wave_form_data_path = "/scratch/naalexeev/NODAL/"
-c = 320 #Speed of sound in m/s
-start_time = 1550158642.26246 #Start time of spectrogram
+# --- NOW imports will work ---
+from src.doppler_funcs import calc_ft, invert_f, load_waveform
+from src.main_inv_fig_functions import remove_median
 
-#Extract time data 
-ht = datetime.fromtimestamp(start_time, tz=timezone.utc)                      
-h = ht.hour
-mins = ht.minute
-secs = ht.second
-month = ht.month
-day = ht.day
-h_u = str(h+1)
+STATION = 1173
+c = 320
+crossing_time = 1550158642.26246 + 120
 
-#load waveform data
-p = wave_form_data_path + "/2019-0"+str(month)+"-"+str(day)+"T"+str(h)+":00:00.000000Z.2019-0"+str(month)+"-"+str(day)+"T"+str(h_u)+":00:00.000000Z.1173.mseed"
-tr = obspy.read(p)
-tr[2].trim(tr[2].stats.starttime + (mins * 60) + secs , tr[2].stats.starttime + (mins * 60) + secs + 240)
-data = tr[2][:]
-fs = int(tr[2].stats.sampling_rate)
-title = f'{tr[2].stats.network}.{tr[2].stats.station}.{tr[2].stats.location}.{tr[2].stats.channel} − starting {tr[2].stats["starttime"]}'						
-t_wf = tr[2].times()
+data, fs, t_wf, title = load_waveform(STATION, crossing_time, spec_window=120)
 
 # Compute spectrogram
 frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=fs, noverlap=fs * .9, detrend = 'constant') 
 
-# Remove median background spectrum calulated for entire 340 sec window
 spec, MDF = remove_median(Sxx)
 
-#Get vmin and vmax of the center of the signal for consistent color scale
 middle_index =  len(times) // 2
 middle_column = spec[:, middle_index]
 vmin = 0  
 vmax = np.max(middle_column) 
 
-#Prepicked t' and F values to get prior model
 x = [112.48911983478979, 59.65932080234049, 186.52395930932946, 102.98341205040444, 120.34960896418536]
 y = [140.02964002964, 188.29218829218826, 93.7170937170937, 153.9234039234039, 128.81712881712878]
 
 coords = [(x[i], y[i]) for i in range(len(x))]
 coords_array = np.array(coords)
+fig_num = 5
 
 # Create a subplot for the visualization
-fig, ax = plt.subplots(5,1,figsize=(8/1.4, 14/1.4),sharex=False)
+fig, ax = plt.subplots(fig_num,1,figsize=(8/1.4, 14/1.4),sharex=False)
 cax = ax[0].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[0].axhline(y=coords_array[1,1], color='black', linestyle='--', linewidth=1)
 ax[0].axhline(y=coords_array[2,1], color='black', linestyle='--', linewidth=1)
@@ -63,7 +46,7 @@ ax[0].axhline(y=(coords_array[1,1]+coords_array[2,1])/2, color='red', linestyle=
 ax[0].axvline(x=coords_array[0,0], color='red', linestyle='--', linewidth=0.7)
 slope = (coords_array[4,1] - coords_array[3,1]) / (coords_array[4,0] - coords_array[3,0])
 
-# Add points at x=70 and x=150 using the slope for line extension
+# Add points at x=70 and x=150 using the slope
 y_70 = coords_array[3,1] + slope * (70 - coords_array[3,0])
 y_150 = coords_array[3,1] + slope * (150 - coords_array[3,0])
 ax[0].plot([70, 150], [y_70, y_150], color='blue', linestyle='--', linewidth=1, zorder=1)
@@ -76,8 +59,7 @@ ax[0].set_ylabel('Frequency (Hz)')
 ax[0].set_title("(a) data picks to get prior model", fontsize='small')
 
 cax = ax[1].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
-
-#Method to get initial model 
+#insert method to get initial model here
 f0 = ((coords_array[1,1]+coords_array[2,1])/2) * 0.84
 t0 = coords_array[0,0] 
 del_f = coords_array[1,1]-coords_array[2,1]
@@ -85,7 +67,6 @@ v0 = (c/del_f)*(np.sqrt((f0**2+del_f**2)) - f0)
 slope_t0prime = slope*((1-(v0/c)**2)**(-3/2))
 l = -(f0*v0**2/(c*slope_t0prime))
 
-#Plot initial model
 m0 = [f0, v0, l, t0, c]
 print('Initial model:', m0)
 ft = calc_ft(times, m0[3], m0[0], m0[1], m0[2], m0[4])
@@ -110,16 +91,13 @@ sigma_l = 10000
 sigma_t0 = 200
 sigma_c = 100
 sigma_prior = [sigma_f0, sigma_v0, sigma_l, sigma_t0, sigma_c]
-# First inversion using all 5 picked data
 m, covm,_, F_m = invert_f(m0, sigma_prior, coords_array, num_iterations=5)
 ft = calc_ft(times, m[3], m[0], m[1], m[2], m[4])
-#Plot model derived from all 5 picked data
+
 cax = ax[2].pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax[2].plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=1) 
 ax[2].set_ylabel('Frequency (Hz)')
 ax[2].set_title("(c) measured model => prior model", fontsize='small')
-
-#Create corridor around prior model and extract data within corridor
 peaks = []
 coord_inv = []
 upper_array = []
@@ -151,7 +129,6 @@ ax[3].plot(coord_inv_array[:, 0], np.array(upper_array), 'r', linewidth=1)
 ax[3].plot(coord_inv_array[:, 0], np.array(lower_array), 'r', linewidth=1)
 ax[3].set_title("(d) data extracted from model corridor (prior model \u00B1 10)", fontsize='small')
 
-#With all data extracted from corridor, do inversion and remove outliers
 prior_sigma = [10,30,600,30,80] #prior sigma values for f0, v0, l, t0, c
 m,_,_,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=3)
 
@@ -176,7 +153,8 @@ ax[3].set_ylabel('Frequency (Hz)')
 prior_sigma = [10,30,500,30,80] #prior sigma values for f0, v0, l, t0, c
 m,covm0,covm_norm,F_m = invert_f(m, prior_sigma, coord_inv_array, num_iterations=6, sigma=2)
 covm0 = np.sqrt(np.diag(covm0))
-
+print(covm0)
+print(np.sqrt(np.diag(covm)))
 f0 = m[0]
 v0 = m[1]
 l = m[2]
@@ -190,14 +168,13 @@ ax[4].set_ylabel('Frequency (Hz)')
 ax[4].set_title("(e) posterior model", fontsize='small')
 
 #make all axis tick labels smaller
-for i in range(5):
+for i in range(fig_num):
 	ax[i].tick_params(axis='both', which='major', labelsize='x-small')
 	ax[i].tick_params(axis='both', which='minor', labelsize='x-small')
-
 #make  the gap between subplots smaller
 plt.subplots_adjust(hspace=0.3)
-ax[4].set_xlabel('Time (s)')
+ax[fig_num-1].set_xlabel('Time (s)')
 plt.tight_layout()
-
+plt.show()
 fig.savefig("inversion_steps.jpg", dpi=600)
 plt.close()

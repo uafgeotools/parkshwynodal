@@ -1,10 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+import matplotlib.pyplot as plt
 
 main_text = False
-repo_path = '/..//parkshwynodal/'
-flightradar_path = '/../nodal_data/flightradar24/'
+#Update with path to your repository
+repo_path = './denali_parks_hwy_nodal/EXAMPLES/planes_flightradar/'
 file_in = open(repo_path + 'input/node_crossings_db_UTM.txt','r')
 
 if main_text == True:
@@ -20,12 +19,7 @@ else:
     Heli = []
 
 col_equip = []
-tail = []
-
-tail_num_dict = {}
 flight_num_dict = {}
-tail_flight_dict = {}
-
 #Get data from crossings database
 for text in file_in.readlines():
     lines = text.split(',')
@@ -34,35 +28,17 @@ for text in file_in.readlines():
     equip = lines[10]
     if equip not in jet + Turboprop + piston + Heli:
         continue
-    if equip not in tail_num_dict:
-        tail_num_dict[equip] = []
     if equip not in flight_num_dict:
         flight_num_dict[equip] = []
     if flight_num not in flight_num_dict[equip]:
         flight_num_dict[equip].extend([flight_num])
 
-    #Extract tailnumber for flightradar24 data
-    flight_data = pd.read_csv(flightradar_path + date + '_flights.csv', sep=",")
-    flight = flight_data['flight_id']
-    tailnumber = flight_data['aircraft_id']
-    for i,fly in enumerate(flight):
-        if float(fly) == float(flight_num):
-            col_equip.append(equip)
-            if int(tailnumber[i]) not in tail_num_dict[equip]:
-                tail_num_dict[equip].extend([int(tailnumber[i])])
-            if int(tailnumber[i]) not in tail_flight_dict:
-                tail_flight_dict[int(tailnumber[i])] = []
-            tail_flight_dict[int(tailnumber[i])].extend([int(flight_num)])
-            break
-file_in.close()
 
-file_jets = open(repo_path + 'output/GT_flight_param_inv_DB.txt', 'r')
-file_nonjets = open(repo_path + 'output/NGT_flight_param_inv_DB.txt', 'r')
+file_in.close()
 
 equip_overtone_dict = {}
 equip_count_dict = {}
 equip_diff_dict = {}
-tail_nums_inverted = {}
 line_count_dict = {}
 
 for eq in jet + Turboprop + piston + Heli:
@@ -70,13 +46,13 @@ for eq in jet + Turboprop + piston + Heli:
     count2 = 0
     equip_overtone_dict[eq] = []
     equip_count_dict[eq] = []
-    tail_nums_inverted[eq] = []
 
     for tt in col_equip:
         if tt == eq:
             count1 += 1
         
-    #Get overtone data for jets from the inversion database with the initial model calculated from groundtruth flight parameters
+    #Get overtone data for jets from the inversion database with the initial 
+    # model calculated from groundtruth flight parameters
     if eq in jet:
         file_jets = open(repo_path + 'output/GT_flight_param_inv_DB.txt', 'r')
         for line in file_jets:
@@ -85,24 +61,15 @@ for eq in jet + Turboprop + piston + Heli:
             if flight_n not in flight_num_dict[eq] or lines[-2] == "Forward Model":
                 continue
 
-            for tail_n, flight_numbers in  tail_flight_dict.items():
-                if int(flight_n) in flight_numbers:
-                    break
-                else:
-                    tail_n = None
-            if tail_n is None:
-                continue
-
             count2 += 1
             data = np.array(lines[9].strip('[]').split(' '), dtype=float)
 
-            if tail_n not in tail_nums_inverted[eq]:
-                tail_nums_inverted[eq].extend([tail_n])
             equip_overtone_dict[eq].extend(data)
         equip_count_dict[eq].extend([count1, count2])
         file_jets.close()
 
-    #Get overtone data for non-jets from the inversion database with the initial model calculated only from the spectrograms
+    #Get overtone data for non-jets from the inversion database with the initial
+    # model calculated only from the spectrograms
     else:
         file_nonjets = open(repo_path + 'output/NGT_flight_param_inv_DB.txt', 'r')
         for line in file_nonjets:
@@ -111,19 +78,10 @@ for eq in jet + Turboprop + piston + Heli:
                 continue
             flight_n = int(lines[2])
 
-            for tail_n, flight_numbers in  tail_flight_dict.items():
-                if flight_n in flight_numbers:
-                    break
-                else:
-                    tail_n = None
-            if tail_n is None:
-                continue
 
             count2 += 1
             data = np.array(lines[10].strip('[]').split(' '), dtype=float)
 
-            if tail_n not in tail_nums_inverted[eq]:
-                tail_nums_inverted[eq].extend([tail_n])
             equip_overtone_dict[eq].extend(data)
         equip_count_dict[eq].extend([count1, count2])
         file_nonjets.close()
@@ -218,20 +176,40 @@ if main_text == True:
             line_count = line_count_dict[equip]
 
         if i ==  len(jet) + len(Turboprop):
-            label_count = 'crossings: ' + str(equip_count[1]) + '/' + str(equip_count[0])
-            label_tail = 'tail numbers: '+ str(len(tail_nums_inverted[equip])) + '/' + str(len(tail_num_dict[equip])) 
+            label_count = f'crossings: {equip_count[1]}/{equip_count[0]}'
         else:
-            label_count = str(equip_count[1]) + '/' + str(equip_count[0])
-            label_tail = str(len(tail_nums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
+            label_count = f'{equip_count[1]}/{equip_count[0]}'
         if equip in jet:
             if i == 0:
                 ax[i, 2].set_title('Jet Aircraft', fontsize=title_size, fontweight='bold')
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
-            ax[i, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[i, 2].text(0.99, 0.95, equip , transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[i, 2].text(0.99, 0.85, label_count, transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[i, 2].text(0.99, 0.75, label_tail, transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[i, 2].text(0.99, 0.65, len(peaks), transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+            ax[i, 2].hist(peaks, 
+                          color='k', 
+                          bins=bins, 
+                          alpha=0.5, 
+                          edgecolor='black'
+                        )
+            ax[i, 2].text(0.99, 0.95, equip, 
+                          transform=ax[i, 2].transAxes, 
+                          fontsize=text_size, 
+                          va='top', 
+                          ha='right', 
+                          bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+            ax[i, 2].text(0.99, 0.85, label_count, 
+                          transform=ax[i, 2].transAxes, 
+                          fontsize=text_size, 
+                          va='top', 
+                          ha='right', 
+                          bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+            ax[i, 2].text(0.99, 0.65, len(peaks), 
+                          transform=ax[i, 2].transAxes, 
+                          fontsize=text_size, 
+                          va='top', 
+                          ha='right', 
+                          bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
             counts, _ = np.histogram(peaks, bins=bins)
             ax[i, 2].set_yticks([0,counts.max()])
             ax[i, 2].tick_params(axis='y', labelsize=tick_size)
@@ -239,37 +217,98 @@ if main_text == True:
         elif equip in Turboprop:
             idx = i - len(jet)
             if i == 8:
-                ax[0, 1].set_title('Turboprop Aircraft', fontsize=title_size, fontweight='bold')
+                ax[0, 1].set_title('Turboprop Aircraft',
+                                    fontsize=title_size,
+                                    fontweight='bold'
+                                )
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
-            ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[idx, 1].text(0.99, 0.95, equip , transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[idx, 1].text(0.99, 0.85, label_count, transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[idx, 1].text(0.99, 0.75, label_tail, transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[idx, 1].text(0.99, 0.65, len(peaks), transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+            ax[idx, 1].hist(peaks, 
+                            color='k', 
+                            bins=bins, 
+                            alpha=0.5, 
+                            edgecolor='black'
+                        )
+            ax[idx, 1].text(0.99, 0.95, equip, 
+                            transform=ax[idx, 1].transAxes, 
+                            fontsize=text_size, 
+                            va='top', 
+                            ha='right', 
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+            ax[idx, 1].text(0.99, 0.85, label_count, 
+                            transform=ax[idx, 1].transAxes, 
+                            fontsize=text_size, 
+                            va='top', 
+                            ha='right', 
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+            ax[idx, 1].text(0.99, 0.65, len(peaks), 
+                            transform=ax[idx, 1].transAxes, 
+                            fontsize=text_size, 
+                            va='top', 
+                            ha='right', 
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
             # Show one decimal if med is not an integer, else show ".0"
             med_display = f"{med:.1f}" if float(med).is_integer() else str(round(med, 1))
-            ax[idx, 1].text(
-                0.99, 0.55, med_display,
-                transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right',
-                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
-            )
+            ax[idx, 1].text(0.99, 0.55, med_display,
+                            transform=ax[idx, 1].transAxes, 
+                            fontsize=text_size, 
+                            va='top', 
+                            ha='right',
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
             for g in range(0,line_count):
-                ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
+                ax[idx, 1].axvline(x= (1 + g) * med, 
+                                   color = [0.0, 0.5, 1.0], 
+                                   ls = '--', 
+                                   zorder=0, 
+                                   linewidth=1
+                                )
                 if equip == 'DH8A':
-                    ax[idx, 1].axvline(x= (1 + g) * 15, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)
+                    ax[idx, 1].axvline(x= (1 + g) * 15,
+                                        color = [0.0, 0.5, 1.0], 
+                                        ls = '--', 
+                                        zorder=0, 
+                                        linewidth=1, 
+                                        alpha=0.3
+                                    )
                 elif equip == 'C208':
-                    ax[idx, 1].axvline(x= (1 + g) * 28.333, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1, alpha=0.3)    
+                    ax[idx, 1].axvline(x= (1 + g) * 28.333, 
+                                       color = [0.0, 0.5, 1.0], 
+                                       ls = '--', 
+                                       zorder=0, 
+                                       linewidth=1, 
+                                       alpha=0.3)    
             counts, _ = np.histogram(peaks, bins=bins)
             ax[idx, 1].set_yticks([0,counts.max()])
             ax[idx, 1].tick_params(axis='y', labelsize=tick_size)
             axes_with_data.add((idx, 1))
+
         elif equip in piston:
             idx = i - len(jet) - len(Turboprop)
             bins = np.arange(min(peaks), max(peaks) + 3, 3)
-            ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
-            ax[idx, 0].text(0.99, 0.95, equip , transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+            ax[idx, 0].hist(peaks, 
+                            color='k', 
+                            bins=bins, 
+                            alpha=0.5, 
+                            edgecolor='black'
+                        )
+            ax[idx, 0].text(0.99, 0.95, equip, 
+                            transform=ax[idx, 0].transAxes, 
+                            fontsize=text_size, 
+                            va='top', 
+                            ha='right', 
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+            ax[idx, 0].text(0.99, 0.85, label_count, 
+                            transform=ax[idx, 0].transAxes, 
+                            fontsize=text_size, 
+                            va='top', 
+                            ha='right', 
+                            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                        )
+
             if i == len(jet) + len(Turboprop):
                 ax[idx, 0].set_title('Piston Aircraft', fontsize=title_size, fontweight='bold')
                 ax[idx, 0].text(0.99, 0.65, 'f\u209B count: ' + str(len(peaks)), transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
@@ -290,7 +329,6 @@ if main_text == True:
             ax[-2, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[-2, 2].text(0.99, 0.95, equip , transform=ax[-2, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax[-2, 2].text(0.99, 0.85, label_count, transform=ax[-2, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            ax[-2, 2].text(0.99, 0.75, label_tail, transform=ax[-2, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax[-2, 2].text(0.99, 0.65, len(peaks), transform=ax[-2, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax[-2, 2].text(0.99, 0.55, round(med,1), transform=ax[-2, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
 
@@ -334,7 +372,6 @@ if main_text == False:
             med = equip_diff_dict[equip]
             line_count = line_count_dict[equip]
         label_count = str(equip_count[1]) + '/' + str(equip_count[0])
-        label_tail = str(len(tail_nums_inverted[equip])) + '/' + str(len(tail_num_dict[equip]))
         if equip in jet:
             if i == 0:
                 ax[i, 2].set_title('Jet Aircraft', fontsize=title_size, fontweight='bold')
@@ -342,7 +379,6 @@ if main_text == False:
             ax[i, 2].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[i, 2].text(0.99, 0.95, equip , transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[i, 2].text(0.99, 0.85, label_count, transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            ax[i, 2].text(0.99, 0.75, label_tail, transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[i, 2].text(0.99, 0.65, str(len(peaks)), transform=ax[i, 2].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             counts, _ = np.histogram(peaks, bins=bins)
             ax[i, 2].set_yticks([0,counts.max()])
@@ -355,7 +391,6 @@ if main_text == False:
             ax[idx, 1].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 1].text(0.99, 0.95, equip , transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.85, label_count, transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            ax[idx, 1].text(0.99, 0.75, label_tail, transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 1].text(0.99, 0.65, str(len(peaks)), transform=ax[idx, 1].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             for g in range(0,line_count):
                 ax[idx, 1].axvline(x= (1 + g) * med, color = [0.0, 0.5, 1.0], ls = '--', zorder=0, linewidth=1)
@@ -379,7 +414,6 @@ if main_text == False:
             ax[idx, 0].hist(peaks, color='k', bins=bins, alpha=0.5, edgecolor='black')
             ax[idx, 0].text(0.99, 0.95, equip , transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(0.99, 0.85, label_count, transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            ax[idx, 0].text(0.99, 0.75, label_tail, transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
             ax[idx, 0].text(
                 0.99, 0.65, str(len(peaks)),
                 transform=ax[idx, 0].transAxes, fontsize=text_size, va='top', ha='right',

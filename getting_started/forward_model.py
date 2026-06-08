@@ -8,7 +8,6 @@ on the observed frequency over time.
 """
 
 import numpy as np
-import sympy as sp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 

@@ -1,23 +1,25 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.signal import spectrogram
-from obspy.clients.fdsn import Client
+from pathlib import Path
 from obspy.core import UTCDateTime
+from scipy.signal import spectrogram
 from matplotlib.ticker import MaxNLocator
-from src.doppler_funcs import invert_f, calc_ft, full_inversion
+
+# --- Fix sys.path ---
+repo_root = Path(__file__).resolve().parents[1]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 from src.main_inv_fig_functions import remove_median, get_auto_picks_full
+from src.doppler_funcs import invert_f, calc_ft, full_inversion, load_waveform
 
 # Interactive picking of points on spectrogram for overtone curve
-def pick_points_on_spectrogram(
-        times, frequencies, spec, vmin, vmax, prompt, axvline=None
-):
+def pick_points_on_spectrogram(times, frequencies, spec, vmin, vmax, prompt, axvline=None):
     coords = []
     plt.figure()
-    plt.pcolormesh(
-        times, frequencies, spec, shading='gouraud', cmap='pink_r',
-        vmin=vmin, vmax=vmax
-    )
+    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
     if axvline is not None:
         plt.axvline(x=axvline, c='#377eb8', ls='--')
     def onclick(event):
@@ -31,15 +33,10 @@ def pick_points_on_spectrogram(
     return coords
 
 # Interactive picking of single points (overtone peaks)
-def pick_single_points(
-        times, frequencies, spec, vmin, vmax, prompt, axvline=None
-):
+def pick_single_points(times, frequencies, spec, vmin, vmax, prompt, axvline=None):
     peaks, freqpeak = [], []
     plt.figure()
-    plt.pcolormesh(
-        times, frequencies, spec, shading='gouraud', cmap='pink_r',
-        vmin=vmin, vmax=vmax
-    )
+    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
     if axvline is not None:
         plt.axvline(x=axvline, c='#377eb8', ls='--')
     def onclick(event):
@@ -57,10 +54,7 @@ def pick_single_points(
 def pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs):
     set_time = []
     plt.figure()
-    plt.pcolormesh(
-        times, frequencies, spec, shading='gouraud', cmap='pink_r',
-        vmin=vmin, vmax=vmax
-    )
+    plt.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
     plt.scatter(tobs, fobs, color='black', marker='x')
     def onclick(event):
         if event.xdata is not None:
@@ -72,32 +66,14 @@ def pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs):
     plt.show(block=True)
     return set_time
 
-# Download waveform data from IRIS PH5WS
-client = Client(
-    "http://service.iris.edu",
-    service_mappings={
-        "dataselect": "http://service.iris.edu/ph5ws/dataselect/1"
-    }
-)
-starttime = UTCDateTime("2019-02-21T20:33:34")
-endtime = UTCDateTime("2019-02-21T20:37:34")
-st = client.get_waveforms("ZE", "1011", "*", "DPZ", starttime, endtime)
-tr = st[0]
-data = tr.data
-t_wf = tr.times()
-fs = int(tr.stats.sampling_rate)
-title = (
-    f'{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.'
-    f'{tr.stats.channel} − starting {tr.stats["starttime"]}'
-)
+epoch_ts = (UTCDateTime(2019, 2, 22, 19, 40, 0) + 1740).timestamp
 
+data, fs, t_wf, title = load_waveform(1245, epoch_ts, 40)
+print(fs)
 # Compute spectrogram
 WIN_LEN = 1  # window length, in s
 NPER = int(WIN_LEN * fs)
-frequencies, times, Sxx = spectrogram(
-    data, fs, scaling='density', nperseg=NPER,
-    noverlap=int(NPER * .9), detrend='constant'
-)
+frequencies, times, Sxx = spectrogram(data, fs, scaling='density', nperseg=NPER, noverlap=int(NPER * .9), detrend='constant')
 
 spec, MDF = remove_median(Sxx)  # Remove median for better visualization
 middle_index = len(times) // 2
@@ -105,22 +81,18 @@ middle_column = spec[:, middle_index]
 vmin, vmax = 0, np.max(middle_column)
 
 # User picks overtone curve points
-print(
-    "Please pick the points on the spectrogram that correspond to the "
-    "primary overtone of the doppler curves."
-)
+print("Please pick the points on the spectrogram that correspond to the primary overtone of the doppler curves.")
 while True:
-    coords = pick_points_on_spectrogram(
-        times, frequencies, spec, vmin, vmax, "Pick overtone curve points"
-    )
+    coords = pick_points_on_spectrogram(times, frequencies, spec, vmin, vmax, "Pick overtone curve points")
     if input("Do you want to repick your points? (y or n)").lower() != 'y':
         break
 coords_array = np.array(coords)
 print(coords_array)
 
+
 # Estimate initial model parameters from picked points
-c = 320 #11.1  # Speed of sound (m/s)
-fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])
+c = 320 # Speed of sound (m/s)
+fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])  # Max/min frequency
 fm = (fa + fr) / 2
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
 f0, t0 = coords_array[closest_index, 1], coords_array[closest_index, 0]
@@ -130,13 +102,8 @@ for i, t in enumerate(coords_array[:, 0]):
         t_hold = abs(t - t0)
         second_index = i
 v0 = c * abs(fa - fr) / (2 * f0)  # Initial velocity estimate
-slope = (
-    (coords_array[closest_index, 1] - coords_array[second_index, 1]) /
-    (coords_array[closest_index, 0] - coords_array[second_index, 0])
-)
-l = -(
-    (f0 * v0 ** 2 / c) * (1 - (v0 / c) ** 2) ** (-3 / 2)
-) / slope  # Initial length estimate
+slope = (coords_array[closest_index, 1] - coords_array[second_index, 1]) / (coords_array[closest_index, 0] - coords_array[second_index, 0])
+l = -((f0 * v0 ** 2 / c) * (1 - (v0 / c) ** 2) ** (-3 / 2)) / slope  # Initial length estimate
 m0 = [f0, v0, l, t0, c]
 sigma_prior = [40, 1, 1, 200, 1]  # Initial prior uncertainties
 
@@ -151,35 +118,21 @@ v0, l, t0, c = m[1], m[2], m[3], m[4]
 mprior = [v0, l, t0, c]
 
 # User picks overtone peaks
-print(
-    "Please pick one point on each overtone, it does not have to be "
-    "at the center of the doppler."
-)
+print("Please pick one point on each overtone, it does not have to be at the center of the doppler.")
 while True:
-    peaks, freqpeak = pick_single_points(
-        times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=t0
-    )
+    peaks, freqpeak = pick_single_points(times, frequencies, spec, vmin, vmax, "Pick overtone peaks", axvline=t0)
     if input("Do you want to repick your points? (y or n)").lower() != 'y':
         break
 
 # Automatically associate picked peaks with overtone curves
 corridor_width = 10 if len(peaks) <= 15 else 5
-tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(
-    peaks, freqpeak, times, frequencies, spec, corridor_width, 
-    t0, v0, l, c, sigma_prior, vmax
-)
+tobs, fobs, peaks_assos, f0_array = get_auto_picks_full(peaks, freqpeak, times, frequencies, spec, corridor_width, t0, v0, l, c, sigma_prior, vmax)
 mprior += [float(f) for f in f0_array]
 
 # User picks time window for inversion
-print(
-    'Please pick two points on the spectrogram that correspond to the '
-    'start and end of the time window you want pull data from in the '
-    'inversion.'
-)
+print('Please pick two points on the spectrogram that correspond to the start and end of the time window you want pull data from in the inversion.')
 while True:
-    set_time = pick_time_window(
-        times, frequencies, spec, vmin, vmax, tobs, fobs
-    )
+    set_time = pick_time_window(times, frequencies, spec, vmin, vmax, tobs, fobs)
     if input("Do you want to repick your points? (y or n)").lower() != 'y':
         break
 start_time, end_time = set_time[:2]
@@ -200,14 +153,8 @@ peaks_assos = peak_ass
 tobs, fobs = ftobs, ffobs
 
 # Final inversion using filtered picks
-sigma_prior = (
-    [10, 125, 15000, 30, 100] if abs(slope) < 1
-    else [10, 30, 500, 30, 100]
-)
-m, covm0, covm, f0_array, F_m = full_inversion(
-    fobs, tobs, peaks_assos, mprior, sigma_prior,
-    num_iterations=2, sigma=3, off_diagonal=False
-)
+sigma_prior = [10, 125, 15000, 30, 100] if abs(slope) < 1 else [10, 30, 500, 30, 100]
+m, covm0, covm, f0_array, F_m = full_inversion(fobs, tobs, peaks_assos, mprior, sigma_prior, num_iterations=2, sigma=3, off_diagonal=False)
 v0, l, t0, c = m[0], m[1], m[2], m[3]
 Cpost, Cpost0 = np.sqrt(np.diag(covm)), np.sqrt(np.diag(covm0))
 
@@ -225,26 +172,17 @@ ax1.set_position([0.125, 0.6, 0.775, 0.3])
 ax1.set_ylabel('Counts')
 
 # Plot spectrogram and inversion results
-cax = ax2.pcolormesh(
-    times, frequencies, spec, shading='gouraud', cmap='pink_r',
-    vmin=vmin, vmax=vmax
-)
+cax = ax2.pcolormesh(times, frequencies, spec, shading='gouraud', cmap='pink_r', vmin=vmin, vmax=vmax)
 ax2.set_xlabel('Time (s)')
 t0prime = t0 + l/c
-ax2.axvline(
-    x=t0prime, c='#377eb8', ls='--', linewidth=0.5,
-    label="t\u2080' = " + "%.2f" % t0prime + ' s'
-)
-ax2.axvline(
-    x=t0, c='#e41a1c', ls='--', linewidth=0.7,
-    label="t\u2080 = " + "%.2f" % t0 + ' s'
-)
+ax2.axvline(x=t0prime, c = '#377eb8', ls = '--',linewidth=0.5,label= "t\u2080' = " + "%.2f" % t0prime +' s')
+ax2.axvline(x=t0, c = '#e41a1c', ls = '--', linewidth=0.7,label= "t\u2080 = " + "%.2f" % t0 +' s')
 f0lab = sorted(f0_array)
 for pp in range(len(f0_array)):
     f0 = f0_array[pp]
     ft = calc_ft(times, t0, f0, v0, l, c)
 
-    ax2.plot(times, ft, '#377eb8', ls=(0, (5, 20)), linewidth=0.7)
+    ax2.plot(times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7)
     ax2.scatter(t0prime, f0, color='black', marker='x', s=30, zorder=10)
 fss = 'x-small'
 
@@ -253,10 +191,7 @@ if len(f0lab) > 1:
     f_range = []
     NTRY = 1000
     for _ in range(NTRY):
-        ftry = [
-            f0_array[i - 4] + np.random.uniform(-Cpost0[i], Cpost0[i])
-            for i in range(4, len(Cpost0))
-        ]
+        ftry = [f0_array[i - 4] + np.random.uniform(-Cpost0[i], Cpost0[i]) for i in range(4, len(Cpost0))]
         ftry = np.sort(ftry)
         f1 = [ftry[g] - ftry[g - 1] for g in range(1, len(ftry))]
         f_range.append(np.nanmedian(f1))
@@ -267,10 +202,7 @@ else:
 
 # Format overtone frequencies for display
 if len(f0lab) > 10:
-    f0lab_lines = [
-        ', '.join([f"{f:.2f}" for f in f0lab[i:i + 10]])
-        for i in range(0, len(f0lab), 10)
-    ]
+    f0lab_lines = [', '.join([f"{f:.2f}" for f in f0lab[i:i + 10]]) for i in range(0, len(f0lab), 10)]
     f0lab_str = '[%s]' % (',\n'.join(f0lab_lines))
 else:
     f0lab_str = '[' + ', '.join([f"{f:.2f}" for f in f0lab]) + ']'
@@ -280,17 +212,11 @@ if isinstance(F_m, str):
     misfit_str = f"\n[{F_m}]"
 else:
     misfit_str = f"\nMisfit: {F_m:.4f}"
-df_str = (
-    f", df\u2080 = {med_df:.2f} \u00B1 {mad_df:.2f} Hz"
-    if med_df != "NaN" else ""
-)
+df_str = f", df\u2080 = {med_df:.2f} \u00B1 {mad_df:.2f} Hz" if med_df != "NaN" else ""
 ax2.set_title(
-    f"t\u2080'= {t0:.2f} \u00B1 {Cpost0[2]:.2f} s, "
-    f"v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
-    f"c = {c:.2f} \u00B1 {Cpost0[3]:.2f} m/s, "
-    f"l = {l:.2f} \u00B1 {Cpost0[1]:.2f} m, \n"
-    f"f\u2080 = {f0lab_str} \u00B1 {np.median(Cpost0[3:]):.2f} Hz"
-    f"{df_str}{misfit_str}",
+    f"t\u2080'= {t0:.2f} \u00B1 {Cpost0[2]:.2f} s, v\u2080 = {v0:.2f} \u00B1 {Cpost0[0]:.2f} m/s, "
+    f"c = {c:.2f} \u00B1 {Cpost0[3]:.2f} m/s, l = {l:.2f} \u00B1 {Cpost0[1]:.2f} m, \n"
+    f"f\u2080 = {f0lab_str} \u00B1 {np.median(Cpost0[3:]):.2f} Hz{df_str}{misfit_str}",
     fontsize=fss
 )
 ax2.legend(loc='upper right', fontsize='small')
@@ -318,9 +244,7 @@ ax4 = fig.add_axes([0.125, 0.11, 0.07, 0.35], sharey=ax2)
 ax4.plot(middle_column2, frequencies, c='#ff7f00')
 ax4.set_ylim(0, int(fs / 2))
 ax4.set_xlim(vmax2 * 1.1, vmin2)
-ax4.tick_params(
-    left=False, right=False, labelleft=False, labelbottom=False, bottom=False
-)
+ax4.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
 ax4.grid(axis='y')
 plt.show()
 plt.close()

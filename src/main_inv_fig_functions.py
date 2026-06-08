@@ -1,147 +1,11 @@
-import pyproj
+import gc
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatch
+
 from pathlib import Path
-from matplotlib.patches import Rectangle
 from scipy.signal import find_peaks
-from src.doppler_funcs import make_base_dir, calc_ft, calc_f0, invert_f
 from matplotlib.ticker import MaxNLocator
-import psutil
-import os 
-import gc
-################################################################################################################################################
-
-def plot_map(flight_utm_x_km, flight_utm_y_km, seismo_utm_x_km, seismo_utm_y_km, closest_time, d, index, flight_num, date, seismometer, closest_p, head, station):
-    """
-    Plot the flight path and seismometer locations on a map.
-
-    Args:
-        flight_utm_x_km (list): List of UTM x coordinates for the flight path.
-        flight_utm_y_km (list): List of UTM y coordinates for the flight path.
-        seismo_utm_x_km (list): List of UTM x coordinates for the seismometers.
-        seismo_utm_y_km (list): List of UTM y coordinates for the seismometers.
-        closest_time (str): The closest time to the seismometer.
-        d (float): Distance to the closest point in kilometers.
-        index (int): Index of the closest point in the flight path.
-        flight_num (int): Flight number.
-        date (str): Date of the flight.
-        seismometer (tuple): Coordinates of the seismometer.
-        closest_p (tuple): Coordinates of the closest point on the flight path.
-        head (list): List of headings for the flight path.
-        station (str): Station identifier.
-
-    Returns:
-        None
-    """
-
-    utm_proj = pyproj.Proj(proj='utm', zone='6', ellps='WGS84')
-
-    closest_x, closest_y = closest_p
-    min_lon = -150.7
-    max_lon = -147.3
-    min_lat = 62.2
-    max_lat = 65.3
-    lxmin,lymin = utm_proj(min_lon, min_lat)
-    lxmax, lymax = utm_proj(max_lon, max_lat)
-    y = [closest_y, seismometer[1]]
-    x = [closest_x, seismometer[0]]
-    yy = sum(y) / len(y)
-    xx = sum(x) / len(x)
-    
-    #set the size of the map depending on the distance
-    min_x = int(xx - 2)
-    max_x = int(xx + 2)
-    min_y = int(yy - 2)
-    max_y = int(yy + 2)
-    if d < 0.5:
-        min_x = (xx - 1)
-        max_x = (xx + 1)
-        min_y = (yy - 1)
-        max_y = (yy + 1)
-    if d < 0.1:
-        min_x = (xx - 0.1)
-        max_x = (xx + 0.1)
-        min_y = (yy - 0.1)
-        max_y = (yy + 0.1)
-
-    # Create a figure with two subplots side by side
-    fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 2]}) 
-    fig.subplots_adjust(wspace=1) 
-
-    # Ploting the entire array and the flight path
-    axs[0].set_xticks(np.arange(int(lxmin/1000)-7, int(lxmax/1000), 50))
-    axs[0].set_yticks(np.arange(int(lymin/1000)-1, int(lymax/1000), 50))
-    axs[0].set_xlabel('UTM Easting (km)')
-    axs[0].set_ylabel('UTM Northing (km)')
-    axs[0].set_aspect('equal')
-    axs[1].set_aspect('equal')
-
-    axs[0].grid(True, linestyle='dotted', color='gray')
-    axs[1].grid(True, linestyle='dotted', color='gray')
-
-    axs[0].scatter(seismo_utm_x_km, seismo_utm_y_km, c='#e41a1c', s = 3, label='seismometers')
-    axs[0].plot(flight_utm_x_km, flight_utm_y_km, '-', c='#377eb8', lw=1, ms = 1, label='flight path')
-
-    # Plot arrows indicating the direction of the flight path
-    for i in range(1, len(flight_utm_y_km)-1, int(len(flight_utm_y_km)/5)):
-        direction = np.arctan2(flight_utm_y_km[i+1] - flight_utm_y_km[i], flight_utm_x_km[i+1] - flight_utm_x_km[i])
-        if (flight_utm_x_km[i+1] - flight_utm_x_km[i]) == 0:
-            continue
-        m = (flight_utm_y_km[i+1] - flight_utm_y_km[i])/(flight_utm_x_km[i+1] - flight_utm_x_km[i])
-        if m == 0:
-            continue
-        b = flight_utm_y_km[i] - m*flight_utm_x_km[i]
-        axs[0].quiver((flight_utm_y_km[i]-b)/m, flight_utm_y_km[i], np.cos(direction), np.sin(direction), angles='xy', color='#377eb8', headwidth = 10)
-
-    # Set labels and title
-    axs[0].set_xlim(int(lxmin/1000), int(lxmax/1000))
-    axs[0].set_ylim(int(lymin/1000), int(lymax/1000))
-    axs[0].tick_params(axis='both', which='major', labelsize=9)
-
-    head_avg = (head[index]+head[index+1])/2
-    converted_angle = (90 - head_avg) % 360
-    heading = np.deg2rad(converted_angle)
-
-    # Define the UTM and latitude/longitude coordinate systems
-    rect = Rectangle((min_x, min_y), (max_x-min_x), (max_y-min_y), ls="-", lw = 1, ec = 'k', fc="none", zorder=2.5)
-    axs[0].add_patch(rect)
-
-    axs[1].set_xticks(np.arange(min_x, max_x, np.round(((max_x - min_x) / 4), 1)))
-    axs[1].set_yticks(np.arange(min_y, max_y, np.round(((max_y - min_y) / 4), 1)))
-
-    # Plot the zoomed in map on the second subplot
-    axs[1].plot(x,y, '--', c='#ff7f00')
-    axs[1].plot(flight_utm_x_km, flight_utm_y_km, c='#377eb8',linestyle ='dotted')
-    axs[1].scatter(flight_utm_x_km, flight_utm_y_km, c='#377eb8', s=20)
-
-    axs[1].set_xlim(min_x, max_x)
-    axs[1].set_ylim(min_y, max_y)
-
-    axs[1].tick_params(axis='both', which='major', labelsize=9)
-    axs[1].ticklabel_format(useOffset=False, style='plain')
-
-    direction = np.arctan2(flight_utm_y_km[index+1] - flight_utm_y_km[index], flight_utm_x_km[index+1] - flight_utm_x_km[index])
-    
-    axs[1].quiver(closest_x, closest_y, np.cos(direction), np.sin(direction), angles='xy', color='#377eb8', scale=8)
-
-    axs[1].quiver(closest_x, closest_y, np.cos(heading), np.sin(heading), angles='xy', scale = 8, color='#999999')
-    axs[1].scatter(closest_x, closest_y, c='#377eb8', s=50, zorder=3)
-    axs[1].scatter(seismometer[0], seismometer[1], c='#e41a1c', s=50, zorder=3)
-
-    axs[1].text(xx,yy, str(round(d, 2))+' km', fontsize=12, fontweight='bold')
-
-    # Draw dashed lines connecting the rectangle on the existing map to the zoomed-in map
-    con = mpatch.ConnectionPatch(xyA=(max_x, min_y), xyB=(min_x, min_y), coordsA="data", coordsB="data", axesA=axs[0], axesB=axs[1], color="black", linestyle="--")
-    fig.add_artist(con)
-    con = mpatch.ConnectionPatch(xyA=(max_x, max_y), xyB=(min_x, max_y), coordsA="data", coordsB="data", axesA=axs[0], axesB=axs[1], color="black", linestyle="--")
-    fig.add_artist(con)
-    plt.tight_layout(pad=0.2, rect=[0, 0, 1, 1])
-
-    BASE_DIR = '/../nodal_data/plane_info/map_all_UTM/' + str(date) + '/'+ str(flight_num) + '/' + str(station) + '/'
-    make_base_dir(BASE_DIR)
-    plt.savefig('/../nodal_data/plane_info/map_all_UTM/' + str(date) + '/' + str(flight_num) + '/' + str(station) + '/map_' + str(flight_num) + '_' + str(closest_time) + '.pdf', bbox_inches='tight',dpi=500)
-    plt.close()
+from src.doppler_funcs import make_base_dir, calc_ft, calc_f0, invert_f
 
 
 ##############################################################################################################################################################################################################
@@ -338,90 +202,6 @@ def plot_spectrogram(data, fs, t_wf, title, spec, times, frequencies, t0, v0, l,
     gc.collect()
 
     return qnum
-
-################################################################################################################################################################################################################################################################################################################################
-
-def plot_spectrum(spec, times, frequencies, t0, l, c, f0_array, fs, closest_time, sta, dir_name):
-    """
-    Plot and save the spectrum with markers for the overtones arriving at the station at t0.
-
-    Args:
-        spec (numpy.ndarray): The spectrum data.
-        times (array): The time array for the spectrogram.
-        frequencies (numpy.ndarray): The frequencies.
-        t0 (float): The time of aircraft closest approach relative to start of spectrogram.
-        l (float): The distance between closest approach of the aircraft and the station (d0).
-        c (float): The speed of sound.
-        f0_array (list): The list of frequencies.
-        fs (int): The sampling frequency.
-        closest_time (float): The time of closest approach of aircraft from flightradar, for saving the file.
-        sta (int or str): The station identifier.
-        dir_name (str): The directory name.
-
-    Returns:
-        None
-    """
-    t0prime = t0 + l/c
-
-    closest_index = np.argmin(np.abs(t0prime - times))
-    arrive_time = spec[:,closest_index]
-    for i in range(len(arrive_time)):
-        if arrive_time[i] < 0:
-            arrive_time[i] = 0
-
-    vmax = np.max(arrive_time)
-    fig = plt.figure(figsize=(10,6))
-    plt.grid()
-
-    plt.plot(frequencies, spec[:,closest_index], c='#377eb8')
-    freqp_hold = 0
-    ampp_hold = 0
-    for pp in range(len(f0_array)):
-        f0 = f0_array[pp]
-        if fs/2 < f0:
-            continue
-
-        if np.isnan(f0):
-            continue
-        if f0 > 250:
-            continue
-        
-        upper = int(f0 + 3)
-        lower = int(f0 - 3)
-        if upper > 250:
-            upper = 250
-
-        
-        tt = spec[lower:upper, closest_index]
-
-        ampp = np.max(tt)
-        freqp = np.argmax(tt)+lower
-        plt.scatter(freqp, ampp, color='black', marker='x', s=100, zorder=10)
-        #Shift text a bit for better visibility
-        #Depends on sampling rate
-        if freqp > 235:
-            if abs(freqp - freqp_hold) < 10 and ampp - ampp_hold < 2:
-                plt.text(freqp - 5, ampp + vmax*0.08, freqp, fontsize=17, ha='center', fontweight='bold')
-            else:
-                plt.text(freqp - 5, ampp + vmax*0.03, freqp, fontsize=17, ha='center', fontweight='bold')
-        else:
-            if abs(freqp - freqp_hold) < 10 and ampp - ampp_hold < 2:
-                plt.text(freqp, ampp + vmax*0.08, freqp, fontsize=17, ha='center', fontweight='bold')
-            else:
-                plt.text(freqp, ampp + vmax*0.03, freqp, fontsize=17, ha='center', fontweight='bold')
-        freqp_hold = freqp
-        ampp_hold = ampp
-    plt.xlim(0, int(fs/2))
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    plt.ylim(0, vmax*1.1)
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.xlabel('Frequency (Hz)', fontsize=17)
-    plt.ylabel("Relative Amplitude at t' = {:.2f} s (dB)".format(t0prime), fontsize=17)
-
-    fig.savefig(dir_name + '/'+str(sta)+'_' + str(closest_time) + '.png', dpi=500)
-    plt.close(fig)
-    gc.collect()
     
 ##############################################################################################################################################################################################################
 
@@ -448,7 +228,7 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
         list: The list of picks the user picked along the most prominent overtone.
     """
 
-    file_name = '/..//parkshwynodal/input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
+    file_name = './REPOSITORIES/denali_parks_hwy_nodal/input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
 
     if Path(file_name).exists():
         coords = []
@@ -481,7 +261,7 @@ def doppler_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta,
         return coords, start_time
     
     elif make_picks:
-        BASE_DIR = '/..//parkshwynodal/input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
+        BASE_DIR = './REPOSITORIES/denali_parks_hwy_nodal/input/data_picks/' + equip + '_data_picks/inversepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
         make_base_dir(BASE_DIR)
         pick_again = 'y'
         start_time = tarrive - spec_window
@@ -534,7 +314,7 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
         list: List of times corresponding to the picked frequencies.
     """
 
-    output2 = '/..//parkshwynodal/input/data_picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
+    output2 = './REPOSITORIES/denali_parks_hwy_nodal/input/data_picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
     if Path(output2).exists():
 
         peaks = []
@@ -548,7 +328,7 @@ def overtone_picks(spec, times, frequencies, vmin, vmax, month, day, flight, sta
         return peaks, freqpeak
     
     elif make_picks:
-        BASE_DIR = '/..//parkshwynodal/input/data_picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
+        BASE_DIR = './REPOSITORIES/denali_parks_hwy_nodal/input/data_picks/' + equip + '_data_picks/overtonepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/'
         make_base_dir(BASE_DIR)
         pick_again = 'y'
         while pick_again == 'y':
@@ -609,7 +389,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         list: The number of data points associated with each overtone, for indexing purposes.
     """
 
-    output3 = '/..//parkshwynodal/input/data_picks/' + equip + '_data_picks/timepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
+    output3 = './REPOSITORIES/denali_parks_hwy_nodal/input/data_picks/' + equip + '_data_picks/timepicks/2019-0' + str(month) + '-' + str(day) + '/' + str(flight) + '/' + str(sta) + '/' + str(closest_time) + '_' + str(flight) + '.csv'
     if Path(output3).exists():
         set_time = []
         with open(output3, 'r') as file:
@@ -644,7 +424,7 @@ def time_picks(month, day, flight, sta, equip, tobs, fobs, closest_time, start_t
         return tobs, fobs, peaks_assos
 
     elif make_picks:
-        BASE_DIR = '/..//parkshwynodal/input/data_picks/' + equip + '_data_picks/timepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'
+        BASE_DIR = './REPOSITORIES/denali_parks_hwy_nodal/input/data_picks/' + equip + '_data_picks/timepicks/2019-0'+str(month)+'-'+str(day)+'/'+str(flight)+'/'+str(sta)+'/'
         make_base_dir(BASE_DIR)
         
         pick_again = 'y'

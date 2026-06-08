@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.patheffects as patheffects
 
-file = pd.read_csv('/..//parkshwynodal/output/NGT_flight_param_inv_DB.txt', sep=",")
+file = pd.read_csv('./REPOSITORIES/denali_parks_hwy_nodal/output/NGT_flight_param_inv_DB.txt', sep=",")
 flight_nums = file['Flight_Number']
 freq_peaks = file['Meas_Source_Frequency_Array']
 varr_dict = file['Variance']

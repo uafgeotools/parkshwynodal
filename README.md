@@ -16,13 +16,13 @@ Most of the code is scripts that read in functions from doppler_funcs.py, contai
 
 ## Installation
 
-To download the parkshwynodal project code from your terminal, type this:
+To download the denali_parks_hwy_nodal project code from your terminal, type this:
 
-```git clone https://github.com/uafgeotools/parkshwynodal.git```
+```git clone https://github.com/uafgeotools/denali_parks_hwy_nodal.git```
 
 Next, to enter the repository:
 
-```cd parkshwynodal```
+```cd denali_parks_hwy_nodal```
 
 To create the conda environment and install dependencies:
 
