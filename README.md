@@ -32,7 +32,7 @@ To create the conda environment and install dependencies:
 
 To enter this environment:
 
-```conda activate denalinodal```
+```conda activate doppler```
 
 Once this is all done try running the sample script from your terminal:
 
