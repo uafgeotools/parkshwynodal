@@ -5,6 +5,8 @@
 
 Seppi, I., C. Tape, and D. Fee, 2025, [Classification of aircraft types using seismic data in Alaska](https://pubs.geoscienceworld.org/ssa/tsr/article/5/4/330/688104/Classification-of-Aircraft-Types-Using-Seismic), *The Seismic Record*.
 
+Note: Everything before commit 524eaa3 was compatible with the results from this paper.
+
 ## Example Data
 
 Between February 11th and March 26th of 2019 a set of 303 Fairfield Nodal 3C 5Hz sensors were deployed along the Parks Highway in south-central Alaska between the towns of Nenana (north) and Trapper Creek (south). A map of these can be found from the [FDSN network page](http://ds.iris.edu/gmap/#network=ZE&maxlat=64.8752&maxlon=-147.5002&minlat=62.227&minlon=-151.5871&drawingmode=box&planet=earth).
