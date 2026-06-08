@@ -5,7 +5,7 @@
 
 Seppi, I., C. Tape, and D. Fee, 2025, [Classification of aircraft types using seismic data in Alaska](https://pubs.geoscienceworld.org/ssa/tsr/article/5/4/330/688104/Classification-of-Aircraft-Types-Using-Seismic), *The Seismic Record*.
 
-Note: Everything before commit 524eaa3 was compatible with the results from this paper.
+Note: Release v1.0.0, everything before commit 524eaa3, is compatible with the results from this paper. Methods from this paper still apply to version v2.0.0.
 
 ## Example Data
 
