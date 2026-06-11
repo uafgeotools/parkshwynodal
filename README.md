@@ -42,7 +42,7 @@ Once this is all done try running the sample script from your terminal:
 
 ```python sample_inversion_script.py```
 
-A spectrogram should pop up and you can follow instructions printed in the terminal to select data points on the figure. You will need to confirm you want to keep the points you picked after closing the image or you will be prompted to repick them. Three images will pop up for you to pick data on and then a final example image should appear. After picking data the inversion results for each iteration will be printed in the terminal followed by misfit values at the end of each round of iteration. The final plot should look similar to the plot on the left side of the example data product below. The plot header and doppler estimation (blue curves) will vary depending on how the data was picked. 
+A spectrogram should pop up and you can follow instructions printed in the terminal to select data points on the figure. A black x should show up where you clicked. If it does not show up wait a bit and try again or close the window and respond in the trerminal with "y" to retry. You will need to confirm you want to keep the points you picked after closing the image or you will be prompted to repick them. Three images will pop up for you to pick data on and then a final example image should appear. After picking data the inversion results for each iteration will be printed in the terminal followed by misfit values at the end of each round of iteration. The final plot should look similar to the plot on the left side of the example data product below. The plot header and doppler estimation (blue curves) will vary depending on how the data was picked. 
 
 ## Example Data product
 ![stations](/input/sample_image.png)
