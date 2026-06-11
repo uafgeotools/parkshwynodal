@@ -124,7 +124,7 @@ class SpecPlot:
 
         for pp in range(len(fs_array)):
             fs = fs_array[pp]
-            doppler_calc = DopplerCalc(t0, v, d0, c)
+            doppler_calc = DopplerCalc(v, d0, t0, c)
             ft = doppler_calc.calc_ft(self.times, fs)
 
             ax2.plot(
@@ -314,7 +314,7 @@ class GetPicks(SpecPlot):
             "at the center of the doppler."
         )
         while True:
-            peaks, freqpeak = [], []
+            peaks, time_peaks = [], []
             plt.figure()
             plt.pcolormesh(
                 self.times, self.frequencies, self.spec, shading='gouraud', 
@@ -325,7 +325,7 @@ class GetPicks(SpecPlot):
             def onclick(event):
                 if event.xdata is not None and event.ydata is not None:
                     peaks.append(event.ydata)
-                    freqpeak.append(event.xdata)
+                    time_peaks.append(event.xdata)
                     plt.scatter(
                         event.xdata, event.ydata, color='black', marker='x'
                         )
@@ -335,7 +335,7 @@ class GetPicks(SpecPlot):
             plt.show(block=True)
             if input("Do you want to repick your points? (y or n)").lower() != 'y':
                 break
-        return peaks, freqpeak
+        return peaks, time_peaks
 
 
     def time_window_points(self, tobs, fobs):
@@ -492,24 +492,24 @@ class GetPicks(SpecPlot):
         if Path(f'{BASE_DIR}/{file_name}').exists():
 
             peaks = []
-            freqpeak = []
+            time_peaks = []
             with open(f'{BASE_DIR}/{file_name}', 'r') as file:
                 for line in file:
                     pick_data = line.split(',')
                     peaks.append(float(pick_data[1]))
-                    freqpeak.append(float(pick_data[0]))
+                    time_peaks.append(float(pick_data[0]))
             file.close()  
-            return peaks, freqpeak
-        
+            return peaks, time_peaks
+
         elif self.make_picks:
-            peaks, freqpeak = self.overtone_points(axvline=t0)
+            peaks, time_peaks = self.overtone_points(axvline=t0)
             if self.save_picks:
                 make_base_dir(BASE_DIR)
                 with open(f'{BASE_DIR}/{file_name}', 'w') as file:
-                    for p, f in zip(peaks, freqpeak):
+                    for p, f in zip(peaks, time_peaks):
                         file.write(f'{f},{p},\n')
                 file.close()
-            return peaks, freqpeak
+            return peaks, time_peaks
         else:
             return [], []
         
@@ -550,16 +550,23 @@ class GetPicks(SpecPlot):
         for pp in range(len(peaks)):
             tprime = time_peaks[pp]
             ft0p = peaks[pp]
-            doppler_calc = DopplerCalc(t0, v, d0, c)
+
+            doppler_calc = DopplerCalc(v, d0, t0, c)
             fs = doppler_calc.calc_fs(tprime, ft0p)
             fs_array.append(fs)
 
             maxfreq = []
             coord_inv = []
             ttt = []
-
-            ft = doppler_calc.calc_ft(self.times)
-
+            print(fs)
+            ft = doppler_calc.calc_ft(self.times, fs)
+            plt.figure()
+            plt.pcolormesh(
+                self.times, self.frequencies, self.spec, shading='gouraud', 
+                cmap='pink_r',vmin=self.vmin, vmax=self.vmax
+            )
+            plt.scatter(self.times, ft, color='black', marker='x')
+            plt.show()
             for t_f in range(len(self.times)):
 
                 upper = int(ft[t_f] + corridor_width)
@@ -606,7 +613,7 @@ class GetPicks(SpecPlot):
                                             [len(coord_inv_array[:,1])]
                                             )
                 doppler_calc = DopplerCalc(
-                                    mtest[2], mtest[0], mtest[1], mtest[3]
+                                    mtest[0], mtest[1], mtest[2], mtest[3]
                                     )
                 ft = doppler_calc.calc_ft(ttt, mtest[4])
                 delf = np.array(ft) - np.array(maxfreq)
@@ -653,7 +660,7 @@ class GetPicks(SpecPlot):
                 for indexing purposes.
         """
 
-        if Path(f'{BASE_DIR}/{file_name}').exists():
+        if file_name is not None and Path(f'{BASE_DIR}/{file_name}').exists():
             set_time = []
             with open(f'{BASE_DIR}/{file_name}', 'r') as file:
                 for line in file:
