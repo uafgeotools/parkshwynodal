@@ -24,7 +24,7 @@ To download the denali_parks_hwy_nodal project code from your terminal, type thi
 
 Next, to enter the repository:
 
-```cd denali_parks_hwy_nodal```
+```cd parkshwynodal```
 
 To create the conda environment and install dependencies:
 
