@@ -91,12 +91,12 @@ m, _, _, _, F_m = aircraft_inversion.full_inversion(
 v, d0, t0, c = m[0], m[1], m[2], m[3]
 mprior = [v, d0, t0, c]
 
-peaks, freqpeak = spec_load.overtone_points(axvline=t0)
+peaks, time_peak = spec_load.overtone_points(axvline=t0)
 
 # Automatically associate picked peaks with overtone curves
 corridor_width = 10 if len(peaks) <= 15 else 5
 tobs, fobs, peaks_assos, fs_array = spec_load.auto_picks_full(
-    peaks, freqpeak, corridor_width, t0, v, d0, c, sigma_prior
+    peaks, time_peak, corridor_width, t0, v, d0, c, sigma_prior
     )
 
 mprior += [float(f) for f in fs_array]
