@@ -226,7 +226,7 @@ class DopplerInversion(DopplerCalc):
 		tuple: A tuple containing the derivatives of f with respect to fs, v, 
 			d0, t0 and c.
 		"""
-		
+
 		fs = self.source_frequencies
 		v = self.source_speed
 		d0 = self.closest_approach_dist
@@ -368,7 +368,7 @@ class DopplerInversion(DopplerCalc):
 
 		Returns:
 			mnew (numpy.ndarray): The final inverted parameters for the doppler
-				function.
+				function. [v, d0, t0, c, fs_array]
 			Cpost0 (numpy.ndarray): The posterior covariance matrix.
 			Cpost (numpy.ndarray): The posterior covariance matrix scaled.
 			fs_array (numpy.ndarray): The inverted array of the fundamental 
