@@ -560,13 +560,7 @@ class GetPicks(SpecPlot):
             ttt = []
             print(fs)
             ft = doppler_calc.calc_ft(self.times, fs)
-            plt.figure()
-            plt.pcolormesh(
-                self.times, self.frequencies, self.spec, shading='gouraud', 
-                cmap='pink_r',vmin=self.vmin, vmax=self.vmax
-            )
-            plt.scatter(self.times, ft, color='black', marker='x')
-            plt.show()
+ 
             for t_f in range(len(self.times)):
 
                 upper = int(ft[t_f] + corridor_width)
