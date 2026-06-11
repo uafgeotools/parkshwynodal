@@ -18,7 +18,7 @@ Most of the code is scripts that read in classes from doppler_funcs.py, containi
 
 ## Installation
 
-To download the denali_parks_hwy_nodal project code from your terminal, type this:
+To download the parkshwynodal project code from your terminal, type this:
 
 ```git clone https://github.com/uafgeotools/parkshwynodal.git```
 
