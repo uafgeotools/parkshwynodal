@@ -42,6 +42,8 @@ A spectrogram should pop up and you can follow instructions printed in the termi
 
 Spectrograms of any data type containing a moving source, approximatly following a linear path, and a doppler curve should be able to use this code.
 
+Examples of how the inversion results can be visualized within a dataset are in the ```/EXAMPLES/post_inv_plots/``` folder. These are all results from Seppi et al., 2025.
+
 ## Example Data product
 ![stations](/input/sample_image.png)
 
