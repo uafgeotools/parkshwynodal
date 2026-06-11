@@ -11,6 +11,7 @@ from src.doppler_funcs import DopplerCalc, DopplerInversion
 class SpecPlot:
     def __init__(self, Sxx, sampling_rate, t_wf, data, times, frequencies, 
                  tarrive, spec_window=120):
+        
         self.Sxx = Sxx
         self.sampling_rate = sampling_rate
         self.t_wf = t_wf
@@ -54,8 +55,8 @@ class SpecPlot:
                         plot_show=True, gt = True):
         """
         Plot and save the waveform, unfiltered, and the spectrogram of the given 
-        data. Include the estimated curve using the final model parameters outputs 
-        from the inversions.
+        data. Include the estimated curve using the final model parameters 
+        outputs from the inversions.
 
         Args:
             data (np.ndarray): The waveform data.
@@ -79,11 +80,9 @@ class SpecPlot:
                 If None, the plot will not be saved. Defaults to None.
             plot_show (bool): If True, show the plot and ask user to provide a 
                 quality number. If False, save the plot without showing it. 
-            gt (bool): If True, the ground truth is used for the initial model in 
-                the inversion.
+            gt (bool): If True, the ground truth is used for the initial model 
+                in the inversion.
 
-        Returns:
-            str: The user assigned quality number.
         """
         print('Plotting spectrogram...')
         t0prime = t0 + d0/c
@@ -111,8 +110,9 @@ class SpecPlot:
 
         # Plot spectrogram
         cax = ax2.pcolormesh(
-            self.times, self.frequencies, self.spec, shading='gouraud', cmap='pink_r', vmin=vmin, 
-            vmax=vmax)		
+            self.times, self.frequencies, self.spec, shading='gouraud', 
+            cmap='pink_r', vmin=vmin, vmax=vmax
+            )		
         ax2.set_xlabel('Time (s)')
 
         ax2.axvline(
@@ -127,7 +127,9 @@ class SpecPlot:
             doppler_calc = DopplerCalc(t0, v, d0, c)
             ft = doppler_calc.calc_ft(self.times, fs)
 
-            ax2.plot(self.times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7)
+            ax2.plot(
+                self.times, ft, '#377eb8', ls = (0,(5,20)), linewidth=0.7
+                )
             ax2.scatter(t0prime, fs, color='black', marker='x', s=30, zorder=10)
 
         text_size = 'x-small'
@@ -256,18 +258,12 @@ class SpecPlot:
 
         if plot_show:
             plt.show()     
-            qnum = input(
-                'What quality number would you give this?(first num for data ' \
-                'quality(0-3), second for ability to fit model to data(0-1))')
-        else:
-            qnum = '__'
+
         if file_name is not None:
             print('Saving figure to:', file_name)
             fig.savefig(file_name, dpi=600)
         plt.close(fig)
         gc.collect()
-
-        return qnum
 
 
 class GetPicks(SpecPlot):
@@ -376,8 +372,8 @@ class GetPicks(SpecPlot):
 
     def single_doppler_data(self, file_name, BASE_DIR):
         """
-        Pick the points for the doppler shift. Specific to Seppi 2025 data structure
-        and flightradar25 information needed.
+        Pick the points for the doppler shift. Specific to Seppi 2025 data 
+        structure and flightradar25 information needed.
 
         Args:
             spec (numpy.ndarray): The spectrogram data.
@@ -395,11 +391,12 @@ class GetPicks(SpecPlot):
             closest_time (float): The time of closest approach.
             start_time (float): The start time of the spectrogram, to save for 
                 future reference on plotting the spectrogram.
-            make_picks (bool): If you come to this function and no picks exist, it 
-                will allow you to make new picks.
+            make_picks (bool): If you come to this function and no picks exist, 
+                it will allow you to make new picks.
 
         Returns:
-            list: The list of picks the user picked along the most prominent overtone.
+            list: The list of picks the user picked along the most prominent 
+                overtone.
         """
 
         if Path(f'{BASE_DIR}/{file_name}').exists():
@@ -413,16 +410,18 @@ class GetPicks(SpecPlot):
                 else:
                     plt.figure()
                     plt.pcolormesh(
-                        self.times, self.frequencies, self.spec, shading='gouraud', cmap='pink_r', 
-                        vmin=self.vmin, vmax=self.vmax)
+                        self.times, self.frequencies, self.spec, 
+                        shading='gouraud', cmap='pink_r', vmin=self.vmin, 
+                        vmax=self.vmax
+                        )
                     plt.scatter(
                         [coord[0] for coord in coords], 
                         [coord[1] for coord in coords], 
                         color='black', marker='x')
                     plt.show()
                     correct_time = input(
-                        "No start time found in file. Do your picks line up with " \
-                        "this signal?(y/n): ")
+                        "No start time found in file. Do your picks line" \
+                        " up with this signal?(y/n): ")
                     if correct_time == 'y': 
                         start_time = self.tarrive - self.spec_window
                         # Rewrite file with start_time as third column 
@@ -456,7 +455,7 @@ class GetPicks(SpecPlot):
         else:
             return [], None
 
-    ##############################################################################################################################################################################################################
+    ############################################################################
 
     def overtone_data(self, t0, file_name, BASE_DIR):
         """
@@ -480,7 +479,8 @@ class GetPicks(SpecPlot):
             start_time (float): The start time of the spectrogram, to save for 
                 future reference on plotting the spectrogram.
             t0 (float): The estimated acoustic wave arrival time.
-            tarrive (float): The initial calculated time of acoustic wave arrival.
+            tarrive (float): The initial calculated time of acoustic wave 
+                arrival.
             make_picks (bool): If you come to this function and no picks exist,     
                 it will allow you to make new picks.
 
@@ -512,90 +512,8 @@ class GetPicks(SpecPlot):
             return peaks, freqpeak
         else:
             return [], []
-
-    ##############################################################################################################################################################################################################
-
-    def final_data(self, tobs, fobs, fs_array, peaks_assos, file_name=None, BASE_DIR=None):
-        """
-        Pick the points for the time shift. Specific to Seppi 2025 data structure
-        and flightradar25 information needed.
-
-        Args:
-            tobs (list): The time array.
-            fobs (list): The frequency array.
-            fs_array (list): The sampling frequency array.
-            peaks_assos (list or bool): The number of peaks associated with 
-                each overtone.
-            file_name (str): The file path to save picks.
-            BASE_DIR (str): The base directory path.
-
-        Returns:
-            list: The time array, including data for all overtones.
-            list: The frequency array, including data for all overtones.
-            list: The number of data points associated with each overtone,  
-                for indexing purposes.
-        """
-
-        if Path(f'{BASE_DIR}/{file_name}').exists():
-            set_time = []
-            with open(f'{BASE_DIR}/{file_name}', 'r') as file:
-                for line in file:
-                    pick_data = line.split(',')
-                    set_time.append(float(pick_data[0]))
-            file.close()  
-            if len(set_time) <= 1:
-                return tobs, fobs, peaks_assos
-            s_time = set_time[0]
-            e_time = set_time[1]
-            ftobs = []
-            ffobs = []
         
-            peak_ass = []
-            cum = 0
-            
-            for p in range(len(fs_array)):
-                count = 0
-                for j in range(cum,cum+peaks_assos[p]):
-                    if tobs[j] >= s_time and tobs[j] <= e_time:
-                        ftobs.append(tobs[j])
-                        ffobs.append(fobs[j])
-                        count += 1
-                cum = cum + peaks_assos[p]
-            
-                peak_ass.append(count)
-            peaks_assos = peak_ass
-            tobs = ftobs
-            fobs = ffobs
-
-            return tobs, fobs, peaks_assos
-
-        elif self.make_picks:
-            start_time, end_time = self.time_window_points(tobs, fobs)
-            if self.save_picks:
-                make_base_dir(BASE_DIR)
-                with open(f'{BASE_DIR}/{file_name}', 'w') as file:
-                    for tt in [start_time, end_time]:
-                        file.write(f'{tt},\n')
-                file.close()
-
-            # Filter picks to only those within the selected time window
-            ftobs, ffobs, peak_ass = [], [], []
-            cum = 0
-            for p in range(len(fs_array)):
-                count = 0
-                for j in range(cum, cum + peaks_assos[p]):
-                    if start_time <= tobs[j] <= end_time:
-                        ftobs.append(tobs[j])
-                        ffobs.append(fobs[j])
-                        count += 1
-                cum += peaks_assos[p]
-                peak_ass.append(count)
-            peaks_assos = peak_ass
-            tobs, fobs = ftobs, ffobs
-            return ftobs, ffobs, peaks_assos
-
-        else:
-            return tobs, fobs, peaks_assos
+    ############################################################################
 
     def auto_picks_full(self, peaks, time_peaks, corridor_width, t0, v, d0, 
                             c, sigma_prior):
@@ -684,8 +602,12 @@ class GetPicks(SpecPlot):
                 invert_f = DopplerInversion(coord_inv_array[:,1], 
                                             coord_inv_array[:,0], mtest, 
                                             sigma_prior, num_iterations=2)
-                mtest,_,_,_,_ = invert_f.full_inversion([len(coord_inv_array[:,1])])
-                doppler_calc = DopplerCalc(mtest[2], mtest[0], mtest[1], mtest[3])
+                mtest,_,_,_,_ = invert_f.full_inversion(
+                                            [len(coord_inv_array[:,1])]
+                                            )
+                doppler_calc = DopplerCalc(
+                                    mtest[2], mtest[0], mtest[1], mtest[3]
+                                    )
                 ft = doppler_calc.calc_ft(ttt, mtest[4])
                 delf = np.array(ft) - np.array(maxfreq)
 
@@ -705,3 +627,89 @@ class GetPicks(SpecPlot):
                 peaks_assos.append(0)
 
         return tobs, fobs, peaks_assos, fs_array
+    
+    ############################################################################
+
+    def final_data(self, tobs, fobs, fs_array, peaks_assos, file_name=None, 
+                   BASE_DIR=None):
+        """
+        Pick the points for the time window used for the inversion. 
+        Specific to Seppi 2025 data structure and flightradar25 information 
+        needed.
+
+        Args:
+            tobs (list): The time array.
+            fobs (list): The frequency array.
+            fs_array (list): The sampling frequency array.
+            peaks_assos (list or bool): The number of peaks associated with 
+                each overtone.
+            file_name (str): The file path to save picks.
+            BASE_DIR (str): The base directory path.
+
+        Returns:
+            list: The time array, including data for all overtones.
+            list: The frequency array, including data for all overtones.
+            list: The number of data points associated with each overtone,  
+                for indexing purposes.
+        """
+
+        if Path(f'{BASE_DIR}/{file_name}').exists():
+            set_time = []
+            with open(f'{BASE_DIR}/{file_name}', 'r') as file:
+                for line in file:
+                    pick_data = line.split(',')
+                    set_time.append(float(pick_data[0]))
+            file.close()  
+            if len(set_time) <= 1:
+                return tobs, fobs, peaks_assos
+            s_time = set_time[0]
+            e_time = set_time[1]
+            ftobs = []
+            ffobs = []
+        
+            peak_ass = []
+            cum = 0
+            
+            for p in range(len(fs_array)):
+                count = 0
+                for j in range(cum,cum+peaks_assos[p]):
+                    if tobs[j] >= s_time and tobs[j] <= e_time:
+                        ftobs.append(tobs[j])
+                        ffobs.append(fobs[j])
+                        count += 1
+                cum = cum + peaks_assos[p]
+            
+                peak_ass.append(count)
+            peaks_assos = peak_ass
+            tobs = ftobs
+            fobs = ffobs
+
+            return tobs, fobs, peaks_assos
+
+        elif self.make_picks:
+            start_time, end_time = self.time_window_points(tobs, fobs)
+            if self.save_picks:
+                make_base_dir(BASE_DIR)
+                with open(f'{BASE_DIR}/{file_name}', 'w') as file:
+                    for tt in [start_time, end_time]:
+                        file.write(f'{tt},\n')
+                file.close()
+
+            # Filter picks to only those within the selected time window
+            ftobs, ffobs, peak_ass = [], [], []
+            cum = 0
+            for p in range(len(fs_array)):
+                count = 0
+                for j in range(cum, cum + peaks_assos[p]):
+                    if start_time <= tobs[j] <= end_time:
+                        ftobs.append(tobs[j])
+                        ffobs.append(fobs[j])
+                        count += 1
+                cum += peaks_assos[p]
+                peak_ass.append(count)
+            peaks_assos = peak_ass
+            tobs, fobs = ftobs, ffobs
+            return ftobs, ffobs, peaks_assos
+
+        else:
+            return tobs, fobs, peaks_assos

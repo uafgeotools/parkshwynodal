@@ -4,12 +4,43 @@ import numpy.linalg as la
 
 class DopplerCalc:
 	def __init__(self, v, d0, t0, c):
+		"""
+		Initialize the DopplerCalc class with the given parameters.
+
+		Parameters:
+		v (float): Velocity of the aircraft.
+		d0 (float): Distance between the station and the aircraft at the 
+			closest approach.
+		t0 (float): Time at which the central frequency of the overtones 
+			occur.
+		c (float): Speed of sound.
+		"""
+
 		self.t0 = t0
 		self.v = v
 		self.d0 = d0
 		self.c = c
 		
 	def calc_t(self, tprime):
+		"""
+		Calculate time conversion from tprime to t using the model parameters.
+
+		Parameters:
+		tprime (float): Time at which a frequency (ft0p) is observed on the 
+			station.
+		t0 (float):  The time at which the central frequency of the overtones 
+			occur.
+		ft0p (float): Frequency recorded on the seismometer, picked from the 
+			overtone doppler curve.
+		v (float): Velocity of the aircraft.
+		d0 (float): Distance between the station and the aircraft at the 
+			closest approach.
+		c (float): Speed of sound.
+
+		Returns:
+		t (float): Converted time value.
+		"""
+
 		t0 = self.t0
 		v = self.v
 		d0 = self.d0
@@ -51,6 +82,7 @@ class DopplerCalc:
 		t = self.calc_t(tprime)
 		fs = ft0p*(1+(v/c)*(v*t)/(np.sqrt(d0**2+(v*t)**2)))
 		self.fs = fs
+
 		return fs
 	
 	def calc_ft(self, times, fs = None):
@@ -71,6 +103,7 @@ class DopplerCalc:
 		Returns:
 			list: List of calculated frequency values.
 		"""
+
 		if fs is None:
 			fs = self.fs
 		v = self.v
@@ -90,7 +123,19 @@ class DopplerInversion(DopplerCalc):
 
 	def __init__(self, fobs, tobs, mprior, prior_sigma, num_iterations=4, 
 			  off_diagonal=False):
-		
+		"""
+		Initialize the DopplerInversion class with the given parameters.
+
+		Parameters:
+		fobs (np.ndarray): Observed frequencies.
+		tobs (np.ndarray): Observed times.
+		mprior (np.ndarray): Prior model parameters.
+		prior_sigma (np.ndarray): Prior uncertainties for the model parameters.
+		num_iterations (int): Number of iterations for the inversion.
+		off_diagonal (bool): Whether to include off-diagonal terms in the prior 
+			covariance matrix.
+		"""
+
 		self.tobs = tobs
 		self.fobs = fobs
 		self.mprior = mprior
@@ -113,13 +158,21 @@ class DopplerInversion(DopplerCalc):
 		self.num_overtones = len(self.mprior[4:])
 
 	def cprior_setup(self):
-		'''
+		"""
 		Setup the prior model covariance matrix.
+
 		Parameters:
 		prior_sigma (list): List of standard deviations for the prior model
 			parameters. The order should be [v_sigma, d0_sigma,
-			t0_sigma, c_sigma, fs_sigma].'''
+			t0_sigma, c_sigma, fs_sigma].
 
+		Returns:
+		cprior0 (np.ndarray): Prior covariance matrix for model parameters.
+		cprior (np.ndarray): Scaled prior covariance matrix.
+		Cd0 (np.ndarray): Prior covariance matrix for observed frequencies.
+		Cd (np.ndarray): Scaled prior covariance matrix for observed 
+			frequencies.
+		"""
 		v_sigma = self.prior_sigma[0]
 		d0_sigma = self.prior_sigma[1]
 		t0_sigma = self.prior_sigma[2]
@@ -153,12 +206,10 @@ class DopplerInversion(DopplerCalc):
 		np.fill_diagonal(Cd0, self.sigma**2)
 		Cd = Cd0*(len(self.fobs))
 
-		mnew = np.array(self.mprior)
-
-		return cprior0, cprior, Cd0, Cd, mnew
+		return cprior0, cprior, Cd0, Cd
 						
 	def df(self, tp):   
-		'''
+		"""
 		Calculate the derivatives of f with respect to fs, v, d0, t0 and c.
 
 		Parameters:
@@ -174,8 +225,8 @@ class DopplerInversion(DopplerCalc):
 		Returns:
 		tuple: A tuple containing the derivatives of f with respect to fs, v, 
 			d0, t0 and c.
-		'''
-
+		"""
+		
 		fs = self.source_frequencies
 		v = self.source_speed
 		d0 = self.closest_approach_dist
@@ -284,7 +335,7 @@ class DopplerInversion(DopplerCalc):
 		cobs = Cdfac * cobs0
 		icobs = la.inv(cobs)
 		icprior = la.inv(self.cprior)
-		print(dnew)
+
 		Sd = 0.5 * (dnew - dobs).T @ icobs @ (dnew - dobs)
 		Sm = 0.5 * (m - mprior).T @ icprior @ (m - mprior)
 		S = Sd + Sm
@@ -316,16 +367,18 @@ class DopplerInversion(DopplerCalc):
 				in the prior covariance matrix, default is False.
 
 		Returns:
-			numpy.ndarray: The inverted parameters for the function f. Velocity 
-				of the aircraft, distance of closest approach, time of closest 
-				approach, and the fundamental frequency produced by the 
-				aircraft.
-			numpy.ndarray: The covariance matrix of the inverted parameters.
-			numpy.ndarray: The array of the fundamental frequency produced 
-				by the aircraft.
+			mnew (numpy.ndarray): The final inverted parameters for the doppler
+				function.
+			Cpost0 (numpy.ndarray): The posterior covariance matrix.
+			Cpost (numpy.ndarray): The posterior covariance matrix scaled.
+			fs_array (numpy.ndarray): The inverted array of the fundamental 
+				frequency produced by the aircraft.
+			F_m (numpy.ndarray): The final data misfit.
 		"""
-		
-		cprior0, cprior, Cd0, Cd, mnew = self.cprior_setup()
+
+		mnew = np.array(self.mprior)
+
+		cprior0, cprior, Cd0, Cd = self.cprior_setup()
 		self.cprior = cprior
 
 		self.sigma = sigma
@@ -423,7 +476,7 @@ class DopplerInversion(DopplerCalc):
 				G_hold = G.copy()
 			fs_array = m[4:]
 			qv += 1
-
+			print(m)
 
 		Cpost = la.inv(Gm.T @ la.inv(Cd) @ Gm + la.inv(cprior))
 		Cpost0 = la.inv(Gm.T @ la.inv(Cd0) @ Gm + la.inv(cprior0))

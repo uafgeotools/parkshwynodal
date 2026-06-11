@@ -249,8 +249,6 @@ m, covm0, covm, fs_array, F_m = aircraft_inversion.full_inversion([len(fobs)])
 
 covm0 = np.sqrt(np.diag(covm0))
 
-print(np.sqrt(np.diag(covm)))
-
 v = m[0]
 d0 = m[1]
 t0 = m[2]
