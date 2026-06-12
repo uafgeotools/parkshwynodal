@@ -8,6 +8,10 @@ from matplotlib.ticker import MaxNLocator
 from src.get_save_data import make_base_dir
 from src.doppler_funcs import DopplerCalc, DopplerInversion
 
+
+############################################################################
+
+
 class SpecPlot:
     def __init__(self, Sxx, sampling_rate, t_wf, data, times, frequencies, 
                  tarrive, spec_window=120):
@@ -20,6 +24,8 @@ class SpecPlot:
         self.frequencies = frequencies
         self.tarrive = tarrive
         self.start_time = tarrive - spec_window
+
+    ############################################################################
 
     def remove_median(self):
         """
@@ -49,6 +55,7 @@ class SpecPlot:
         self.MDF = MDF
         return spec, MDF
 
+    ############################################################################
 
     def plot_spectrogram(self, title, t0, v, d0, c, fs_array,
                         F_m, Cpost0, middle_index, file_name=None, 
@@ -211,10 +218,11 @@ class SpecPlot:
                 "t\u2080 = " + "%.2f" % t0 + ' \u00B1 ' + "%.2f" % Cpost0[2] 
                 + ' s, v = ' + "%.2f" % v +' \u00B1 ' + "%.2f" % Cpost0[0] 
                 + ' m/s, c = ' + "%.2f" % c +' \u00B1 ' + "%.2f" % Cpost0[3] 
-                + ' m/s, d\u2080 = '+ "%.2f" % d0 +' \u00B1 ' + "%.2f" % Cpost0[1] 
-                + ' m, \n' + 'f\u209B = ' + fslab_str + ' \u00B1 ' 
-                + "%.2f" % np.median(Cpost0[4:]) +' Hz, df\u209B = ' 
-                + "%.2f" % med_df + ' \u00B1 ' + "%.2f" % mad_df + ' Hz\nMisfit: ' 
+                + ' m/s, d\u2080 = '+ "%.2f" % d0 +' \u00B1 ' 
+                + "%.2f" % Cpost0[1] + ' m, \n' + 'f\u209B = ' 
+                + fslab_str + ' \u00B1 ' + "%.2f" % np.median(Cpost0[4:]) 
+                + ' Hz, df\u209B = ' + "%.2f" % med_df + ' \u00B1 ' 
+                + "%.2f" % mad_df + ' Hz\nMisfit: ' 
                 + "%.4f" % F_m + ' ' + type_inv, fontsize=text_size)
 
         ax2.legend(loc='upper right',fontsize = 'small')
@@ -266,6 +274,9 @@ class SpecPlot:
         gc.collect()
 
 
+################################################################################
+
+
 class GetPicks(SpecPlot):
 
     def __init__(self, spec_plot, vmin=None, vmax=None, make_picks=True,
@@ -276,6 +287,8 @@ class GetPicks(SpecPlot):
         self.vmax = vmax
         self.make_picks = make_picks
         self.save_picks = save_picks
+
+    ############################################################################
 
     def doppler_points(self):
         '''Interactive picking of points on spectrogram for overtone curve'''
@@ -302,9 +315,13 @@ class GetPicks(SpecPlot):
             plt.gcf().canvas.mpl_connect('button_press_event', onclick)
             plt.show(block=True)
 
-            if input("Do you want to repick your points? (y or n)").lower() != 'y':
+            if input(
+                "Do you want to repick your points? (y or n)"
+                ).lower() != 'y':
                 break
         return np.array(coords)
+    
+    ############################################################################
 
     def overtone_points(self, axvline=None):
         '''Interactive picking of points on spectrogram for overtone peaks'''
@@ -333,10 +350,13 @@ class GetPicks(SpecPlot):
                     print('Clicked:', event.xdata, event.ydata)
             plt.gcf().canvas.mpl_connect('button_press_event', onclick)
             plt.show(block=True)
-            if input("Do you want to repick your points? (y or n)").lower() != 'y':
+            if input(
+                "Do you want to repick your points? (y or n)"
+                ).lower() != 'y':
                 break
         return peaks, time_peaks
 
+    ############################################################################
 
     def time_window_points(self, tobs, fobs):
         '''Interactive picking of time window for inversion'''
@@ -364,11 +384,14 @@ class GetPicks(SpecPlot):
                     print('Clicked:', event.xdata, event.ydata)
             plt.gcf().canvas.mpl_connect('button_press_event', onclick)
             plt.show(block=True)
-            if input("Do you want to repick your points? (y or n)").lower() != 'y':
+            if input(
+                "Do you want to repick your points? (y or n)"
+                ).lower() != 'y':
                 break
         start_time, end_time = set_time[:2]
         return start_time, end_time
-
+    
+    ############################################################################
 
     def single_doppler_data(self, file_name, BASE_DIR):
         """
@@ -434,8 +457,9 @@ class GetPicks(SpecPlot):
                                 # Only keep first two columns, append start_time 
                                 # then move \n to next column
                                 if len(pick_data) >= 2:
-                                    file.write(
-                                        f'{pick_data[0]},{pick_data[1]},{start_time},\n')
+                                    wline = f'{pick_data[0]},{pick_data[1]}'
+                                    wline += f',{start_time},\n'
+                                    file.write(wline)
                     else:
                         return [], None
             file.close()  
@@ -558,7 +582,7 @@ class GetPicks(SpecPlot):
             maxfreq = []
             coord_inv = []
             ttt = []
-            print(fs)
+
             ft = doppler_calc.calc_ft(self.times, fs)
  
             for t_f in range(len(self.times)):

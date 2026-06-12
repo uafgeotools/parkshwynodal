@@ -1,6 +1,10 @@
 '''Inversion functions for Doppler shift data.'''
 import numpy as np
 import numpy.linalg as la
+	
+
+################################################################################
+	
 
 class DopplerCalc:
 	def __init__(self, v, d0, t0, c):
@@ -20,7 +24,9 @@ class DopplerCalc:
 		self.v = v
 		self.d0 = d0
 		self.c = c
-		
+
+	############################################################################
+
 	def calc_t(self, tprime):
 		"""
 		Calculate time conversion from tprime to t using the model parameters.
@@ -52,7 +58,9 @@ class DopplerCalc:
 		t = (diff_t - sqrt_term)/(vel_diff)
 
 		return t
-
+	
+	############################################################################
+	
 	def calc_fs(self, tprime, ft0p):
 		"""
 		Calculate the fundamental frequency produced by an aircraft 
@@ -84,6 +92,8 @@ class DopplerCalc:
 		self.fs = fs
 
 		return fs
+	
+	############################################################################
 	
 	def calc_ft(self, times, fs = None):
 		"""
@@ -117,6 +127,9 @@ class DopplerCalc:
 									
 			ft.append(ft0p)
 		return ft
+	
+
+################################################################################
 	
 
 class DopplerInversion(DopplerCalc):
@@ -156,6 +169,8 @@ class DopplerInversion(DopplerCalc):
 		self.source_frequencies = None
 		
 		self.num_overtones = len(self.mprior[4:])
+
+	############################################################################
 
 	def cprior_setup(self):
 		"""
@@ -207,7 +222,9 @@ class DopplerInversion(DopplerCalc):
 		Cd = Cd0*(len(self.fobs))
 
 		return cprior0, cprior, Cd0, Cd
-						
+
+	############################################################################
+					
 	def df(self, tp):   
 		"""
 		Calculate the derivatives of f with respect to fs, v, d0, t0 and c.
@@ -302,7 +319,8 @@ class DopplerInversion(DopplerCalc):
 		
 		return f_derivev, f_derived0, f_derivet0, f_derivec, f_derivefs
 
-
+	############################################################################
+	
 	def data_misfit(self):
 		"""
 		Calculate the data misfit using the predictions and observations.
@@ -345,6 +363,7 @@ class DopplerInversion(DopplerCalc):
 		print("Total Misfit:", S)
 		return Sd
 
+	############################################################################
 	
 	def full_inversion(self, peaks_assos, sigma=3):
 		"""
@@ -483,6 +502,8 @@ class DopplerInversion(DopplerCalc):
 		F_m = self.data_misfit()
 
 		return mnew, Cpost0, Cpost, fs_array, F_m
+
+	############################################################################
 	
 	def main(self):
 		if self.method == 'full':
