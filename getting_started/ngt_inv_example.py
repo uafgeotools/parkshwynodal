@@ -1,5 +1,6 @@
-import numpy as np
 import sys
+import numpy as np
+
 from pathlib import Path
 from matplotlib import pyplot as plt
 from scipy.signal import spectrogram
