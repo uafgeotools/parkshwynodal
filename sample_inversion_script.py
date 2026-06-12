@@ -15,7 +15,7 @@ from obspy.core import UTCDateTime
 from scipy.signal import spectrogram
 
 # --- Fix sys.path ---
-repo_root = Path(__file__).resolve().parents[1]
+repo_root = Path(__file__).resolve().parents[0]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
@@ -42,12 +42,15 @@ spec, MDF = spec_plot.remove_median()
 middle_index = len(times) // 2
 middle_column = spec[:, middle_index]
 vmin, vmax = 0, np.max(middle_column)
+base_dir = f'{repo_root}/input/data_picks/sample_script_picks/'
 
-spec_load = GetPicks(spec_plot, vmin, vmax)
-coords_array = spec_load.doppler_points()
+fpks1 = f'doppler_picks.txt'
+
+spec_load = GetPicks(spec_plot, vmin, vmax, save_picks=True,review_picks=True)
+coords_array, start_time = spec_load.single_doppler_data(fpks1, base_dir)
 
 # Estimate initial model parameters from picked points
-c = 320 #11.1  # Speed of sound (m/s)
+c = 320 # Speed of sound (m/s)
 fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])
 fm = (fa + fr) / 2
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
@@ -90,8 +93,9 @@ m, _, _, _, F_m = aircraft_inversion.full_inversion(
     [len(fobs)])
 v, d0, t0, c = m[0], m[1], m[2], m[3]
 mprior = [v, d0, t0, c]
-
-peaks, time_peak = spec_load.overtone_points(axvline=t0)
+fpks2 = f'overtone_picks.txt'
+peaks, time_peak = spec_load.overtone_data(t0, file_name=fpks2, 
+                                             BASE_DIR=base_dir)
 
 # Automatically associate picked peaks with overtone curves
 corridor_width = 10 if len(peaks) <= 15 else 5
@@ -100,8 +104,10 @@ tobs, fobs, peaks_assos, fs_array = spec_load.auto_picks_full(
     )
 
 mprior += [float(f) for f in fs_array]
-
-tobs, fobs, peaks_assos = spec_load.final_data(tobs, fobs, fs_array, peaks_assos)
+fpks3 = f'time_picks.txt'
+tobs, fobs, peaks_assos = spec_load.final_data(tobs, fobs, fs_array, 
+                                               peaks_assos, file_name=fpks3, 
+                                               BASE_DIR=base_dir)
 
 # Final inversion using filtered picks
 sigma_prior = (

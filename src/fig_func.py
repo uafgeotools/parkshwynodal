@@ -279,14 +279,16 @@ class SpecPlot:
 
 class GetPicks(SpecPlot):
 
-    def __init__(self, spec_plot, vmin=None, vmax=None, make_picks=True,
-                save_picks=False):
+    def __init__(self, spec_plot, vmin=None, vmax=None, spec_window=120, 
+                 make_picks=True, save_picks=False, review_picks=False):
         
         self.__dict__.update(spec_plot.__dict__)  # copy all attributes
         self.vmin = vmin
         self.vmax = vmax
         self.make_picks = make_picks
         self.save_picks = save_picks
+        self.spec_window = spec_window
+        self.review_picks = review_picks
 
     ############################################################################
 
@@ -421,6 +423,7 @@ class GetPicks(SpecPlot):
             list: The list of picks the user picked along the most prominent 
                 overtone.
         """
+        make_picks = self.make_picks
 
         if Path(f'{BASE_DIR}/{file_name}').exists():
             coords = []
@@ -442,6 +445,7 @@ class GetPicks(SpecPlot):
                         [coord[1] for coord in coords], 
                         color='black', marker='x')
                     plt.show()
+
                     correct_time = input(
                         "No start time found in file. Do your picks line" \
                         " up with this signal?(y/n): ")
@@ -461,11 +465,32 @@ class GetPicks(SpecPlot):
                                     wline += f',{start_time},\n'
                                     file.write(wline)
                     else:
-                        return [], None
+                        return [], None     
             file.close()  
-            return np.array(coords), start_time
+
+            if self.review_picks:
+                #Have user check if they like the picks they saved
+                plt.figure()
+                plt.pcolormesh(self.times, self.frequencies, self.spec, 
+                               shading='gouraud', cmap='pink_r', vmin=self.vmin, 
+                               vmax=self.vmax)
+                
+                plt.scatter([coord[0] for coord in coords], 
+                            [coord[1] for coord in coords], 
+                            color='black', marker='x')
+                plt.show()
+
+                if input(
+                    "Do you want to repick your points? (y or n)"
+                    ).lower() == 'y':
+                        make_picks = True
+                else:
+
+                    return np.array(coords), start_time
+            else:
+                return np.array(coords), start_time
         
-        elif self.make_picks:
+        if make_picks:
             start_time = self.tarrive - self.spec_window
             coords = self.doppler_points()
             if self.save_picks:
@@ -512,6 +537,7 @@ class GetPicks(SpecPlot):
             list: List of frequencies picked by user along different overtones.
             list: List of times corresponding to the picked frequencies.
         """
+        make_picks = self.make_picks
 
         if Path(f'{BASE_DIR}/{file_name}').exists():
 
@@ -522,10 +548,28 @@ class GetPicks(SpecPlot):
                     pick_data = line.split(',')
                     peaks.append(float(pick_data[1]))
                     time_peaks.append(float(pick_data[0]))
-            file.close()  
-            return peaks, time_peaks
 
-        elif self.make_picks:
+            file.close() 
+            if self.review_picks:
+                #Have user check if they like the picks they saved
+                plt.figure()
+                plt.pcolormesh(self.times, self.frequencies, self.spec, 
+                            shading='gouraud', cmap='pink_r', vmin=self.vmin, 
+                            vmax=self.vmax)
+                plt.scatter(time_peaks, peaks, color='black', marker='x')
+                plt.axvline(x=t0, c='#377eb8', ls='--')
+                plt.show()
+
+                if input(
+                    "Do you want to repick your points? (y or n)"
+                    ).lower() == 'y':
+                        make_picks = True
+                else:
+                    return peaks, time_peaks
+            else:
+                return peaks, time_peaks
+
+        if make_picks:
             peaks, time_peaks = self.overtone_points(axvline=t0)
             if self.save_picks:
                 make_base_dir(BASE_DIR)
@@ -677,7 +721,7 @@ class GetPicks(SpecPlot):
             list: The number of data points associated with each overtone,  
                 for indexing purposes.
         """
-
+        make_picks = self.make_picks
         if file_name is not None and Path(f'{BASE_DIR}/{file_name}').exists():
             set_time = []
             with open(f'{BASE_DIR}/{file_name}', 'r') as file:
@@ -685,33 +729,60 @@ class GetPicks(SpecPlot):
                     pick_data = line.split(',')
                     set_time.append(float(pick_data[0]))
             file.close()  
-            if len(set_time) <= 1:
+
+            if self.review_picks:
+                #Have user check if they like the picks they saved
+                print(
+                    "Red lines show the window of data the inversion will use."
+                )
+                plt.figure()
+                plt.pcolormesh(self.times, self.frequencies, self.spec, 
+                            shading='gouraud', cmap='pink_r', vmin=self.vmin, 
+                            vmax=self.vmax)
+                plt.scatter(tobs, fobs, color='black', marker='x')
+                plt.axvline(x=set_time[0], c='red', ls='--')
+                plt.axvline(x=set_time[1], c='red', ls='--')
+                plt.show()
+
+                if input(
+                    "Do you want to repick your points? (y or n)"
+                    ).lower() == 'y':
+                        make_picks = True
+                        go_on = False
+                else:
+                    go_on = True
+
+            else:
+                go_on = True
+
+            if go_on:
+                if len(set_time) <= 1:
+                    return tobs, fobs, peaks_assos
+                s_time = set_time[0]
+                e_time = set_time[1]
+                ftobs = []
+                ffobs = []
+            
+                peak_ass = []
+                cum = 0
+                
+                for p in range(len(fs_array)):
+                    count = 0
+                    for j in range(cum,cum+peaks_assos[p]):
+                        if tobs[j] >= s_time and tobs[j] <= e_time:
+                            ftobs.append(tobs[j])
+                            ffobs.append(fobs[j])
+                            count += 1
+                    cum = cum + peaks_assos[p]
+                
+                    peak_ass.append(count)
+                peaks_assos = peak_ass
+                tobs = ftobs
+                fobs = ffobs
+
                 return tobs, fobs, peaks_assos
-            s_time = set_time[0]
-            e_time = set_time[1]
-            ftobs = []
-            ffobs = []
-        
-            peak_ass = []
-            cum = 0
-            
-            for p in range(len(fs_array)):
-                count = 0
-                for j in range(cum,cum+peaks_assos[p]):
-                    if tobs[j] >= s_time and tobs[j] <= e_time:
-                        ftobs.append(tobs[j])
-                        ffobs.append(fobs[j])
-                        count += 1
-                cum = cum + peaks_assos[p]
-            
-                peak_ass.append(count)
-            peaks_assos = peak_ass
-            tobs = ftobs
-            fobs = ffobs
 
-            return tobs, fobs, peaks_assos
-
-        elif self.make_picks:
+        elif make_picks:
             start_time, end_time = self.time_window_points(tobs, fobs)
             if self.save_picks:
                 make_base_dir(BASE_DIR)
