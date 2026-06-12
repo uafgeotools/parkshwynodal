@@ -10,6 +10,7 @@ from pathlib import Path
 repo_path = Path(__file__).resolve().parents[3]
 if str(repo_path) not in sys.path:
     sys.path.insert(0, str(repo_path))
+
 file = pd.read_csv(f'{repo_path}/output/Seppi_2025_results/NGT_flight_param_inv_DB.txt', sep=",")
 flight_nums = file['Flight_Number']
 freq_peaks = file['Meas_Source_Frequency_Array']
@@ -81,9 +82,11 @@ for i in range(len(flight_nums)):
             diff = ftry[g] - ftry[g - 1]
             f1.append(diff)
         f_range.append(np.nanmedian(f1))
+
     med_df = np.nanmedian(f_range)
     mad_df = np.nanmedian(np.abs(f_range - med_df))
 
+    print(flight_num)
     error_dict[tail_num].extend([mad_df])
 
     if str(tail_num) == '10512184' and med_df < 20:

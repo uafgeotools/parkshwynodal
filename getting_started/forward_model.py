@@ -98,7 +98,8 @@ for n, var_name in enumerate(var_names):
     tprime_array = get_t(params['v'], params['d0'], params['t0'], params['c'], 
                    time_receiver)
     print(tprime_array)
-    ft = get_f(params['v'], params['d0'], tprime_array, params['c'], params['fs'])
+    ft = get_f(params['v'], params['d0'], tprime_array, params['c'], 
+               params['fs'])
 
     axs[n].plot(time_receiver, ft, c='k', linewidth=0.5, zorder=10)
     axs[n].axvline(params['t0'], c='k', linewidth=0.5, zorder=10)
@@ -123,8 +124,8 @@ for n, var_name in enumerate(var_names):
         # Plot for varying parameters 
         for val in var_values:
             params[var_name] = val
-            tprime_array = get_t(params['v'], params['d0'], params['t0'], params['c'], 
-                           time_receiver)
+            tprime_array = get_t(params['v'], params['d0'], params['t0'], 
+                                 params['c'], time_receiver)
             ft = get_f(params['v'], params['d0'], tprime_array, params['c'], 
                     params['fs'])
             axs[n].plot(time_receiver, ft, color=cm(norm(val)), linewidth=0.5)
