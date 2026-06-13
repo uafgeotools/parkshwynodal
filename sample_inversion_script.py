@@ -23,6 +23,10 @@ from src.get_save_data import load_waveform
 from src.doppler_funcs import DopplerInversion as DI
 from src.fig_func import SpecPlot, GetPicks
 
+#Flag to decide if you want to save your data picks
+#Also use if you want to review old picks, set to True
+save_picks = False
+
 arrive_time = (UTCDateTime("2019-02-21T20:33:34") + 120).timestamp
 
 data, sample_rate, t_wf, title = load_waveform('1011', arrive_time, 
@@ -42,13 +46,16 @@ spec, MDF = spec_plot.remove_median()
 middle_index = len(times) // 2
 middle_column = spec[:, middle_index]
 vmin, vmax = 0, np.max(middle_column)
-base_dir = f'{repo_root}/input/data_picks/sample_script_picks/'
 
-fpks1 = f'doppler_picks.txt'
-
-spec_load = GetPicks(spec_plot, vmin, vmax, save_picks=True,review_picks=True)
-coords_array, start_time = spec_load.single_doppler_data(fpks1, base_dir)
-
+if save_picks:
+    base_dir = f'{repo_root}/input/data_picks/sample_script_picks/'
+    spec_load = GetPicks(spec_plot, vmin, vmax, save_picks=True,
+                         review_picks=True)
+    fpks1 = f'doppler_picks.txt'
+    coords_array, start_time = spec_load.single_doppler_data(fpks1, base_dir)
+else:
+    spec_load = GetPicks(spec_plot, vmin, vmax)
+    coords_array = spec_load.doppler_points()
 # Estimate initial model parameters from picked points
 c = 320 # Speed of sound (m/s)
 fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])
@@ -93,10 +100,12 @@ m, _, _, _, F_m = aircraft_inversion.full_inversion(
     [len(fobs)])
 v, d0, t0, c = m[0], m[1], m[2], m[3]
 mprior = [v, d0, t0, c]
-fpks2 = f'overtone_picks.txt'
-peaks, time_peak = spec_load.overtone_data(t0, file_name=fpks2, 
-                                             BASE_DIR=base_dir)
-
+if save_picks:
+    fpks2 = f'overtone_picks.txt'
+    peaks, time_peak = spec_load.overtone_data(t0, file_name=fpks2, 
+                                               BASE_DIR=base_dir)
+else:
+    peaks, time_peak = spec_load.overtone_points(axvline=t0)
 # Automatically associate picked peaks with overtone curves
 corridor_width = 10 if len(peaks) <= 15 else 5
 tobs, fobs, peaks_assos, fs_array = spec_load.auto_picks_full(
@@ -104,11 +113,14 @@ tobs, fobs, peaks_assos, fs_array = spec_load.auto_picks_full(
     )
 
 mprior += [float(f) for f in fs_array]
-fpks3 = f'time_picks.txt'
-tobs, fobs, peaks_assos = spec_load.final_data(tobs, fobs, fs_array, 
-                                               peaks_assos, file_name=fpks3, 
-                                               BASE_DIR=base_dir)
-
+if save_picks:
+    fpks3 = f'time_picks.txt'
+    tobs, fobs, peaks_assos = spec_load.final_data(tobs, fobs, fs_array, 
+                                                   peaks_assos, file_name=fpks3, 
+                                                   BASE_DIR=base_dir)
+else:
+    tobs, fobs, peaks_assos = spec_load.final_data(tobs, fobs, fs_array, 
+                                                   peaks_assos)
 # Final inversion using filtered picks
 sigma_prior = (
     [10, 125, 15000, 30, 100] if abs(slope) < 1
