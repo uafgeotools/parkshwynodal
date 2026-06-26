@@ -64,7 +64,7 @@ spec_load = GetPicks(spec_plot, vmin, vmax)
 coords_array = spec_load.doppler_points()
 
 # Estimate initial model parameters from picked points
-c = 320 #11.1  # Speed of sound (m/s)
+c = 335 #11.1  # Speed of sound (m/s)
 fa, fr = np.max(coords_array[:, 1]), np.min(coords_array[:, 1])
 fm = (fa + fr) / 2
 closest_index = np.argmin(np.abs(coords_array[:, 1] - fm))
